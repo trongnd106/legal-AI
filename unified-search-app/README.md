@@ -86,7 +86,13 @@ You can host Unified Search datasets locally or in a blob.
 
 Install all the dependencies: `uv sync`
 
-Run the project using streamlit: `uv run poe start`
+Run Streamlit directly (recommended):
+
+```sh
+uv run streamlit run app/home_page.py
+```
+
+Or install dev deps and use Poe: `uv sync --extra dev` then `uv run poe start`
 
 # How to use it
 

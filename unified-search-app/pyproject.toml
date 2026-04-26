@@ -13,12 +13,17 @@ dependencies = [
     "azure-search-documents~=11.4",
     "azure-storage-blob~=12.20",
     "azure-identity~=1.16",
-    "graphrag==2.5.0",
+    # Dùng graphrag trong monorepo (cùng schema settings.yaml với index từ source).
+    # graphrag==2.5.0 trên PyPI không đọc được cache: json / vector_store lancedb.
+    "graphrag",
     "altair~=5.3",
     "streamlit-agraph~=0.0.45",
     "st-tabs~=0.1",
     "spacy~=3.8",
 ]
+
+[tool.uv.sources]
+graphrag = { path = "../packages/graphrag" }
 
 [project.optional-dependencies]
 dev = [

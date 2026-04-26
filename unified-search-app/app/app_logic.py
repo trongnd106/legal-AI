@@ -322,6 +322,7 @@ async def run_basic_search(
         response, context_data = await api.basic_search(
             config=sv.graphrag_config.value,
             text_units=sv.text_units.value,
+            response_type="Multiple Paragraphs",
             query=query,
         )
 
