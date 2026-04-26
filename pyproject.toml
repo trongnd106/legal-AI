@@ -45,6 +45,7 @@ dev = [
     "semversioner~=2.0",
     "update-toml~=0.2",
     "pytest-xdist[psutil]~=3.8.0",
+    "neo4j>=5.0",
 ]
 
 [tool.uv]
