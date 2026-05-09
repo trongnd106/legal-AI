@@ -76,3 +76,17 @@ uv run python scripts/index_per_file.py \
   --workspace-root /home/trong/graphrag_workspace \
   --dry-run
 ```
+9. Chạy benchmark
+Chỉ thu thập câu trả lời, không gọi gemini chấm điểm
+```bash
+uv run python scripts/ragas_graphrag_benchmark.py   --root /home/trong/graphrag_workspace   --skip-eval   --save-queries ./out.json
+```
+Full:
+```bash
+export GOOGLE_API_KEY=...
+uv run python scripts/ragas_graphrag_benchmark.py \
+  --root /path/to/graphrag_project \
+  --questions scripts/ragas_benchmark_questions.example.json \
+  --method global \
+  --output-csv ./ragas_scores.csv
+```

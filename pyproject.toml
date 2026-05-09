@@ -48,6 +48,13 @@ dev = [
     "neo4j>=5.0",
 ]
 
+# Ragas/Gemini evaluation for GraphRAG (see my-docs/ragas_graphrag_benchmark_guide.md)
+benchmark = [
+    "ragas>=0.3",
+    "langchain-google-genai~=3.2",
+    "datasets~=4.6",
+]
+
 [tool.uv]
 package = false
 
@@ -99,6 +106,7 @@ index = "python -m graphrag index"
 update = "python -m graphrag update"
 init = "python -m graphrag init"
 query = "python -m graphrag query"
+ragas_benchmark = "python scripts/ragas_graphrag_benchmark.py"
 prompt_tune = "python -m graphrag prompt-tune"
 # Pass in a test pattern
 test_only = "pytest -s -k"
@@ -226,6 +234,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S", "D", "ANN", "T201", "ASYNC", "ARG", "PTH", "TRY"]
+"scripts/ragas_graphrag_benchmark.py" = ["CPY001"]
 "graphrag/index/config/*" = ["TCH"]
 "*.ipynb" = ["T201", "S101", "PT015", "B011", "CPY001", "SLF001", "DTZ005"]
 
