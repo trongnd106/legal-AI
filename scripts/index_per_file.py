@@ -4,6 +4,10 @@
 Sau khi mỗi file được index xong, kết quả sẽ được đồng bộ vào Neo4j qua MERGE
 (idempotent) để tích lũy graph dần theo thời gian.
 
+Chỉ đồng bộ lại từ workspace (không index, không tốn token LLM):
+
+  uv run python scripts/index_per_file.py --sync-only --workspace-root /path/to/workspace
+
 Cấu hình Neo4j qua biến môi trường (hoặc args):
   NEO4J_URI       - ví dụ bolt://localhost:7687
   NEO4J_USERNAME  - mặc định: neo4j
@@ -82,6 +86,20 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Only print planned commands without executing.",
+    )
+    parser.add_argument(
+        "--sync-only",
+        action="store_true",
+        help=(
+            "Không index: chỉ MERGE <workspace>/output/*.parquet lên Neo4j "
+            "(không gọi LLM). Cần NEO4J_PASSWORD và không được dùng --no-neo4j."
+        ),
+    )
+    parser.add_argument(
+        "--sync-source-label",
+        type=str,
+        default="workspace_output",
+        help="Giá trị property source_file gán cho mọi node khi dùng --sync-only.",
     )
 
     # --- Neo4j ---
@@ -369,14 +387,22 @@ def neo4j_sync_after_run(
 # ---------------------------------------------------------------------------
 
 
+def ensure_workspace_root(args: argparse.Namespace) -> Path:
+    """Validate workspace directory exists."""
+    workspace_root = args.workspace_root.resolve()
+    if not workspace_root.exists():
+        raise FileNotFoundError(f"Path does not exist: {workspace_root}")
+    return workspace_root
+
+
 def ensure_paths(args: argparse.Namespace) -> tuple[Path, Path, Path, Path]:
     """Validate and return required folders."""
     repo_root = args.repo_root.resolve()
-    workspace_root = args.workspace_root.resolve()
+    workspace_root = ensure_workspace_root(args)
     source_dir = args.source_dir.resolve()
     input_dir = workspace_root / "input"
 
-    for path in (repo_root, workspace_root, source_dir):
+    for path in (repo_root, source_dir):
         if not path.exists():
             raise FileNotFoundError(f"Path does not exist: {path}")
     input_dir.mkdir(parents=True, exist_ok=True)
@@ -392,9 +418,57 @@ def run_command(command: list[str], cwd: Path, dry_run: bool) -> int:
     return completed.returncode
 
 
+def run_sync_only_mode(args: argparse.Namespace) -> int:
+    """Chỉ đồng bộ output/ lên Neo4j, không index."""
+    if args.no_neo4j:
+        print("[sync-only] Bỏ qua (--no-neo4j không tương thích với --sync-only).")
+        return 1
+    workspace_root = ensure_workspace_root(args)
+    output_dir = workspace_root / "output"
+    if not output_dir.is_dir():
+        print(f"[sync-only] Không có thư mục: {output_dir}")
+        return 1
+    if not any(output_dir.glob("*.parquet")):
+        print(f"[sync-only] Không tìm thấy *.parquet trong {output_dir}")
+        return 1
+
+    if args.dry_run:
+        print(
+            "[sync-only] dry-run: sẽ MERGE parquet từ "
+            f"{output_dir} với source_file={args.sync_source_label!r}"
+        )
+        return 0
+
+    if not args.neo4j_password:
+        print("[sync-only] Cần NEO4J_PASSWORD hoặc --neo4j-password.")
+        return 1
+
+    driver = None
+    try:
+        driver = neo4j_connect(args.neo4j_uri, args.neo4j_user, args.neo4j_password)
+        driver.verify_connectivity()
+        neo4j_setup_constraints(driver)
+        print(
+            f"[sync-only] Connected: {args.neo4j_uri} (user={args.neo4j_user})"
+        )
+        neo4j_sync_after_run(driver, workspace_root, args.sync_source_label)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[sync-only] Lỗi: {exc}")
+        return 1
+    finally:
+        if driver is not None:
+            driver.close()
+
+    print("[sync-only] Hoàn tất.")
+    return 0
+
+
 def main() -> int:
     """Program entrypoint."""
     args = parse_args()
+    if args.sync_only:
+        return run_sync_only_mode(args)
+
     repo_root, workspace_root, source_dir, input_dir = ensure_paths(args)
 
     files = sorted(source_dir.glob(args.pattern))

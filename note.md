@@ -54,3 +54,25 @@ embedding_models:
     retry:
       type: exponential_backoff
 ```
+7. Index updating tuần tự
+chú ý cần enable neo4j trong env
+```bash
+cd /home/trong/Documents/graphrag
+set -a && source /home/trong/graphrag_workspace/.env && set +a
+uv run python scripts/index_per_file.py   --source-dir /home/trong/Documents/graphrag/data/txt   --pattern "BLLĐ-45-2019.txt"
+```
+8. Sync data lên Neo4j
+```bash
+cd /home/trong/Documents/graphrag
+set -a && source /home/trong/graphrag_workspace/.env && set +a
+uv run python scripts/index_per_file.py \
+  --sync-only \
+  --workspace-root /home/trong/graphrag_workspace
+```
+Dry-run (chỉ in kế hoạch, không gửi Neo4j):
+```bash
+uv run python scripts/index_per_file.py \
+  --sync-only \
+  --workspace-root /home/trong/graphrag_workspace \
+  --dry-run
+```
