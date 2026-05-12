@@ -9,6 +9,11 @@ readme = "README.md"
 requires-python = ">=3.11,<3.14"
 
 dependencies = [
+    "pdfplumber~=0.11",
+    "python-docx~=1.1",
+    "json-repair~=0.30",
+    "neo4j>=5.0,<7",
+    "python-dotenv>=1.0,<2",
     "streamlit==1.43.0",
     "azure-search-documents~=11.4",
     "azure-storage-blob~=12.20",
@@ -26,6 +31,12 @@ dependencies = [
 graphrag = { path = "../packages/graphrag" }
 
 [project.optional-dependencies]
+ocr = [
+    "paddlepaddle>=3.0.0,<4",
+    "paddleocr>=2.7.0,<3",
+    "pymupdf>=1.24.0",
+    "opencv-python-headless>=4.8.0",
+]
 dev = [
     "poethepoet~=0.26",
     "ipykernel~=6.29",
@@ -46,5 +57,7 @@ start = "streamlit run app/home_page.py"
 start_prod = "streamlit run app/home_page.py --server.port=8501 --server.address=0.0.0.0"
 
 [tool.pyright]
-include = ["app"]
+include = ["app", "tests"]
 exclude = ["**/node_modules", "**/__pycache__"]
+# Tests chạy với PYTHONPATH=app; Pyright cần extraPaths để resolve ``contract_analysis``.
+extraPaths = ["app"]

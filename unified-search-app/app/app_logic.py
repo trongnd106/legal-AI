@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 import graphrag.api as api
 import streamlit as st
+from contract_analysis.env_util import load_repo_dotenv
 from knowledge_loader.data_sources.loader import (
     create_datasource,
     load_dataset_listing,
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 def initialize() -> SessionVariables:
     """Initialize app logic."""
+    load_repo_dotenv()
     if "session_variables" not in st.session_state:
         st.set_page_config(
             layout="wide",
