@@ -15,6 +15,7 @@ from ui.report_details import create_report_details_ui
 from ui.report_list import create_report_list_ui
 from ui.search import display_citations, format_suggested_questions, init_search_ui
 from ui.sidebar import create_side_bar
+from ui.contract_analysis_tab import render_contract_analysis_tab
 
 
 async def main():
@@ -77,7 +78,7 @@ async def main():
         st.button(label="Reset", on_click=on_click_reset, kwargs={"sv": sv})
 
     tab_id = TabBar(
-        tabs=["Search", "Community Explorer"],
+        tabs=["Search", "Community Explorer", "Phân tích HĐLĐ"],
         color="#fc9e9e",
         activeColor="#ff4b4b",
         default=0,
@@ -245,6 +246,9 @@ async def main():
         with report_content:
             st.markdown("##### Selected Report")
             create_report_details_ui(sv)
+
+    if tab_id == 2:
+        await render_contract_analysis_tab(sv)
 
 
 if __name__ == "__main__":

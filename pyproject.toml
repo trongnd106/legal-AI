@@ -252,9 +252,13 @@ include = [
     "packages/graphrag-storage/graphrag_storage", 
     "packages/graphrag-cache/graphrag_cache",
     "packages/graphrag-llm/graphrag_llm",
-    "tests"
+    "tests",
+    "unified-search-app/app",
+    "unified-search-app/tests",
 ]
 exclude = ["**/node_modules", "**/__pycache__"]
+# unified-search-app tests import ``contract_analysis`` như khi PYTHONPATH=app
+extraPaths = ["unified-search-app/app"]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
