@@ -51,6 +51,7 @@ dev = [
 # Ragas/Gemini evaluation for GraphRAG (see my-docs/ragas_graphrag_benchmark_guide.md)
 benchmark = [
     "ragas>=0.3",
+    "google-genai>=1.0",
     "langchain-google-genai~=3.2",
     "datasets~=4.6",
 ]

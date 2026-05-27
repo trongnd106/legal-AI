@@ -1,0 +1,88 @@
+{
+  "45/2019/QH14": {
+    "ten": "Bộ luật Lao động 2019",
+    "so_hieu": "45/2019/QH14",
+    "loai": "bo_luat",
+    "ngay_ban_hanh": "2019-11-20",
+    "ngay_hieu_luc": "2021-01-01",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Quoc hoi",
+    "huong_dan_boi": [
+      "145/2020/NĐ-CP",
+      "12/2022/NĐ-CP",
+      "74/2024/NĐ-CP",
+      "70/2023/NĐ-CP",
+      "10/2020/TT-BLĐTBXH"
+    ]
+  },
+  "145/2020/NĐ-CP": {
+    "ten": "Nghị định 145/2020/NĐ-CP — Điều kiện lao động và quan hệ lao động",
+    "so_hieu": "145/2020/NĐ-CP",
+    "loai": "nghi_dinh",
+    "ngay_ban_hanh": "2020-12-14",
+    "ngay_hieu_luc": "2021-02-01",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Chinh phu",
+    "huong_dan_cho": "45/2019/QH14"
+  },
+  "12/2022/NĐ-CP": {
+    "ten": "Nghị định 12/2022/NĐ-CP — Xử phạt vi phạm hành chính lĩnh vực lao động",
+    "so_hieu": "12/2022/NĐ-CP",
+    "loai": "nghi_dinh",
+    "ngay_ban_hanh": "2022-01-17",
+    "ngay_hieu_luc": "2022-01-17",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Chinh phu",
+    "lien_quan_den": "45/2019/QH14"
+  },
+  "74/2024/NĐ-CP": {
+    "ten": "Nghị định 74/2024/NĐ-CP — Mức lương tối thiểu",
+    "so_hieu": "74/2024/NĐ-CP",
+    "loai": "nghi_dinh",
+    "ngay_ban_hanh": "2024-06-30",
+    "ngay_hieu_luc": "2024-07-01",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Chinh phu",
+    "huong_dan_cho": "45/2019/QH14",
+    "thay_the": "38/2022/NĐ-CP"
+  },
+  "70/2023/NĐ-CP": {
+    "ten": "Nghị định 70/2023/NĐ-CP — Lao động nước ngoài tại Việt Nam",
+    "so_hieu": "70/2023/NĐ-CP",
+    "loai": "nghi_dinh",
+    "ngay_ban_hanh": "2023-09-18",
+    "ngay_hieu_luc": "2023-09-18",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Chinh phu",
+    "sua_doi": "152/2020/NĐ-CP",
+    "lien_quan_den": "45/2019/QH14"
+  },
+  "10/2020/TT-BLĐTBXH": {
+    "ten": "Thông tư 10/2020/TT-BLĐTBXH — Nội dung hợp đồng lao động",
+    "so_hieu": "10/2020/TT-BLĐTBXH",
+    "loai": "thong_tu",
+    "ngay_ban_hanh": "2020-11-12",
+    "ngay_hieu_luc": "2021-01-01",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Bo LDTBXH",
+    "huong_dan_cho": "45/2019/QH14"
+  },
+  "19/VBHN-VPQH": {
+    "ten": "Luật Bảo hiểm xã hội 2024 (văn bản hợp nhất)",
+    "so_hieu": "19/VBHN-VPQH",
+    "loai": "luat",
+    "ngay_ban_hanh": "2026-02-12",
+    "ngay_hieu_luc": "2025-07-01",
+    "tinh_trang": "con_hieu_luc",
+    "pham_vi": "toan_quoc",
+    "co_quan": "Van phong Quoc hoi",
+    "goc": "41/2024/QH15",
+    "ghi_chu": "Hợp nhất: Luật 41/2024/QH15 + Luật Nhà giáo 73/2025 + Luật Thanh tra 84/2025"
+  }
+}

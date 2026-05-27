@@ -10,6 +10,7 @@ See ``my-docs/ragas_graphrag_benchmark_guide.md`` for background.
 from __future__ import annotations
 
 import argparse
+import os
 import asyncio
 import json
 import logging
@@ -267,29 +268,35 @@ def run_ragas(
     embedding_model: str,
     max_workers: int,
 ) -> Any:
-    """Run Ragas Faithfulness and AnswerRelevancy using Gemini backends."""
-    from langchain_google_genai import (
-        ChatGoogleGenerativeAI,
-        GoogleGenerativeAIEmbeddings,
-    )
+    """Run Ragas Faithfulness and AnswerRelevancy using Gemini (google-genai SDK)."""
+    from google import genai as google_genai
+
     from ragas import EvaluationDataset, evaluate
-    from ragas.embeddings import LangchainEmbeddingsWrapper
-    from ragas.llms import LangchainLLMWrapper
+    from ragas.embeddings import GoogleEmbeddings
+    from ragas.llms import llm_factory
     from ragas.metrics.collections import AnswerRelevancy, Faithfulness
     from ragas.run_config import RunConfig
 
-    evaluator_llm = LangchainLLMWrapper(
-        ChatGoogleGenerativeAI(
-            model=eval_model,
-            temperature=0.1,
-            max_tokens=2048,
+    api_key = os.environ.get("GOOGLE_API_KEY")
+    if not api_key:
+        msg = (
+            "GOOGLE_API_KEY is required for Ragas evaluation. "
+            "Set it in the environment or run with --skip-eval."
         )
+        raise ValueError(msg)
+
+    gemini_client = google_genai.Client(api_key=api_key)
+    evaluator_llm = llm_factory(
+        eval_model,
+        provider="google",
+        client=gemini_client,
+        temperature=0.1,
+        max_tokens=2048,
     )
-    evaluator_embeddings = LangchainEmbeddingsWrapper(
-        GoogleGenerativeAIEmbeddings(
-            model=embedding_model,
-            task_type="retrieval_document",
-        )
+    embedding_id = embedding_model.removeprefix("models/")
+    evaluator_embeddings = GoogleEmbeddings(
+        client=gemini_client,
+        model=embedding_id,
     )
     dataset = EvaluationDataset.from_list(samples)
     rc = RunConfig(
