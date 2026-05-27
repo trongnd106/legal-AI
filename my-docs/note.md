@@ -85,7 +85,7 @@ Full:
 ```bash
 export GOOGLE_API_KEY=...
 uv run python scripts/ragas_graphrag_benchmark.py \
-  --root /path/to/graphrag_project \
+  --root /home/trong/graphrag_workspace \
   --questions scripts/ragas_benchmark_questions.example.json \
   --method global \
   --output-csv ./ragas_scores.csv
