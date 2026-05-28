@@ -1,0 +1,65 @@
+completion_models:
+  default_completion_model:
+    api_key: ${GRAPHRAG_API_KEY}
+    model_provider: openai
+    model: gpt-4o-mini
+    max_tokens: 4000
+    temperature: 0
+    request_timeout: 180.0
+
+embedding_models:
+  default_embedding_model:
+    api_key: ${GRAPHRAG_API_KEY}
+    model_provider: openai
+    model: text-embedding-3-small
+
+parallelization:
+  stagger: 0.3
+  num_threads: 4
+
+input:
+  type: file
+  file_type: json
+  base_dir: "chunks"
+  file_pattern: ".*\\.jsonl$"
+  document_attribute_columns:
+    - id
+    - van_ban
+    - so_dieu
+    - tieu_de
+    - chuong_so
+    - ten_chuong
+    - muc_so
+    - norm_type
+
+chunks:
+  size: 4000
+  overlap: 0
+  group_by_columns:
+    - id
+
+entity_extraction:
+  prompt: "prompts/entity_extraction_labor.txt"
+  entity_types:
+    - ChuThe
+    - HanhVi
+    - CoQuan
+    - HopDongLaoDong
+    - TienLuong
+    - TraLuong
+    - ThoiGioLamViec
+    - NghiPhep
+    - XuLyKyLuat
+    - CheDoBaoHiem
+    - TroCapThoiViec
+    - CheTai
+    - AnToanVeSinhLaoDong
+  max_gleanings: 2
+
+relationship_extraction:
+  prompt: "prompts/relationship_extraction_labor.txt"
+
+community_reports:
+  prompt: "prompts/community_report_labor.txt"
+  max_length: 2000
+  max_input_length: 8000

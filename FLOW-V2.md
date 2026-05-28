@@ -60,3 +60,13 @@ Tổng 7 file:
 - 2069 Khoản
 - 1705 Điểm
 Trong đó BLLĐ 2019 chứa: 220 Điều, 645 Khoản, 287 Điểm
+
+### 2. Ontology Design
+Run merge script in verify mode
+```bash
+cd /home/trong/Documents/graphrag && python3 scripts/02_merge_structural_graph.py --verify
+```
+Run merge script in dry-run mode
+```bash
+cd /home/trong/Documents/graphrag && python3 scripts/02_merge_structural_graph.py --dry-run
+```

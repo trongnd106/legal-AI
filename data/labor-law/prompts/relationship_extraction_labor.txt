@@ -1,0 +1,64 @@
+Chú ý các loại quan hệ đặc thù pháp luật lao động Việt Nam:
+
+-Relationship Types và Quy tắc sử dụng-
+
+regulates
+  Điều luật điều chỉnh một hành vi/khái niệm pháp lý.
+  VD: BLLĐ_2019_Điều_35 --regulates--> "Đơn phương chấm dứt HĐLĐ"
+  Từ khóa: "quy định về", "điều chỉnh", "hướng dẫn thực hiện"
+
+applies_to
+  Phạm vi áp dụng THUẦN TÚY (Điều 2 — đối tượng áp dụng, Điều 1 — phạm vi điều chỉnh).
+  KHÔNG dùng thay obligates/entitles khi Điều đã chỉ rõ nghĩa vụ hay quyền lợi.
+  VD: BLLĐ_2019_Điều_2 --applies_to--> "Người học nghề"
+
+obligates
+  Áp nghĩa vụ pháp lý, target là ChuThe.
+  Từ khóa: "phải", "có trách nhiệm", "bắt buộc", "có nghĩa vụ"
+  VD: BLLĐ_2019_Điều_35 --obligates--> "Người lao động" (phải báo trước 45 ngày)
+
+entitles
+  Trao quyền, target là ChuThe.
+  Từ khóa: "có quyền", "được phép", "được", "có thể"
+  VD: BLLĐ_2019_Điều_35 --entitles--> "Người lao động" (được đơn phương chấm dứt)
+
+prohibits
+  Cấm hành vi, target là HanhVi.
+  Từ khóa: "không được", "cấm", "nghiêm cấm"
+  VD: BLLĐ_2019_Điều_8 --prohibits--> "Phân biệt đối xử về giới tính"
+
+penalizes
+  Chế tài HÀNH CHÍNH (phạt tiền, cảnh cáo theo Nghị định 12/2022/NĐ-CP).
+  Target PHẢI là CheTai.
+  KHÔNG dùng cho kỷ luật nội bộ doanh nghiệp (dùng disciplines).
+  Từ khóa: "bị phạt tiền", "xử phạt vi phạm hành chính", "phạt cảnh cáo"
+  VD: ND_12_2022_Điều_38 --penalizes--> "Phạt 12-15% tổng BHXH, tối đa 75 triệu"
+
+disciplines
+  Kỷ luật lao động NỘI BỘ của doanh nghiệp, target PHẢI là XuLyKyLuat.
+  KHÔNG phải phạt tiền hành chính.
+  Từ khóa: "sa thải", "khiển trách", "cách chức", "kéo dài thời hạn nâng lương"
+  VD: BLLĐ_2019_Điều_125 --disciplines--> "Sa thải"
+
+enforced_by
+  Cơ quan nhà nước thực thi/giám sát, target PHẢI là CoQuan.
+  Từ khóa: "Bộ LĐTBXH", "Thanh tra lao động", "Chính phủ quy định chi tiết",
+           "Ủy ban nhân dân", "cơ quan có thẩm quyền"
+  VD: BLLĐ_2019_Điều_12 --enforced_by--> "Bộ Lao động - Thương binh và Xã hội"
+
+cites
+  Dẫn chiếu văn bản/điều khoản khác.
+  Target = string nguyên văn ("Điều X", "Nghị định Y", "khoản Z Điều X").
+  Alias index sẽ resolve thành node L1 khi merge graph.
+  Từ khóa: "theo quy định tại Điều X", "căn cứ Điều Y", "hướng dẫn tại Nghị định Z"
+  VD: BLLĐ_2019_Điều_35 --cites--> "Điều 46" (dẫn chiếu trợ cấp thôi việc)
+
+-Quy tắc ưu tiên khi chọn relation Dieu → ChuThe-
+  1. Nếu Điều áp nghĩa vụ rõ ràng → obligates
+  2. Nếu Điều trao quyền rõ ràng   → entitles
+  3. Nếu chỉ xác định phạm vi áp dụng → applies_to
+  Không dùng: HanhVi→ChuThe (chiều ngược, dễ nhầm)
+
+-Quy tắc phân biệt penalizes vs disciplines-
+  penalizes → target CheTai    (phạt tiền, NĐ 12/2022)
+  disciplines → target XuLyKyLuat (sa thải, khiển trách, nội bộ DN)
