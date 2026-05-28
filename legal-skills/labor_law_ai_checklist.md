@@ -22,11 +22,11 @@
 
 | # | Hạng mục | File hướng dẫn | Trạng thái |
 |---|----------|---------------|-----------|
-| 2.1 | Định nghĩa entity types: `VanBan`, `Chuong`, `Dieu`, `Khoan`, `Diem`, `CoQuan`, `ChuThe`, `HanhVi` | `legal-skills/02_ontology_design.md` | ☐ |
-| 2.2 | Định nghĩa semantic entities đặc thù lao động: `HopDongLaoDong`, `TienLuong`, `ThoiGioLamViec`, `Nghi Phep`, `TraLuong`, `XuLyKyLuat`, `CheDoBaoHiem` | `legal-skills/02_ontology_design.md` | ☐ |
-| 2.3 | Định nghĩa relation types: `contains`, `cites`, `amends`, `repeals`, `requires`, `prohibits`, `entitles`, `obligates` | `legal-skills/02_ontology_design.md` | ☐ |
-| 2.4 | Gắn nhãn loại quy phạm: `nghia_vu` (NLĐ/NSDLĐ phải), `quyen` (NLĐ/NSDLĐ được), `cam_doan` (không được), `thu_tuc` | `legal-skills/02_ontology_design.md` | ☐ |
-| 2.5 | Schema JSON/YAML cho GraphRAG entity config (`settings.yaml` → `entity_extraction`) | `legal-skills/02_ontology_design.md` | ☐ |
+| 2.1 | Định nghĩa entity types: `VanBan`, `Chuong`, `Dieu`, `Khoan`, `Diem`, `CoQuan`, `ChuThe`, `HanhVi` | `legal-skills/02_ontology_design.md` | ✅ |
+| 2.2 | Định nghĩa semantic entities đặc thù lao động: `HopDongLaoDong`, `TienLuong`, `ThoiGioLamViec`, `NghiPhep`, `TraLuong`, `XuLyKyLuat`, `CheDoBaoHiem`, `TroCapThoiViec`, `CheTai`, `AnToanVeSinhLaoDong` | `legal-skills/02_ontology_design.md` | ✅ |
+| 2.3 | Định nghĩa relation types: `contains`, `cites`, `amends`, `repeals`, `obligates`, `entitles`, `prohibits`, `regulates`, `penalizes`, `disciplines`, `enforced_by`, `issued_by`, `guided_by` | `legal-skills/02_ontology_design.md` | ✅ |
+| 2.4 | Gắn nhãn loại quy phạm: `nghia_vu` (NLĐ/NSDLĐ phải), `quyen` (NLĐ/NSDLĐ được), `cam_doan` (không được), `thu_tuc` | `legal-skills/02_ontology_design.md` | ✅ |
+| 2.5 | Schema JSON/YAML cho GraphRAG entity config (`settings.yaml` → `entity_extraction`) | `legal-skills/02_ontology_design.md` | ✅ |
 
 ---
 
