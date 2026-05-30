@@ -48,12 +48,12 @@
 
 | # | Hạng mục | File hướng dẫn | Trạng thái |
 |---|----------|---------------|-----------|
-| 4.1 | Triển khai Global Search cho câu hỏi tổng quát (VD: "quyền lợi của NLĐ khi bị sa thải") | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 4.2 | Triển khai Local Search cho câu hỏi cụ thể về một Điều/Khoản | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 4.3 | Xây dựng multi-hop query: truy vết chuỗi `hành vi → nghĩa vụ → chế tài` (VD: không đóng BHXH → vi phạm Điều nào → phạt bao nhiêu) | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 4.4 | Lọc theo temporal: chỉ trả kết quả từ văn bản còn hiệu lực | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 4.5 | Hiển thị reasoning path và trích dẫn Điều/Khoản cụ thể trong câu trả lời | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 4.6 | Rule-based layer: mã hóa các quy tắc cứng (VD: lương tối thiểu, giờ làm tối đa) để xác thực kết quả LLM | `legal-skills/04_reasoning_retrieval.md` | ☐ |
+| 4.1 | Triển khai Global Search cho câu hỏi tổng quát (VD: "quyền lợi của NLĐ khi bị sa thải") | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 4.2 | Triển khai Local Search cho câu hỏi cụ thể về một Điều/Khoản | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 4.3 | Xây dựng multi-hop query: truy vết chuỗi `hành vi → nghĩa vụ → chế tài` (VD: không đóng BHXH → vi phạm Điều nào → phạt bao nhiêu) | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 4.4 | Lọc theo temporal: chỉ trả kết quả từ văn bản còn hiệu lực | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 4.5 | Hiển thị reasoning path và trích dẫn Điều/Khoản cụ thể trong câu trả lời | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 4.6 | Rule-based layer: mã hóa các quy tắc cứng (VD: lương tối thiểu, giờ làm tối đa) để xác thực kết quả LLM | `legal-skills/04_reasoning_retrieval.md` | ✅ |
 
 ---
 
@@ -61,10 +61,10 @@
 
 | # | Hạng mục | File hướng dẫn | Trạng thái |
 |---|----------|---------------|-----------|
-| 5.1 | Xây dựng bộ test cases 50+ câu hỏi luật lao động có ground truth | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 5.2 | Đo Precision/Recall trên tập test, so sánh GraphRAG vs RAG thuần vector | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 5.3 | Kiểm tra multi-hop accuracy: câu hỏi yêu cầu ≥ 2 Điều liên kết | `legal-skills/04_reasoning_retrieval.md` | ☐ |
-| 5.4 | Kiểm tra citation accuracy: câu trả lời có trích đúng số Điều/Khoản không | `legal-skills/04_reasoning_retrieval.md` | ☐ |
+| 5.1 | Xây dựng bộ test cases 50+ câu hỏi luật lao động có ground truth | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 5.2 | Đo Precision/Recall trên tập test, so sánh GraphRAG vs RAG thuần vector | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 5.3 | Kiểm tra multi-hop accuracy: câu hỏi yêu cầu ≥ 2 Điều liên kết | `legal-skills/04_reasoning_retrieval.md` | ✅ |
+| 5.4 | Kiểm tra citation accuracy: câu trả lời có trích đúng số Điều/Khoản không | `legal-skills/04_reasoning_retrieval.md` | ✅ |
 
 ---
 
