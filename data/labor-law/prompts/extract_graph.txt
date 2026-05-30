@@ -1,0 +1,196 @@
+-Goal-
+Cho đoạn văn bản thuộc Bộ luật Lao động Việt Nam hoặc các Nghị định hướng dẫn thi hành,
+hãy trích xuất entity NGỮ NGHĨA pháp lý và các mối quan hệ giữa chúng.
+
+-Ngữ cảnh chunk-
+Mỗi đoạn văn bản tương ứng với 1 Điều luật với metadata:
+  chunk_id = {id}        (VD: BLLĐ_2019_Điều_35)
+  van_ban  = {van_ban}   (VD: 45/2019/QH14)
+  so_dieu  = {so_dieu}   (VD: 35)
+
+LƯU Ý QUAN TRỌNG — Lớp 1 (structural) đã được build sẵn, KHÔNG trích xuất lại:
+- KHÔNG tạo entity cho VanBan, Chuong, Dieu, Khoan, Diem.
+- Khi tạo relationship mà Điều này là nguồn, dùng {id} làm source.
+  VD: source="BLLĐ_2019_Điều_35", KHÔNG dùng source="Điều 35".
+- Khi Điều dẫn chiếu Điều khác ("theo quy định tại Điều X"), dùng relation `cites`
+  với target="Điều X" (alias index sẽ resolve tự động khi merge graph).
+
+-Steps-
+1. Identify all entities. For each identified entity, extract:
+   - entity_name: tên entity, viết hoa chữ đầu
+   - entity_type: một trong các loại [{entity_types}]
+   - entity_description: mô tả ngắn gọn bằng tiếng Việt, rõ ngữ nghĩa pháp lý
+   Format: ("entity"<|><entity_name><|><entity_type><|><entity_description>)
+
+2. Identify all relationships between entities from step 1:
+   - source_entity, target_entity: từ danh sách step 1 (hoặc dùng {id} nếu source là Điều này)
+   - relationship_description: giải thích quan hệ pháp lý bằng tiếng Việt
+   - relationship_strength: 1-10
+   Format: ("relationship"<|><source_entity><|><target_entity><|><relationship_description><|><relationship_strength>)
+
+3. Return output as a single list, use ## as delimiter between records.
+
+4. When finished, output <|COMPLETE|>
+
+-Entity Types-
+{entity_types}
+
+-Quy tắc phân loại (PHẢI tuân thủ)-
+HanhVi         = hành vi/sự kiện pháp lý (không trả lương, đình công, không đóng BHXH)
+               ≠ CheTai (phạt tiền) ≠ XuLyKyLuat (kỷ luật nội bộ)
+XuLyKyLuat     = hình thức kỷ luật NỘI BỘ của doanh nghiệp (sa thải, khiển trách, kéo dài nâng lương)
+               KHÔNG phải phạt tiền hành chính
+CheTai         = chế tài HÀNH CHÍNH (phạt tiền, cảnh cáo theo NĐ 12/2022)
+               KHÔNG phải kỷ luật nội bộ
+TienLuong      = mức/cơ cấu tiền lương (lương tối thiểu vùng, hệ số lương)
+TraLuong       = thời hạn/hình thức trả lương (trả chậm, chu kỳ trả lương, trả bằng tiền mặt)
+TroCapThoiViec = trợ cấp/bồi thường khi chấm dứt HĐLĐ — KHÔNG phải lương định kỳ
+CoQuan         = cơ quan nhà nước thực thi/giám sát (Bộ LĐTBXH, Thanh tra LĐ, Chính phủ)
+               ≠ ChuThe (bên trong quan hệ lao động: NLĐ, NSDLĐ)
+
+-Relationship Types và Quy tắc sử dụng-
+regulates
+  Điều luật điều chỉnh một hành vi/khái niệm pháp lý.
+  Từ khóa: "quy định về", "điều chỉnh", "hướng dẫn thực hiện"
+
+applies_to
+  Phạm vi áp dụng THUẦN TÚY (Điều 2 — đối tượng áp dụng).
+  KHÔNG dùng thay obligates/entitles khi Điều đã chỉ rõ nghĩa vụ hay quyền lợi.
+
+obligates
+  Áp nghĩa vụ pháp lý, target là ChuThe.
+  Từ khóa: "phải", "có trách nhiệm", "bắt buộc", "có nghĩa vụ"
+
+entitles
+  Trao quyền, target là ChuThe.
+  Từ khóa: "có quyền", "được phép", "được", "có thể"
+
+prohibits
+  Cấm hành vi, target là HanhVi.
+  Từ khóa: "không được", "cấm", "nghiêm cấm"
+
+penalizes
+  Chế tài HÀNH CHÍNH (phạt tiền theo NĐ 12/2022). Target PHẢI là CheTai.
+  KHÔNG dùng cho kỷ luật nội bộ (dùng disciplines).
+  Từ khóa: "bị phạt tiền", "xử phạt vi phạm hành chính"
+
+disciplines
+  Kỷ luật lao động NỘI BỘ doanh nghiệp. Target PHẢI là XuLyKyLuat.
+  Từ khóa: "sa thải", "khiển trách", "cách chức", "kéo dài thời hạn nâng lương"
+
+enforced_by
+  Cơ quan nhà nước thực thi/giám sát. Target PHẢI là CoQuan.
+  Từ khóa: "Bộ LĐTBXH", "Thanh tra lao động", "Chính phủ quy định chi tiết"
+
+cites
+  Dẫn chiếu Điều/Nghị định khác. Target = string nguyên văn ("Điều X", "Nghị định Y").
+  Alias index sẽ resolve thành node L1 khi merge graph.
+  Từ khóa: "theo quy định tại Điều X", "căn cứ Điều Y"
+
+-Quy tắc ưu tiên Dieu → ChuThe-
+  Ưu tiên obligates/entitles (cụ thể) trước applies_to (chung chung).
+
+######################
+-Examples-
+######################
+Example 1:
+Entity_types: ChuThe,HanhVi,HopDongLaoDong,TienLuong,TraLuong,ThoiGioLamViec,NghiPhep,XuLyKyLuat,CheDoBaoHiem,TroCapThoiViec,CheTai,AnToanVeSinhLaoDong,CoQuan
+chunk_id: BLLĐ_2019_Điều_35, van_ban: 45/2019/QH14, so_dieu: 35
+Text:
+Người lao động có quyền đơn phương chấm dứt hợp đồng lao động nhưng phải báo trước cho
+người sử dụng lao động ít nhất 45 ngày nếu làm việc theo hợp đồng lao động không xác
+định thời hạn; ít nhất 30 ngày nếu làm việc theo hợp đồng lao động xác định thời hạn
+có thời hạn từ 12 tháng đến 36 tháng.
+######################
+Output:
+("entity"<|>Người lao động<|>ChuThe<|>Chủ thể có quyền đơn phương chấm dứt HĐLĐ theo Điều 35)
+##
+("entity"<|>Người sử dụng lao động<|>ChuThe<|>Bên nhận thông báo khi NLĐ đơn phương chấm dứt HĐLĐ)
+##
+("entity"<|>Đơn phương chấm dứt HĐLĐ<|>HanhVi<|>Hành vi một bên chấm dứt hợp đồng trước thời hạn)
+##
+("entity"<|>HĐLĐ không xác định thời hạn<|>HopDongLaoDong<|>Hợp đồng lao động vô thời hạn, cần báo trước 45 ngày)
+##
+("entity"<|>HĐLĐ xác định thời hạn 12-36 tháng<|>HopDongLaoDong<|>Hợp đồng có thời hạn từ 12 đến 36 tháng, báo trước 30 ngày)
+##
+("relationship"<|>BLLĐ_2019_Điều_35<|>Người lao động<|>entitles<|>Trao quyền đơn phương chấm dứt HĐLĐ với điều kiện báo trước<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_35<|>Người lao động<|>obligates<|>Bắt buộc báo trước ít nhất 45 ngày (HĐLĐ vô thời hạn) hoặc 30 ngày (HĐLĐ 12-36 tháng)<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_35<|>Đơn phương chấm dứt HĐLĐ<|>regulates<|>Điều luật điều chỉnh hành vi đơn phương chấm dứt hợp đồng<|>8)
+##
+("relationship"<|>BLLĐ_2019_Điều_35<|>HĐLĐ không xác định thời hạn<|>regulates<|>Áp dụng thời hạn báo trước 45 ngày cho loại HĐLĐ vô thời hạn<|>7)
+##
+("relationship"<|>BLLĐ_2019_Điều_35<|>HĐLĐ xác định thời hạn 12-36 tháng<|>regulates<|>Áp dụng thời hạn báo trước 30 ngày cho HĐLĐ 12-36 tháng<|>7)
+<|COMPLETE|>
+
+######################
+Example 2:
+Entity_types: ChuThe,HanhVi,CheDoBaoHiem,CheTai,CoQuan
+chunk_id: ND_12_2022_Điều_38, van_ban: 12/2022/NĐ-CP, so_dieu: 38
+Text:
+Phạt tiền từ 12% đến 15% tổng số tiền phải đóng bảo hiểm xã hội bắt buộc tại thời điểm lập
+biên bản vi phạm hành chính nhưng tối đa không quá 75.000.000 đồng đối với người sử dụng
+lao động có hành vi không đóng bảo hiểm xã hội bắt buộc cho người lao động.
+Cơ quan thực hiện: Thanh tra Bộ Lao động - Thương binh và Xã hội.
+######################
+Output:
+("entity"<|>Người sử dụng lao động<|>ChuThe<|>Bên bị xử phạt khi không đóng BHXH bắt buộc)
+##
+("entity"<|>Không đóng BHXH bắt buộc<|>HanhVi<|>Hành vi vi phạm nghĩa vụ đóng bảo hiểm xã hội)
+##
+("entity"<|>BHXH bắt buộc<|>CheDoBaoHiem<|>Chế độ bảo hiểm xã hội bắt buộc theo luật)
+##
+("entity"<|>Phạt 12-15% tổng BHXH, tối đa 75 triệu đồng<|>CheTai<|>Mức phạt hành chính cho vi phạm không đóng BHXH)
+##
+("entity"<|>Thanh tra Bộ Lao động - Thương binh và Xã hội<|>CoQuan<|>Cơ quan thực thi xử phạt vi phạm BHXH)
+##
+("relationship"<|>ND_12_2022_Điều_38<|>Phạt 12-15% tổng BHXH, tối đa 75 triệu đồng<|>penalizes<|>Chế tài hành chính cho hành vi không đóng BHXH bắt buộc<|>9)
+##
+("relationship"<|>ND_12_2022_Điều_38<|>Người sử dụng lao động<|>obligates<|>Người sử dụng lao động phải đóng BHXH bắt buộc, vi phạm bị phạt tiền<|>8)
+##
+("relationship"<|>ND_12_2022_Điều_38<|>Thanh tra Bộ Lao động - Thương binh và Xã hội<|>enforced_by<|>Thanh tra Bộ LĐTBXH thực hiện xử phạt vi phạm BHXH<|>8)
+##
+("relationship"<|>ND_12_2022_Điều_38<|>Không đóng BHXH bắt buộc<|>regulates<|>Điều luật quy định về hành vi không đóng BHXH và chế tài<|>7)
+##
+("relationship"<|>Không đóng BHXH bắt buộc<|>BHXH bắt buộc<|>regulates<|>Hành vi vi phạm liên quan đến chế độ BHXH bắt buộc<|>6)
+<|COMPLETE|>
+
+######################
+Example 3:
+Entity_types: ChuThe,HanhVi,XuLyKyLuat
+chunk_id: BLLĐ_2019_Điều_125, van_ban: 45/2019/QH14, so_dieu: 125
+Text:
+Hình thức xử lý kỷ luật lao động gồm: Khiển trách; kéo dài thời hạn nâng lương không quá
+06 tháng; cách chức; sa thải. Người sử dụng lao động áp dụng một hình thức xử lý kỷ luật
+lao động đối với mỗi hành vi vi phạm.
+######################
+Output:
+("entity"<|>Người sử dụng lao động<|>ChuThe<|>Bên có thẩm quyền áp dụng kỷ luật lao động)
+##
+("entity"<|>Khiển trách<|>XuLyKyLuat<|>Hình thức kỷ luật nhẹ nhất trong doanh nghiệp)
+##
+("entity"<|>Kéo dài thời hạn nâng lương<|>XuLyKyLuat<|>Hình thức kỷ luật kéo dài thời hạn nâng lương không quá 6 tháng)
+##
+("entity"<|>Cách chức<|>XuLyKyLuat<|>Hình thức kỷ luật cách chức người lao động)
+##
+("entity"<|>Sa thải<|>XuLyKyLuat<|>Hình thức kỷ luật cao nhất — chấm dứt quan hệ lao động)
+##
+("relationship"<|>BLLĐ_2019_Điều_125<|>Khiển trách<|>disciplines<|>Quy định hình thức kỷ luật khiển trách trong doanh nghiệp<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_125<|>Kéo dài thời hạn nâng lương<|>disciplines<|>Quy định hình thức kỷ luật kéo dài nâng lương tối đa 6 tháng<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_125<|>Cách chức<|>disciplines<|>Quy định hình thức kỷ luật cách chức<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_125<|>Sa thải<|>disciplines<|>Quy định hình thức kỷ luật sa thải cao nhất<|>9)
+##
+("relationship"<|>BLLĐ_2019_Điều_125<|>Người sử dụng lao động<|>entitles<|>Trao quyền áp dụng một hình thức kỷ luật cho mỗi hành vi vi phạm<|>8)
+<|COMPLETE|>
+
+######################
+-Real Data-
+######################
+Entity_types: {entity_types}
+Text: {input_text}
+######################
+Output:
