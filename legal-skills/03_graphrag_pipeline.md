@@ -1,235 +1,247 @@
 # Skill 03 — Xây dựng Knowledge Graph với GraphRAG
 
 > **Phủ checklist**: mục 3.1 · 3.2 · 3.3 · 3.4 · 3.5 · 3.6 · 3.7  
-> **Repo path**: `data/labor-law/` · `graphrag` CLI
+> **Repo path**: `data/labor-law/` · `.venv/bin/graphrag` CLI  
+> **Phụ thuộc**: Skill 01 (`scripts/01_prepare_data.py`) · Skill 02 (`data/labor-law/settings.yaml`, `prompts/`)
 
 ---
 
 ## Yêu cầu môi trường
 
 ```bash
-# Repo dùng uv (xem pyproject.toml)
+# Repo dùng uv — venv đã có sẵn tại .venv/
 uv sync
-# Hoặc dùng pip truyền thống
-pip install graphrag
 
-# Kiểm tra version
-graphrag --version   # nên >= 1.0.0
+# Kiểm tra graphrag CLI
+.venv/bin/graphrag --help   # phải hiện: init, index, update, prompt-tune, query
 ```
 
-Thiết lập biến môi trường (copy từ `.env.examples`):
+Thiết lập API key:
 ```bash
-cp .env.examples .env
-# Điền vào .env:
-# GRAPHRAG_API_KEY=<your-openai-key>
-# GRAPHRAG_API_BASE=https://api.openai.com/v1
-# GRAPHRAG_LLM_MODEL=gpt-4o-mini   # dùng mini để tiết kiệm chi phí khi test
+# Tạo file .env trong data/labor-law/
+cat > data/labor-law/.env << 'EOF'
+GRAPHRAG_API_KEY=<your-openai-or-compatible-key>
+EOF
 ```
 
 ---
 
 ## Bước 1 — Khởi tạo project (3.1)
 
-```bash
-# Tạo thư mục workspace riêng cho luật lao động
-graphrag init --root data/labor-law
+`graphrag init` sinh ra cấu trúc thư mục và `settings.yaml` mặc định. Vì Skill 02 đã tạo `settings.yaml` + prompts tùy chỉnh, chỉ cần init để sinh các file còn thiếu:
 
-# Cấu trúc được tạo ra:
+```bash
+# Init — sinh prompts mặc định và .env mẫu (KHÔNG ghi đè settings.yaml đã có)
+.venv/bin/graphrag init --root data/labor-law
+
+# Cấu trúc sau init:
 # data/labor-law/
-# ├── settings.yaml        ← chỉnh theo skill 02
-# ├── .env                 ← API key
-# ├── prompts/             ← thay bằng prompts tiếng Việt (skill 02)
-# └── input/               ← copy chunks/*.jsonl vào đây
+# ├── settings.yaml        ← đã có từ Skill 02, GIỮ NGUYÊN
+# ├── .env                 ← điền GRAPHRAG_API_KEY vào đây
+# ├── prompts/
+# │   ├── extract_graph.txt              ← prompt tiếng Việt (Skill 02)
+# │   ├── community_report_labor.txt     ← prompt tiếng Việt (Skill 02)
+# │   ├── summarize_descriptions.txt     ← sinh bởi init, dùng default
+# │   ├── local_search_system_prompt.txt ← sinh bởi init
+# │   └── ...
+# ├── chunks/              ← JSONL đã có từ Skill 01
+# ├── cache/               ← LLM cache, tồn tại qua nhiều lần chạy
+# └── output/              ← kết quả indexing
 ```
 
-```bash
-# Copy dữ liệu vào input/
-cp data/labor-law/chunks/*.jsonl data/labor-law/input/
-```
+> **Lưu ý:** `input_storage.base_dir: "chunks"` trong `settings.yaml` trỏ thẳng đến `data/labor-law/chunks/`.  
+> **Không cần** copy JSONL vào `input/`.
 
 ---
 
-## Bước 2 — Tùy chỉnh prompt entity extraction (3.2)
+## Bước 2 — Tùy chỉnh prompt entity + relationship extraction (3.2 · 3.3)
 
-GraphRAG hỗ trợ **auto prompt tuning** — nên chạy trước khi index toàn bộ:
+GraphRAG dùng **một prompt duy nhất** (`extract_graph.txt`) cho cả entity và relationship extraction — không có file riêng cho relationship.
+
+Prompt `data/labor-law/prompts/extract_graph.txt` (đã tạo ở Skill 02) bao gồm:
+- Hướng dẫn domain luật lao động tiếng Việt
+- 13 entity types Tier 1 (inject qua `{entity_types}` từ `settings.yaml`)
+- Quy tắc phân loại (`penalizes` vs `disciplines`, `TienLuong` vs `TraLuong`…)
+- 3 ví dụ thực tế (Điều 35, Điều 38 NĐ 12/2022, Điều 125)
+- 9 relation types với từ khóa nhận dạng
+
+**Auto prompt-tune** (tuỳ chọn — dùng nếu muốn GraphRAG tự sinh ví dụ từ corpus):
 
 ```bash
-# Auto-tune prompts dựa trên 5 sample chunks
-graphrag prompt-tune \
+# Sinh lại extract_graph.txt từ 5 sample chunks
+# LƯU Ý: sẽ GHI ĐÈ prompts/extract_graph.txt — backup trước
+cp data/labor-law/prompts/extract_graph.txt data/labor-law/prompts/extract_graph.txt.bak
+
+.venv/bin/graphrag prompt-tune \
   --root data/labor-law \
   --language Vietnamese \
   --domain "Vietnamese Labor Law" \
   --output data/labor-law/prompts \
-  --limit 5
+  --limit 5 \
+  --no-discover-entity-types  # giữ entity_types từ settings.yaml, không tự sinh
 ```
 
-Sau đó mở `data/labor-law/prompts/entity_extraction.txt` và **thêm thủ công** các entity đặc thù lao động từ skill 02 vào phần `-Entity Types-`.
-
-Kiểm tra prompt có nhận diện đúng:
-```bash
-# Test extraction trên 1 đoạn
-python -c "
-from graphrag.index.operations.extract_entities import extract_entities
-# xem docs tại https://microsoft.github.io/graphrag/prompt_tuning/
-"
-```
+> Auto-tune sinh ra: `extract_graph.txt`, `summarize_descriptions.txt`, `community_report_graph.txt`  
+> Sau khi tune xong, cần thêm lại các quy tắc domain (penalizes/disciplines…) vì auto-tune không biết ontology Skill 02.
 
 ---
 
-## Bước 3 — Tùy chỉnh prompt relationship extraction (3.3)
+## Bước 3 — Cấu hình chunking (3.4)
 
-Mở `data/labor-law/prompts/relationship_extraction.txt`, thêm vào phần hướng dẫn:
-
-```
-Chú ý các loại quan hệ đặc thù pháp luật lao động:
-- cites: khi điều khoản dẫn chiếu đến điều/nghị định khác ("theo quy định tại Điều X")
-- amends: khi nghị định sửa đổi nội dung bộ luật
-- obligates: khi quy định áp đặt nghĩa vụ ("phải", "có trách nhiệm")
-- prohibits: khi quy định cấm hành vi ("không được", "cấm", "nghiêm cấm")
-- entitles: khi quy định trao quyền ("có quyền", "được phép")
-- penalizes: khi điều khoản quy định chế tài/xử phạt
-```
-
----
-
-## Bước 4 — Cấu hình chunking (3.4)
-
-Trong `settings.yaml`, đảm bảo chunking không cắt giữa Khoản:
+`settings.yaml` đã cấu hình (Skill 02):
 
 ```yaml
-chunks:
-  size: 600           # ~1-2 Khoản
-  overlap: 80
-  group_by_columns:
-    - van_ban         # Không trộn chunk từ 2 văn bản khác nhau
-  encoding_model: cl100k_base
+chunking:
+  size: 4000    # 1 Điều = 1 chunk, không cắt giữa Khoản
+  overlap: 0    # Điều là unit pháp lý độc lập
 ```
 
-Nếu muốn tách sẵn theo Khoản (khuyến nghị — độ chính xác cao hơn):
-```python
-# scripts/03_split_by_khoan.py
-import re, json, pathlib
+`input.text_column: noi_dung` → GraphRAG đọc field `noi_dung` của JSONL làm text gửi vào LLM.  
+Các field còn lại (`id`, `van_ban`, `so_dieu`, `norm_type`…) lưu trong `raw_data` của document và có thể dùng khi query.
 
-def split_khoan(dieu_text: str, dieu_id: str) -> list:
-    """Tách Điều thành các Khoản riêng."""
-    khoan_pattern = re.compile(r"(\d+\.\s+.+?)(?=\d+\.\s+|\Z)", re.DOTALL)
-    khoans = khoan_pattern.findall(dieu_text)
-    results = []
-    for i, k in enumerate(khoans, 1):
-        results.append({
-            "id": f"{dieu_id}_Khoản_{i}",
-            "so_khoan": i,
-            "noi_dung": k.strip(),
-            "parent_dieu": dieu_id,
-        })
-    return results if results else [{"id": dieu_id, "noi_dung": dieu_text}]
-```
+> Skill 01 đã tách sẵn mỗi Điều thành 1 JSONL record — không cần script `split_by_khoan` thêm.
 
 ---
 
-## Bước 5 — Chạy indexing pipeline (3.5)
+## Bước 4 — Chạy indexing pipeline (3.5)
 
 ```bash
-# Chạy index — LƯU Ý: tốn tokens, test với 10 file trước
-graphrag index --root data/labor-law
+# Test nhỏ trước — chỉ chạy 1 file (~80 Điều BLLĐ, ~800-1000 LLM requests)
+# Tạm thời move các file khác ra ngoài:
+mkdir -p data/labor-law/chunks_bak
+mv data/labor-law/chunks/ND_*.jsonl data/labor-law/chunks_bak/
+mv data/labor-law/chunks/TT_*.jsonl data/labor-law/chunks_bak/
+mv data/labor-law/chunks/VBHN_*.jsonl data/labor-law/chunks_bak/
 
-# Theo dõi tiến độ
-# GraphRAG log vào stdout, có thể redirect:
-graphrag index --root data/labor-law 2>&1 | tee logs/indexing_$(date +%Y%m%d).log
+.venv/bin/graphrag index --root data/labor-law 2>&1 | tee logs/index_bllđ_$(date +%Y%m%d).log
+
+# Khôi phục sau khi test OK
+mv data/labor-law/chunks_bak/*.jsonl data/labor-law/chunks/
 ```
 
-**Ước tính chi phí** (gpt-4o-mini):
-- BLLĐ 2019 (~220 Điều × ~500 tokens) ≈ ~110K tokens
-- 4 văn bản tổng cộng ≈ ~400–600K tokens input
-- Chi phí ≈ $0.5–$1.0 với gpt-4o-mini
+```bash
+# Chạy full index — tất cả 7 văn bản (581 Điều)
+.venv/bin/graphrag index --root data/labor-law 2>&1 | tee logs/index_full_$(date +%Y%m%d).log
+```
+
+**Ước tính thực tế** (gpt-4o-mini, `max_gleanings: 1`):
+
+| Bước pipeline | LLM requests | Token ước tính |
+|---------------|-------------|----------------|
+| `extract_graph` (581 chunks × 2 calls) | ~1.160 | ~6M |
+| `summarize_descriptions` | ~2.000–3.000 | ~3–4M |
+| `create_community_reports` | ~100–200 | ~1M |
+| **Tổng completion LLM** | **~4.000–5.000** | **~10–12M** |
+| Embeddings | ~581 | ~0.4M |
+| **Chi phí gpt-4o-mini** | | **~$3–5** |
+
+**Chạy nhiều ngày trên free tier (Gemini/OpenRouter):**
+- Cache LLM lưu tại `data/labor-law/cache/` — **giữ qua lần chạy lại**
+- Ngày sau chạy lại: chunk đã cache → hit cache (0 token), chunk chưa cache → gọi API tiếp
+- Gemini Flash free: ~1.500 req/ngày → full index cần ~3–4 ngày
+- **KHÔNG xóa** `cache/` giữa các lần chạy
 
 ---
 
-## Bước 6 — Kiểm tra output (3.6)
+## Bước 5 — Kiểm tra output (3.6)
+
+Output nằm tại:
+```
+data/labor-law/output/<timestamp>/artifacts/
+```
+
+Các file parquet quan trọng:
 
 ```bash
-# Output nằm tại data/labor-law/output/
-ls data/labor-law/output/
-
-# Các file quan trọng:
-# entities.parquet          — danh sách thực thể
-# relationships.parquet     — danh sách quan hệ
-# communities.parquet       — cụm tri thức
-# community_reports.parquet — báo cáo tổng hợp theo cụm
-# text_units.parquet        — các chunk đã index
+ls data/labor-law/output/*/artifacts/*.parquet
+# create_final_entities.parquet
+# create_final_relationships.parquet
+# create_final_communities.parquet
+# create_final_community_reports.parquet
+# create_final_text_units.parquet
+# create_final_documents.parquet
 ```
 
 ```python
 # scripts/03_inspect_output.py
 import pandas as pd
+from pathlib import Path
 
-entities = pd.read_parquet("data/labor-law/output/entities.parquet")
-rels = pd.read_parquet("data/labor-law/output/relationships.parquet")
+# Tìm artifacts mới nhất
+artifacts = sorted(Path("data/labor-law/output").glob("*/artifacts"))[-1]
+
+entities = pd.read_parquet(artifacts / "create_final_entities.parquet")
+rels     = pd.read_parquet(artifacts / "create_final_relationships.parquet")
 
 print(f"Tổng entity: {len(entities)}")
 print(f"Tổng relationship: {len(rels)}")
+
 print("\nEntity types:")
-print(entities["type"].value_counts())
-print("\nRelationship types:")
-print(rels["relationship_type"].value_counts() if "relationship_type" in rels.columns else rels.head())
+if "type" in entities.columns:
+    print(entities["type"].value_counts())
+
+print("\nRelationship descriptions (top 15):")
+if "description" in rels.columns:
+    print(rels["description"].value_counts().head(15))
 ```
 
-**Kết quả mong đợi:**
-- ≥ 500 entities (BLLĐ 2019 đủ)
-- ≥ 800 relationships
-- Có đủ các type: `Dieu`, `ChuThe`, `HanhVi`, `HopDongLaoDong`...
+**Kết quả mong đợi sau full index:**
+- ≥ 600 L2 entities (`ChuThe`, `HanhVi`, `CheTai`…)
+- ≥ 1.000 L2 relationships
+- Có đủ các type: `ChuThe`, `HanhVi`, `CheTai`, `XuLyKyLuat`, `CheDoBaoHiem`…
+
+```bash
+# Kiểm tra community reports (quan trọng cho Global Search)
+python3 -c "
+import pandas as pd
+from pathlib import Path
+artifacts = sorted(Path('data/labor-law/output').glob('*/artifacts'))[-1]
+cr = pd.read_parquet(artifacts / 'create_final_community_reports.parquet')
+print(f'Tổng cộng {len(cr)} communities')
+if 'rank' in cr.columns:
+    print(cr[['title','rank']].sort_values('rank', ascending=False).head(10))
+else:
+    print(cr[['title']].head(10))
+"
+```
 
 ---
 
-## Bước 7 — Mô hình hóa dẫn chiếu chéo giữa BLLĐ và Nghị định (3.7)
+## Bước 6 — Merge L1 structural graph (3.7)
 
-GraphRAG tự phát hiện quan hệ `cites` nếu text có dạng "theo quy định tại Điều X Luật Y". Tuy nhiên nên **thêm thủ công** các liên kết quan trọng:
+Sau khi `graphrag index` xong, chạy script merge để gộp L1 (VanBan, Dieu, Khoan…) vào graph:
 
-```python
-# scripts/03_add_cross_references.py
-"""
-Thêm quan hệ guided_by giữa Nghị định và BLLĐ vào relationships.parquet
-"""
-import pandas as pd
-
-rels = pd.read_parquet("data/labor-law/output/relationships.parquet")
-
-# Thêm quan hệ hướng dẫn
-extra = pd.DataFrame([
-    {
-        "source": "145/2020/NĐ-CP",
-        "target": "45/2019/QH14",
-        "description": "Nghị định 145/2020 hướng dẫn thi hành một số điều của BLLĐ 2019",
-        "weight": 10.0,
-        "combined_degree": 2,
-    },
-    {
-        "source": "12/2022/NĐ-CP",
-        "target": "45/2019/QH14",
-        "description": "Nghị định 12/2022 quy định xử phạt vi phạm hành chính trong lĩnh vực lao động",
-        "weight": 10.0,
-        "combined_degree": 2,
-    },
-])
-
-rels = pd.concat([rels, extra], ignore_index=True)
-rels.to_parquet("data/labor-law/output/relationships.parquet", index=False)
-print("✅ Đã thêm quan hệ dẫn chiếu chéo")
+```bash
+python3 scripts/02_merge_structural_graph.py --dry-run   # kiểm tra trước
+python3 scripts/02_merge_structural_graph.py             # ghi merged_*.parquet
 ```
+
+Output: `data/labor-law/output/merged_entities.parquet`, `merged_relationships.parquet`
+
+Quan hệ dẫn chiếu chéo BLLĐ ↔ Nghị định đã được build tự động từ `metadata.json`:
+- `guided_by`: NĐ hướng dẫn → BLLĐ
+- `issued_by`: VanBan → CoQuan ban hành
+- `cites`: dẫn chiếu chéo (resolve qua alias index)
 
 ---
 
 ## Kiểm tra hoàn thành toàn bộ phần 3
 
 ```bash
-# Quick sanity check
-python scripts/03_inspect_output.py
+mkdir -p logs
 
-# Kiểm tra community reports (quan trọng cho Global Search)
-python -c "
-import pandas as pd
-cr = pd.read_parquet('data/labor-law/output/community_reports.parquet')
-print(f'Tổng cộng {len(cr)} communities')
-print(cr[['title','rank']].sort_values('rank', ascending=False).head(10))
-"
+# 1. Verify dữ liệu đầu vào (Skill 01)
+python3 scripts/01_prepare_data.py --verify
+
+# 2. Chạy index
+.venv/bin/graphrag index --root data/labor-law 2>&1 | tee logs/index_$(date +%Y%m%d).log
+
+# 3. Inspect L2 output
+python3 scripts/03_inspect_output.py
+
+# 4. Merge L1 + L2
+python3 scripts/02_merge_structural_graph.py
+
+# 5. Kiểm tra alias index không collision
+python3 scripts/02_merge_structural_graph.py --verify
 ```

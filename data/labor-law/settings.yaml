@@ -1,49 +1,71 @@
+# GraphRAG settings — Trợ lý Ảo Luật Lao Động Việt Nam
+# Skill 02 / Checklist 2.5
+# Chạy: .venv/bin/graphrag index --root data/labor-law
+
+# ─── LLM (completion) ────────────────────────────────────────────────────────
 completion_models:
   default_completion_model:
     api_key: ${GRAPHRAG_API_KEY}
     model_provider: openai
-    model: gpt-4o-mini
+    model: gpt-4o-mini          # mini đủ cho extraction, tiết kiệm ~10x so với gpt-4o
     max_tokens: 4000
-    temperature: 0
+    temperature: 0              # deterministic → kết quả ổn định
     request_timeout: 180.0
+    concurrent_requests: 4      # số request song song (thay parallelization.num_threads cũ)
+    retry:
+      type: exponential_backoff
 
+# ─── Embedding ───────────────────────────────────────────────────────────────
 embedding_models:
   default_embedding_model:
     api_key: ${GRAPHRAG_API_KEY}
     model_provider: openai
     model: text-embedding-3-small
 
-parallelization:
-  stagger: 0.3
-  num_threads: 4
-
+# ─── Input — đọc JSONL từ chunks/ (output của 01_prepare_data.py) ────────────
+# Mỗi record JSONL = 1 Điều luật, có field: id, van_ban, so_dieu, tieu_de,
+# chuong_so, ten_chuong, muc_so, norm_type, noi_dung, khoans[]
 input:
-  type: file
-  file_type: json
-  base_dir: "chunks"
+  type: json              # đọc file .jsonl (json lines)
   file_pattern: ".*\\.jsonl$"
-  document_attribute_columns:
-    - id
-    - van_ban
-    - so_dieu
-    - tieu_de
-    - chuong_so
-    - ten_chuong
-    - muc_so
-    - norm_type
+  id_column: id           # dùng field "id" (vd. BLLĐ_2019_Điều_35) làm document id
+  title_column: tieu_de   # dùng field "tieu_de" làm tiêu đề
+  text_column: noi_dung   # dùng field "noi_dung" làm nội dung gửi vào LLM
 
-chunks:
+input_storage:
+  type: file
+  base_dir: "chunks"      # data/labor-law/chunks/*.jsonl
+
+output_storage:
+  type: file
+  base_dir: "output"
+
+# ─── Cache — LLM cache tồn tại qua nhiều lần chạy (quan trọng cho free tier) ─
+cache:
+  type: json
+  storage:
+    type: file
+    base_dir: "cache"
+
+# ─── Chunking ────────────────────────────────────────────────────────────────
+# Mỗi Điều trung bình ~800 tokens; Điều dài nhất ~3000 tokens.
+# size=4000 đảm bảo 1 Điều = 1 chunk, không bao giờ cắt giữa Khoản.
+# overlap=0: mỗi Điều là unit pháp lý độc lập.
+chunking:
   size: 4000
   overlap: 0
-  group_by_columns:
-    - id
 
-entity_extraction:
-  prompt: "prompts/entity_extraction_labor.txt"
+# ─── Extract graph (entity + relationship trong 1 prompt) ────────────────────
+# Lớp 1 (VanBan, Dieu, Khoan…) KHÔNG đưa vào đây — build deterministic bởi
+# scripts/01_prepare_data.py + scripts/02_merge_structural_graph.py.
+extract_graph:
+  prompt: "prompts/extract_graph.txt"   # prompt tiếng Việt, domain luật lao động
   entity_types:
-    - ChuThe
-    - HanhVi
-    - CoQuan
+    # Lớp 2A — Ngữ nghĩa pháp lý
+    - ChuThe             # NLĐ, NSDLĐ, người học nghề
+    - HanhVi             # hành vi/sự kiện được điều chỉnh
+    - CoQuan             # cơ quan NN thực thi
+    # Lớp 2B — Domain lao động Tier 1
     - HopDongLaoDong
     - TienLuong
     - TraLuong
@@ -54,12 +76,20 @@ entity_extraction:
     - TroCapThoiViec
     - CheTai
     - AnToanVeSinhLaoDong
-  max_gleanings: 2
+    # Tier 2 — bật khi mở rộng corpus
+    # - TranhChapLaoDong
+    # - ThoaUocTapThe
+    # - DieuKienLamViec
+    # - ThoiHan
+  max_gleanings: 1        # 1 = 2 LLM calls/chunk; giảm từ 2 để tiết kiệm ~30% requests
 
-relationship_extraction:
-  prompt: "prompts/relationship_extraction_labor.txt"
+# ─── Summarize descriptions ──────────────────────────────────────────────────
+# Gộp mô tả nhiều chunk cho cùng 1 entity/relation → 1 câu tóm tắt
+summarize_descriptions:
+  max_length: 500         # token tối đa cho mỗi summary
 
+# ─── Community reports ───────────────────────────────────────────────────────
 community_reports:
-  prompt: "prompts/community_report_labor.txt"
+  graph_prompt: "prompts/community_report_labor.txt"
   max_length: 2000
   max_input_length: 8000
