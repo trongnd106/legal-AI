@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Microsoft Corporation.
 # Licensed under the MIT License
 
-"""Prompt tiếng Việt cho phân đoạn điều khoản và kiểm tra tuân thủ."""
+"""Prompt tiếng Việt — nâng cấp: segmentation + violation review (với rule context)."""
 
 from contract_analysis.constants import CLAUSE_CATEGORIES_FOR_PROMPT
 
@@ -46,8 +46,11 @@ VIOLATION_BATCH_SYSTEM = """Bạn là luật sư lao động Việt Nam. Phân t
 Chỉ trả về JSON hợp lệ."""
 
 VIOLATION_BATCH_INSTRUCTION = """
-Với mỗi điều khoản sau, so sánh với ngữ cảnh pháp luật được trích (có thể rút gọn).
-Trả về JSON object có khóa "results": array các phần tử:
+Bạn đã có kết quả rule-based (VR001–VR016) bên dưới.
+Nhiệm vụ: Chỉ kiểm tra những vấn đề mà rule CHƯA phát hiện hoặc cần diễn giải sâu hơn.
+KHÔNG lặp lại các vấn đề đã có trong RULE_ISSUES.
+
+Với mỗi điều khoản sau, trả về JSON object có khóa "results": array các phần tử:
 {{
   "clause_id": "...",
   "severity": "VIOLATION|HIGH_RISK|MEDIUM_RISK|COMPLIANT|NOT_COVERED",
@@ -64,19 +67,26 @@ Trả về JSON object có khóa "results": array các phần tử:
   "confidence": 0.0-1.0
 }}
 
-QUAN TRỌNG: Không suy diễn ngoài ngữ cảnh. Nếu thiếu dữ liệu, dùng NOT_COVERED hoặc MEDIUM_RISK với mô tả ngắn.
+QUAN TRỌNG:
+- Tập trung vào vấn đề SEMANTIC, NGỮ CẢNH mà regex không phát hiện được.
+- Nếu rule đã phát hiện vi phạm rõ ràng → đặt issues=[] và severity=COMPLIANT/NOT_COVERED.
+- Không suy diễn ngoài ngữ cảnh. Nếu thiếu dữ liệu: NOT_COVERED.
 
 ĐIỀU KHOẢN (JSON):
 {clauses_json}
+
+KẾT QUẢ RULE-BASED (đã phát hiện — KHÔNG lặp lại):
+{rule_issues_summary}
 
 NGỮ CẢNH PHÁP LUẬT (GraphRAG):
 {legal_context}
 
 NGƯỠNG THAM CHIẾU:
-- Giờ làm thông thường không quá 48h/tuần (trừ trường hợp pháp luật cho phép khác).
+- Giờ làm thông thường không quá 48h/tuần.
 - Lương tối thiểu vùng (VNĐ/tháng): I={w1}, II={w2}, III={w3}, IV={w4}
-- Thử việc tối đa thường gặp: 180 ngày (một số chức danh quản lý), 60 ngày (trình độ cao đẳng/đại học), 30 ngày (khác) — nếu không rõ chức danh, đánh giá thận trọng.
-- Lương thử việc ≥ 85%% lương chính thức (Điều 26 BLLĐ).
+- Thử việc tối đa: 180 ngày (quản lý), 60 ngày (CĐ/ĐH), 30 ngày (khác).
+- Lương thử việc ≥ 85% lương chính thức (Điều 26 BLLĐ).
+- HĐLĐ xác định thời hạn tối đa 36 tháng (Điều 20 BLLĐ).
 
 Vùng áp dụng người dùng chọn: {region}
 """

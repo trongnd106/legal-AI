@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Microsoft Corporation.
 # Licensed under the MIT License
 
-"""Phân tích sâu bằng LLM (batch) trên ngữ cảnh GraphRAG."""
+"""Phân tích sâu bằng LLM (batch) — nâng cấp: nhận rule context, tránh duplicate."""
 
 from __future__ import annotations
 
@@ -45,10 +45,13 @@ def _issues_from_llm_item(
     for i, it in enumerate(payload.get("issues") or []):
         if not isinstance(it, dict):
             continue
+        desc = str(it.get("description") or "")
+        if not desc:
+            continue
         out.append(
             ContractIssue(
                 issue_id=str(it.get("issue_id") or f"L{i + 1}"),
-                description=str(it.get("description") or ""),
+                description=desc,
                 severity=sev,
                 legal_basis=str(it.get("legal_basis") or ""),
                 recommendation=str(it.get("recommendation") or ""),
@@ -59,38 +62,81 @@ def _issues_from_llm_item(
     return out
 
 
+def _format_rule_issues_summary(
+    rule_issues_by_id: dict[str, list[ContractIssue]],
+    clauses: list[Clause],
+) -> str:
+    """
+    Format rule issues thành text ngắn gọn để đưa vào prompt LLM.
+    Giới hạn ≤ 4000 ký tự để tiết kiệm token.
+    """
+    lines: list[str] = []
+    for c in clauses:
+        issues = rule_issues_by_id.get(c.clause_id, [])
+        if not issues:
+            continue
+        lines.append(f"[{c.clause_id}] {c.category}:")
+        for iss in issues:
+            lines.append(f"  - {iss.issue_id} ({iss.severity}): {iss.description[:120]}")
+    if not lines:
+        return "(Không có rule issue nào — cần phân tích toàn bộ.)"
+    summary = "\n".join(lines)
+    return summary[:4000] + ("…" if len(summary) > 4000 else "")
+
+
 async def llm_clause_review_batch(
     llm: "LLMCompletion",
     clauses: list[Clause],
     mapped: dict[str, MappedLawSnippet],
     *,
     region: str,
+    rule_issues_by_id: dict[str, list[ContractIssue]] | None = None,
 ) -> dict[str, list[ContractIssue]]:
-    """Một lần gọi LLM cho toàn bộ điều khoản + ghép ngữ cảnh."""
+    """
+    Một lần gọi LLM cho các điều khoản cần review sâu.
+
+    Tối ưu token:
+    - Chỉ gửi clauses đã được pipeline chọn (clauses_need_llm)
+    - Đính kèm rule_issues_summary để LLM không lặp lại
+    - Giới hạn legal_context ≤ 24000 ký tự
+    """
     from contract_analysis.llm_utils import llm_chat_json
+
+    if not clauses:
+        return {}
 
     slim_clauses = [
         {
             "clause_id": c.clause_id,
             "category": c.category,
+            "categories": list(c.effective_categories()),
             "title": c.title,
             "summary": c.summary,
-            "original_text": (c.original_text[:2500] + "…")
-            if len(c.original_text) > 2500
+            "original_text": (c.original_text[:2000] + "…")
+            if len(c.original_text) > 2000
             else c.original_text,
         }
         for c in clauses
     ]
-    legal_chunks = []
+
+    # Legal context từ basic_search (rút gọn để tiết kiệm token)
+    legal_chunks: list[str] = []
     for c in clauses:
         sn = mapped.get(c.clause_id)
-        if sn:
-            legal_chunks.append(f"--- {c.clause_id} ---\n{sn.rag_answer[:3500]}")
-    legal_context = "\n\n".join(legal_chunks)[:32000]
+        if sn and sn.rag_answer:
+            legal_chunks.append(f"--- {c.clause_id} ---\n{sn.rag_answer[:2500]}")
+    legal_context = "\n\n".join(legal_chunks)[:24000]
+
+    # Rule issues summary (đưa vào prompt để LLM không duplicate)
+    rule_summary = _format_rule_issues_summary(
+        rule_issues_by_id or {},
+        clauses,
+    )
 
     w = REGIONAL_MINIMUM_WAGE
     user = VIOLATION_BATCH_INSTRUCTION.format(
         clauses_json=json.dumps(slim_clauses, ensure_ascii=False),
+        rule_issues_summary=rule_summary,
         legal_context=legal_context,
         w1=w["I"],
         w2=w["II"],
@@ -98,6 +144,7 @@ async def llm_clause_review_batch(
         w4=w["IV"],
         region=region,
     )
+
     try:
         data = await llm_chat_json(llm, VIOLATION_BATCH_SYSTEM, user)
     except Exception:
