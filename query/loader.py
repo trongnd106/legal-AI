@@ -8,23 +8,28 @@ Dùng:
 """
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 import pandas as pd
 from graphrag.config.load_config import load_config
 from graphrag.config.models.graph_rag_config import GraphRagConfig
+from graphrag.data_model.data_reader import DataReader
+from graphrag_storage import create_storage
+from graphrag_storage.tables.table_provider_factory import create_table_provider
 
 
 class GraphLoader:
     """Load và giữ config + tất cả parquet DataFrames cần cho query."""
 
-    REQUIRED_PARQUETS = [
-        "create_final_entities.parquet",
-        "create_final_communities.parquet",
-        "create_final_community_reports.parquet",
-        "create_final_text_units.parquet",
-        "create_final_relationships.parquet",
-    ]
+    LEGACY_PARQUETS = {
+        "entities": "create_final_entities.parquet",
+        "communities": "create_final_communities.parquet",
+        "community_reports": "create_final_community_reports.parquet",
+        "text_units": "create_final_text_units.parquet",
+        "relationships": "create_final_relationships.parquet",
+        "covariates": "create_final_covariates.parquet",
+    }
 
     def __init__(self, root_dir: str = "data/labor-law"):
         self.root_dir = Path(root_dir)
@@ -38,7 +43,17 @@ class GraphLoader:
         self.artifacts_dir: Path | None = None
 
     # ------------------------------------------------------------------
-    def _find_latest_artifacts(self) -> Path:
+    @staticmethod
+    def artifacts_available(root_dir: Path) -> bool:
+        """Kiểm tra index GraphRAG đã có output chưa (format mới hoặc legacy)."""
+        out = root_dir / "output"
+        if not out.exists():
+            return False
+        if (out / "entities.parquet").exists():
+            return True
+        return bool(list(out.glob("*/artifacts/create_final_entities.parquet")))
+
+    def _find_latest_legacy_artifacts(self) -> Path:
         """Tìm artifacts directory mới nhất trong output/*/artifacts/."""
         candidates = sorted(
             (self.root_dir / "output").glob("*/artifacts"),
@@ -52,37 +67,57 @@ class GraphLoader:
             )
         return candidates[0]
 
-    def _find_merged_graph(self) -> Path | None:
-        """Trả về merged_entities.parquet directory nếu đã chạy 02_merge_structural_graph.py."""
-        merged = self.root_dir / "output" / "merged_entities.parquet"
-        return merged.parent if merged.exists() else None
+    def _load_via_table_provider(self) -> None:
+        """Load output GraphRAG mới qua TableProvider (giống graphrag CLI)."""
+        storage_obj = create_storage(self.config.output_storage)
+        table_provider = create_table_provider(
+            self.config.table_provider, storage=storage_obj
+        )
+        reader = DataReader(table_provider)
+        self.artifacts_dir = self.root_dir / "output"
+
+        async def _read_all() -> None:
+            self.entities = await reader.entities()
+            self.communities = await reader.communities()
+            self.community_reports = await reader.community_reports()
+            self.text_units = await reader.text_units()
+            self.relationships = await reader.relationships()
+            if await table_provider.has("covariates"):
+                self.covariates = await reader.covariates()
+            else:
+                self.covariates = None
+
+        asyncio.run(_read_all())
+
+    def _load_legacy_artifacts(self) -> None:
+        """Load output GraphRAG legacy từ output/*/artifacts/."""
+        self.artifacts_dir = self._find_latest_legacy_artifacts()
+        self.entities = pd.read_parquet(
+            self.artifacts_dir / self.LEGACY_PARQUETS["entities"]
+        )
+        self.communities = pd.read_parquet(
+            self.artifacts_dir / self.LEGACY_PARQUETS["communities"]
+        )
+        self.community_reports = pd.read_parquet(
+            self.artifacts_dir / self.LEGACY_PARQUETS["community_reports"]
+        )
+        self.text_units = pd.read_parquet(
+            self.artifacts_dir / self.LEGACY_PARQUETS["text_units"]
+        )
+        self.relationships = pd.read_parquet(
+            self.artifacts_dir / self.LEGACY_PARQUETS["relationships"]
+        )
+        cov_path = self.artifacts_dir / self.LEGACY_PARQUETS["covariates"]
+        self.covariates = pd.read_parquet(cov_path) if cov_path.exists() else None
 
     # ------------------------------------------------------------------
     def load(self, prefer_merged: bool = True) -> "GraphLoader":
         """Load config + tất cả parquets. Nếu prefer_merged=True, dùng merged graph nếu có."""
         self.config = load_config(self.root_dir)
-        self.artifacts_dir = self._find_latest_artifacts()
-
-        # Parquets dùng cho GraphRAG API search (phải từ artifacts)
-        self.entities = pd.read_parquet(
-            self.artifacts_dir / "create_final_entities.parquet"
-        )
-        self.communities = pd.read_parquet(
-            self.artifacts_dir / "create_final_communities.parquet"
-        )
-        self.community_reports = pd.read_parquet(
-            self.artifacts_dir / "create_final_community_reports.parquet"
-        )
-        self.text_units = pd.read_parquet(
-            self.artifacts_dir / "create_final_text_units.parquet"
-        )
-        self.relationships = pd.read_parquet(
-            self.artifacts_dir / "create_final_relationships.parquet"
-        )
-
-        # Covariates là optional — bỏ qua nếu không có
-        cov_path = self.artifacts_dir / "create_final_covariates.parquet"
-        self.covariates = pd.read_parquet(cov_path) if cov_path.exists() else None
+        if (self.root_dir / "output" / "entities.parquet").exists():
+            self._load_via_table_provider()
+        else:
+            self._load_legacy_artifacts()
 
         print(
             f"Loaded from: {self.artifacts_dir}\n"
