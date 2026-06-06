@@ -24,17 +24,29 @@ class ChatRequest(BaseModel):
     domain: str | None = "lao_dong"
 
 
+class DataCitationItem(BaseModel):
+    key: str
+    type: str
+    id: str
+    label: str
+    detail: str
+    icon: str = "📎"
+    type_label: str = ""
+
+
 class ChatResponse(BaseModel):
     answer: str
     mode: str
     article_citations: list[str]
     entities_used: list[str] = Field(default_factory=list)
     temporal_warnings: list[str] = Field(default_factory=list)
+    data_citations: list[DataCitationItem] = Field(default_factory=list)
 
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(body: ChatRequest) -> ChatResponse:
     try:
+        from query.citation_resolver import resolve_data_citations
         from query.global_search import ask_global
         from query.local_search import ask_local
         from query.temporal_filter import filter_citations_by_effectiveness
@@ -97,6 +109,8 @@ async def chat(body: ChatRequest) -> ChatResponse:
 
         answer = str(result.get("answer", ""))
         citations = list(result.get("article_citations", []))
+        context_data = result.get("context_data")
+        data_citations = resolve_data_citations(answer, context_data)
 
         temporal = filter_citations_by_effectiveness(citations)
         warnings = temporal.get("expired_warnings", [])
@@ -107,6 +121,7 @@ async def chat(body: ChatRequest) -> ChatResponse:
             article_citations=citations,
             entities_used=entities[:20],
             temporal_warnings=warnings,
+            data_citations=[DataCitationItem(**item) for item in data_citations],
         )
     except HTTPException:
         raise

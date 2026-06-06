@@ -113,6 +113,7 @@ export function ChatPanel() {
           markdown: answer,
           plain: answer,
           citations: data.article_citations || [],
+          dataCitations: data.data_citations || [],
         },
       ]);
     } catch (err) {
@@ -150,7 +151,10 @@ export function ChatPanel() {
                 <div className="avatar bot-avatar">🤖</div>
                 <div className="bubble bot-bubble">
                   {msg.markdown ? (
-                    <MarkdownMessage content={msg.markdown} />
+                    <MarkdownMessage
+                      content={msg.markdown}
+                      dataCitations={msg.dataCitations}
+                    />
                   ) : msg.html ? (
                     <div dangerouslySetInnerHTML={{ __html: msg.html }} />
                   ) : null}

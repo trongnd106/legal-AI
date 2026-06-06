@@ -395,6 +395,134 @@ button {
   border-top: 1px solid var(--color-border);
 }
 
+.markdown-with-citations {
+  display: inline;
+}
+
+.markdown-with-citations > * {
+  display: inline;
+}
+
+.markdown-with-citations p {
+  display: inline;
+  margin: 0;
+}
+
+.markdown-with-citations h1,
+.markdown-with-citations h2,
+.markdown-with-citations h3,
+.markdown-with-citations h4,
+.markdown-with-citations ul,
+.markdown-with-citations ol,
+.markdown-with-citations blockquote,
+.markdown-with-citations pre,
+.markdown-with-citations table {
+  display: block;
+}
+
+.citation-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 2px;
+  vertical-align: baseline;
+}
+
+.citation-badge {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.citation-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 200px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  border: 1px solid #c5d9f8;
+  color: #1e4a8a;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: help;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.citation-badge:hover .citation-badge-pill,
+.citation-badge:focus-within .citation-badge-pill {
+  background: #dbeafe;
+  border-color: #93b8f0;
+  box-shadow: 0 2px 6px rgba(30, 74, 138, 0.12);
+}
+
+.citation-badge-icon {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.citation-badge-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.citation-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  width: max-content;
+  max-width: 320px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-50%) translateY(4px);
+  transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+}
+
+.citation-tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: #1a1a1a;
+}
+
+.citation-tooltip-type {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a8c4f0;
+}
+
+.citation-tooltip-detail {
+  display: block;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.citation-badge:hover .citation-tooltip,
+.citation-badge:focus-within .citation-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 .bubble-citations {
   margin-top: var(--spacing-sm);
   padding-top: var(--spacing-sm);
