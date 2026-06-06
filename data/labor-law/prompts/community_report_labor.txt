@@ -37,17 +37,12 @@ Trả về JSON hợp lệ theo đúng format:
   - Ví dụ thực tiễn quan trọng
 
 # Grounding Rules
-Mọi phát biểu cụ thể phải dẫn chiếu data:
-"NLĐ phải báo trước ít nhất 45 ngày [Data: Entities (id); Relationships (id)]."
+Mọi phát biểu cụ thể phải dẫn chiếu data từ input text.
 
 Giới hạn tổng độ dài báo cáo: {max_report_length} từ.
 
 # Input
 -----------
-Text:
+Text từ cộng đồng entity:
 
-Entities
-{entity_df}
-
-Relationships
-{relationships_df}
+{input_text}
