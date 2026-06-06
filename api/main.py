@@ -6,7 +6,7 @@ Chạy:
   python -m api.main
 
 Hoặc:
-  uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+  uvicorn api.main:app --reload --host 0.0.0.0 --port 8000 --loop asyncio
 """
 
 from __future__ import annotations
@@ -55,5 +55,6 @@ if __name__ == "__main__":
         "api.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False,
+        loop="asyncio",
     )

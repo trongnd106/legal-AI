@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from api.services.graph_loader import artifacts_available, get_loader
+from api.services.graph_loader import artifacts_available, get_loader_async
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["chat"])
+
+CHAT_TIMEOUT_SECONDS = 90
 
 
 class ChatRequest(BaseModel):
@@ -53,15 +56,16 @@ async def chat(body: ChatRequest) -> ChatResponse:
             ),
         )
 
-    try:
-        loader = get_loader()
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-
     question = body.question.strip()
     try:
+        # get_loader_async chạy trong thread pool → không block event loop, không xung đột asyncio.run()
+        try:
+            loader = await get_loader_async()
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+
         if body.mode == "global":
-            result = await ask_global(
+            coro = ask_global(
                 question,
                 loader,
                 domain_filter=body.domain,
@@ -69,11 +73,26 @@ async def chat(body: ChatRequest) -> ChatResponse:
             )
             entities: list[str] = []
         else:
-            result = await ask_local(
+            coro = ask_local(
                 question,
                 loader,
                 response_type="multiple paragraphs",
             )
+            entities = []
+
+        try:
+            result = await asyncio.wait_for(coro, timeout=CHAT_TIMEOUT_SECONDS)
+        except asyncio.TimeoutError:
+            logger.warning("Chat request timed out after %ss", CHAT_TIMEOUT_SECONDS)
+            raise HTTPException(
+                status_code=504,
+                detail=(
+                    f"Hệ thống mất quá nhiều thời gian để xử lý (>{CHAT_TIMEOUT_SECONDS}s). "
+                    "Vui lòng thử lại hoặc đặt câu hỏi ngắn gọn hơn."
+                ),
+            )
+
+        if body.mode != "global":
             entities = result.get("entities_used", [])
 
         answer = str(result.get("answer", ""))
@@ -89,6 +108,23 @@ async def chat(body: ChatRequest) -> ChatResponse:
             entities_used=entities[:20],
             temporal_warnings=warnings,
         )
+    except HTTPException:
+        raise
+    except asyncio.CancelledError:
+        raise HTTPException(
+            status_code=503,
+            detail="Yêu cầu bị hủy. Vui lòng thử lại.",
+        )
     except Exception as exc:
-        logger.exception("Chat error")
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        exc_str = str(exc)
+        logger.exception("Chat error: %s", exc_str[:200])
+        # Kiểm tra RateLimitError / model overload
+        if "RateLimitError" in exc_str or "429" in exc_str or "engine_overloaded" in exc_str:
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "Model AI đang quá tải, vui lòng thử lại sau 1-2 phút. "
+                    "(OpenRouter: Model busy / Rate limit)"
+                ),
+            ) from exc
+        raise HTTPException(status_code=500, detail=exc_str) from exc
