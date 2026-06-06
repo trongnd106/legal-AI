@@ -2,32 +2,41 @@
 # Skill 02 / Checklist 2.5
 # Chạy: .venv/bin/graphrag index --root data/labor-law
 
-# ─── LLM (completion) ────────────────────────────────────────────────────────
+# ─── LLM (completion) — OpenRouter ───────────────────────────────────────────
 completion_models:
   default_completion_model:
-    api_key: ${GRAPHRAG_API_KEY}
-    model_provider: openai
-    model: gpt-4o-mini          # mini đủ cho extraction, tiết kiệm ~10x so với gpt-4o
+    type: litellm
+    model_provider: openrouter
+    model: qwen/qwen3-235b-a22b-2507
+    auth_method: api_key
+    api_key: ${OPENROUTER_API_KEY}
+    api_base: https://openrouter.ai/api/v1
     max_tokens: 4000
-    temperature: 0              # deterministic → kết quả ổn định
-    request_timeout: 180.0
-    concurrent_requests: 4      # số request song song (thay parallelization.num_threads cũ)
+    temperature: 0
+    concurrent_requests: 1
+    request_timeout: 300.0
     retry:
       type: exponential_backoff
 
 # ─── Embedding ───────────────────────────────────────────────────────────────
 embedding_models:
   default_embedding_model:
-    api_key: ${GRAPHRAG_API_KEY}
-    model_provider: openai
-    model: text-embedding-3-small
+    type: litellm
+    model_provider: ollama
+    model: qwen3-embedding:4b          # hoặc dengcao/Qwen3-Embedding-4B:Q4_K_M
+    api_base: http://localhost:11434
+    api_key: ollama                    # dummy — GraphRAG bắt buộc có api_key
+    concurrent_requests: 1             # local GPU/RAM — tránh quá tải
+# ─── Vector store — PHẢI khớp dim embedding ─────────────────────────────────
+vector_store:
+  vector_size: 2560
 
 # ─── Input — đọc JSONL từ chunks/ (output của 01_prepare_data.py) ────────────
 # Mỗi record JSONL = 1 Điều luật, có field: id, van_ban, so_dieu, tieu_de,
 # chuong_so, ten_chuong, muc_so, norm_type, noi_dung, khoans[]
 input:
-  type: json              # đọc file .jsonl (json lines)
-  file_pattern: ".*\\.jsonl$"
+  type: jsonl           # đọc file .jsonl (json lines)
+  file_pattern: ".*\\.jsonl$$"
   id_column: id           # dùng field "id" (vd. BLLĐ_2019_Điều_35) làm document id
   title_column: tieu_de   # dùng field "tieu_de" làm tiêu đề
   text_column: noi_dung   # dùng field "noi_dung" làm nội dung gửi vào LLM
@@ -52,14 +61,14 @@ cache:
 # size=4000 đảm bảo 1 Điều = 1 chunk, không bao giờ cắt giữa Khoản.
 # overlap=0: mỗi Điều là unit pháp lý độc lập.
 chunking:
-  size: 4000
+  size: 2000
   overlap: 0
 
 # ─── Extract graph (entity + relationship trong 1 prompt) ────────────────────
 # Lớp 1 (VanBan, Dieu, Khoan…) KHÔNG đưa vào đây — build deterministic bởi
 # scripts/01_prepare_data.py + scripts/02_merge_structural_graph.py.
 extract_graph:
-  prompt: "prompts/extract_graph.txt"   # prompt tiếng Việt, domain luật lao động
+  prompt: "prompts/extract_graph_simple.txt"   # simplified prompt — domain rules + JSON output
   entity_types:
     # Lớp 2A — Ngữ nghĩa pháp lý
     - ChuThe             # NLĐ, NSDLĐ, người học nghề
