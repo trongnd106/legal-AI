@@ -17,8 +17,10 @@ pip install -e packages/graphrag
 ```bash
 python -m api.main
 # hoặc
-uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn api.main:app --reload --host 0.0.0.0 --port 8000 --loop asyncio
 ```
+
+> **Lưu ý:** Bắt buộc `--loop asyncio` khi chạy bằng uvicorn trực tiếp. GraphRAG dùng `nest_asyncio2`, không tương thích với `uvloop` (mặc định trên Linux).
 
 Mở **http://localhost:8000** — chỉ API REST.
 
