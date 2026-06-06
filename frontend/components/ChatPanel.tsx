@@ -16,8 +16,16 @@ const WELCOME_HTML = `
   </ul>
 `;
 
+function formatMessageTime(ts: number): string {
+  const d = new Date(ts);
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const s = String(d.getSeconds()).padStart(2, "0");
+  return `${h}:${m}:${s}`;
+}
+
 const INITIAL_MESSAGES: ChatMessage[] = [
-  { role: "bot", html: WELCOME_HTML, plain: "Xin chào!" },
+  { role: "bot", html: WELCOME_HTML, plain: "Xin chào!", timestamp: Date.now() },
 ];
 
 function copyText(text: string, showToast: (msg: string, err?: boolean) => void) {
@@ -96,6 +104,7 @@ export function ChatPanel() {
       {
         role: "user",
         html: `<p>${escapeHtml(displayQ).replace(/\n/g, "<br>")}</p>`,
+        timestamp: Date.now(),
       },
     ]);
     setInput("");
@@ -114,6 +123,7 @@ export function ChatPanel() {
           plain: answer,
           citations: data.article_citations || [],
           dataCitations: data.data_citations || [],
+          timestamp: Date.now(),
         },
       ]);
     } catch (err) {
@@ -124,6 +134,7 @@ export function ChatPanel() {
           role: "bot",
           html: `<p>⚠️ ${escapeHtml(message)}</p>`,
           plain: message,
+          timestamp: Date.now(),
         },
       ]);
     } finally {
@@ -149,46 +160,66 @@ export function ChatPanel() {
             {msg.role === "bot" ? (
               <>
                 <div className="avatar bot-avatar">🤖</div>
-                <div className="bubble bot-bubble">
-                  {msg.markdown ? (
-                    <MarkdownMessage
-                      content={msg.markdown}
-                      dataCitations={msg.dataCitations}
-                    />
-                  ) : msg.html ? (
-                    <div dangerouslySetInnerHTML={{ __html: msg.html }} />
-                  ) : null}
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="bubble-citations">
-                      Căn cứ: {msg.citations.join(", ")}
-                    </div>
-                  )}
-                  {msg.plain && (
-                    <div className="bubble-actions">
-                      <button
-                        className="action-btn"
-                        type="button"
-                        onClick={() => copyText(msg.plain!, showToast)}
-                      >
-                        <span>📋</span> Sao chép
-                      </button>
-                      <button
-                        className="action-btn"
-                        type="button"
-                        onClick={() => downloadText(msg.plain!, idx)}
-                      >
-                        <span>⬇️</span> Tải về file
-                      </button>
-                    </div>
+                <div className="message-body">
+                  <div className="bubble bot-bubble">
+                    {msg.markdown ? (
+                      <MarkdownMessage
+                        content={msg.markdown}
+                        dataCitations={msg.dataCitations}
+                      />
+                    ) : msg.html ? (
+                      <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                    ) : null}
+                    {msg.citations && msg.citations.length > 0 && (
+                      <div className="bubble-citations">
+                        Căn cứ: {msg.citations.join(", ")}
+                      </div>
+                    )}
+                    {msg.plain && (
+                      <div className="bubble-actions">
+                        <button
+                          className="action-btn"
+                          type="button"
+                          onClick={() => copyText(msg.plain!, showToast)}
+                        >
+                          <span>📋</span> Sao chép
+                        </button>
+                        <button
+                          className="action-btn"
+                          type="button"
+                          onClick={() => downloadText(msg.plain!, idx)}
+                        >
+                          <span>⬇️</span> Tải về file
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {msg.timestamp != null && (
+                    <time
+                      className="message-time"
+                      dateTime={new Date(msg.timestamp).toISOString()}
+                    >
+                      {formatMessageTime(msg.timestamp)}
+                    </time>
                   )}
                 </div>
               </>
             ) : (
               <>
-                <div className="bubble user-bubble">
-                  {msg.html ? (
-                    <div dangerouslySetInnerHTML={{ __html: msg.html }} />
-                  ) : null}
+                <div className="message-body">
+                  <div className="bubble user-bubble">
+                    {msg.html ? (
+                      <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                    ) : null}
+                  </div>
+                  {msg.timestamp != null && (
+                    <time
+                      className="message-time"
+                      dateTime={new Date(msg.timestamp).toISOString()}
+                    >
+                      {formatMessageTime(msg.timestamp)}
+                    </time>
+                  )}
                 </div>
                 <div className="avatar user-avatar">👤</div>
               </>
