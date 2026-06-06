@@ -7,26 +7,33 @@ completion_models:
   default_completion_model:
     type: litellm
     model_provider: openrouter
-    model: qwen/qwen3-235b-a22b-2507
+    # model: qwen/qwen3-235b-a22b-2507
+    model: deepseek/deepseek-v4-flash
     auth_method: api_key
     api_key: ${OPENROUTER_API_KEY}
     api_base: https://openrouter.ai/api/v1
     max_tokens: 4000
     temperature: 0
     concurrent_requests: 1
-    request_timeout: 300.0
+    request_timeout: 60.0
     retry:
       type: exponential_backoff
+      max_retries: 2
 
-# ─── Embedding ───────────────────────────────────────────────────────────────
+# ─── Embedding — OpenRouter ──────────────────────────────────────────────────
 embedding_models:
   default_embedding_model:
     type: litellm
-    model_provider: ollama
-    model: qwen3-embedding:4b          # hoặc dengcao/Qwen3-Embedding-4B:Q4_K_M
-    api_base: http://localhost:11434
-    api_key: ollama                    # dummy — GraphRAG bắt buộc có api_key
-    concurrent_requests: 1             # local GPU/RAM — tránh quá tải
+    model_provider: openrouter
+    model: qwen/qwen3-embedding-4b
+    auth_method: api_key
+    api_key: ${OPENROUTER_API_KEY}
+    api_base: https://openrouter.ai/api/v1
+    concurrent_requests: 4
+    request_timeout: 30.0
+    retry:
+      type: exponential_backoff
+      max_retries: 2
 # ─── Vector store — PHẢI khớp dim embedding ─────────────────────────────────
 vector_store:
   vector_size: 2560
@@ -102,3 +109,20 @@ community_reports:
   graph_prompt: "prompts/community_report_labor.txt"
   max_length: 2000
   max_input_length: 8000
+
+# ─── Local Search ────────────────────────────────────────────────────────────
+# Giảm context window để tránh request timeout và tăng tốc phản hồi.
+# Dataset lớn (5120 entities, 7890 relationships) → cần giới hạn chặt.
+local_search:
+  text_unit_prop: 0.4          # 40% context dành cho text units (default 0.5)
+  community_prop: 0.1          # 10% cho community reports (default 0.15)
+  top_k_entities: 10           # top-K entities ánh xạ (default 10)
+  top_k_relationships: 10      # top-K relationships (default 10)
+  max_context_tokens: 6000     # giảm từ 12000 → nhanh hơn ~2x, ít RAM hơn
+
+# ─── Global Search ───────────────────────────────────────────────────────────
+global_search:
+  max_context_tokens: 6000
+  data_max_tokens: 6000
+  map_max_length: 1000
+  reduce_max_length: 2000
