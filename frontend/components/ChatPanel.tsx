@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { escapeHtml, markdownLite, sendChatMessage } from "@/lib/api";
+import { escapeHtml, sendChatMessage } from "@/lib/api";
 import type { ChatMessage } from "@/types/api";
+import { MarkdownMessage } from "./MarkdownMessage";
 import { useToast } from "./ToastProvider";
 
 const WELCOME_HTML = `
@@ -109,7 +110,7 @@ export function ChatPanel() {
         ...prev,
         {
           role: "bot",
-          html: markdownLite(answer),
+          markdown: answer,
           plain: answer,
           citations: data.article_citations || [],
         },
@@ -148,7 +149,11 @@ export function ChatPanel() {
               <>
                 <div className="avatar bot-avatar">🤖</div>
                 <div className="bubble bot-bubble">
-                  <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                  {msg.markdown ? (
+                    <MarkdownMessage content={msg.markdown} />
+                  ) : msg.html ? (
+                    <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                  ) : null}
                   {msg.citations && msg.citations.length > 0 && (
                     <div className="bubble-citations">
                       Căn cứ: {msg.citations.join(", ")}
@@ -177,7 +182,9 @@ export function ChatPanel() {
             ) : (
               <>
                 <div className="bubble user-bubble">
-                  <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                  {msg.html ? (
+                    <div dangerouslySetInnerHTML={{ __html: msg.html }} />
+                  ) : null}
                 </div>
                 <div className="avatar user-avatar">👤</div>
               </>

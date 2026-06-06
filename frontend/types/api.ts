@@ -16,7 +16,8 @@ export interface DocumentItem {
 
 export interface ChatMessage {
   role: "user" | "bot";
-  html: string;
+  html?: string;
+  markdown?: string;
   plain?: string;
   citations?: string[];
 }

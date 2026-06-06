@@ -7,21 +7,68 @@ import type {
 
 const API_BASE = "";
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: "application/json", ...options.headers },
-    ...options,
-  });
+const DEFAULT_TIMEOUT_MS = 15_000;
+const CHAT_TIMEOUT_MS = 160_000;
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { Accept: "application/json", ...options.headers },
+      signal: controller.signal,
+      ...options,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(
+        `Yêu cầu quá thời gian chờ (${Math.round(timeoutMs / 1000)}s). Vui lòng thử lại.`,
+      );
+    }
+    // Lỗi mạng / kết nối bị ngắt (ECONNRESET, Failed to fetch, v.v.)
+    const msg = err instanceof Error ? err.message : String(err);
+    if (
+      msg.includes("Failed to fetch") ||
+      msg.includes("NetworkError") ||
+      msg.includes("ECONNRESET") ||
+      msg.includes("socket hang up")
+    ) {
+      throw new Error(
+        "Kết nối đến server bị gián đoạn. Server có thể đang xử lý câu hỏi — vui lòng thử lại.",
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     let detail = res.statusText;
     try {
-      const err = (await res.json()) as { detail?: string; message?: string };
-      detail = err.detail || err.message || detail;
+      const body = await res.json() as { detail?: unknown; message?: unknown };
+      const raw = body.detail ?? body.message;
+      if (typeof raw === "string" && raw.length > 0) {
+        detail = raw;
+      } else if (raw != null) {
+        detail = JSON.stringify(raw);
+      }
     } catch {
-      /* ignore */
+      // Body không phải JSON (ví dụ: HTML error page từ proxy)
+      if (res.status === 503) {
+        detail = "Model AI đang quá tải, vui lòng thử lại sau ít phút.";
+      } else if (res.status === 504) {
+        detail = "Server mất quá nhiều thời gian xử lý, vui lòng thử lại.";
+      } else if (res.status >= 500) {
+        detail = "Lỗi server nội bộ. Vui lòng thử lại hoặc liên hệ quản trị viên.";
+      }
     }
-    throw new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    throw new Error(detail);
   }
 
   if (res.status === 204) return null as T;
@@ -29,11 +76,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
-  return request<ChatResponse>("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  return request<ChatResponse>(
+    "/api/chat",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    CHAT_TIMEOUT_MS,
+  );
 }
 
 export async function listDocuments(): Promise<{ documents: DocumentItem[] }> {
@@ -71,17 +122,6 @@ export function escapeHtml(text: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-export function markdownLite(text: string): string {
-  if (!text) return "";
-  let html = escapeHtml(text);
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/\n\n/g, "</p><p>");
-  html = html.replace(/\n- /g, "</p><ul><li>");
-  html = html.replace(/\n(\d+)\. /g, "</p><ol><li>");
-  if (!html.startsWith("<p>")) html = `<p>${html}</p>`;
-  return html;
 }
 
 export function formatBytes(bytes: number): string {
