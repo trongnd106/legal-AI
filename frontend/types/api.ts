@@ -31,6 +31,7 @@ export interface ChatMessage {
   plain?: string;
   citations?: string[];
   dataCitations?: DataCitationItem[];
+  timestamp?: number;
 }
 
 export interface ChatRequest {

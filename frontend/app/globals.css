@@ -226,8 +226,27 @@ button {
   background: var(--color-border);
 }
 
-.bubble {
+.message-body {
+  display: flex;
+  flex-direction: column;
   max-width: 68%;
+  min-width: 0;
+}
+
+.message.user .message-body {
+  align-items: flex-end;
+}
+
+.message-time {
+  margin-top: 4px;
+  padding: 0 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--color-text-secondary);
+}
+
+.bubble {
+  width: 100%;
   padding: var(--spacing-md);
   border-radius: var(--radius-lg);
   font-size: 14px;
@@ -983,7 +1002,7 @@ button {
     display: none;
   }
 
-  .bubble {
+  .message-body {
     max-width: 88%;
   }
 
