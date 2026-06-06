@@ -1,0 +1,48 @@
+-Goal-
+Extract semantic entities and relationships from Vietnamese labor law text.
+
+-Entity Types-
+{entity_types}
+
+-Classification Rules (MUST follow)-
+HanhVi         = Legal actions/violations: not paying salary, not signing contract, not registering insurance
+CheTai         = Administrative penalties: fines, warnings per Decree 12/2022
+XuLyKyLuat     = Internal disciplinary measures: termination, reprimand, salary delay
+CoQuan         = State agencies: Ministry of Labor, Inspection, Government, Court
+ChuThe         = Parties in labor relationship: worker, employer, trainee, organization
+HopDongLaoDong = Labor contract: employment agreement, terms, conditions
+TienLuong      = Salary: salary level, salary structure, minimum wage, coefficient
+TraLuong       = Salary payment: payment schedule, payment method, late payment
+ThoiGioLamViec = Working time: working hours, overtime, schedule
+NghiPhep       = Leave: annual leave, sick leave, maternity leave, unpaid leave
+CheDoBaoHiem   = Insurance: social insurance, health insurance, unemployment insurance
+TroCapThoiViec = Termination benefits: severance, compensation for early termination
+AnToanVeSinhLaoDong = Occupational health and safety: accident prevention, safety measures
+
+-Output Format-
+For each entity found, output one line:
+("entity"<|>entity_name<|>entity_type<|>entity_description)
+
+For each relationship found, output one line:
+("relationship"<|>source_entity<|>target_entity<|>relationship_description<|>strength_1_to_10)
+
+Use ## as delimiter between records.
+
+-Important Instructions-
+1. Do NOT extract: VanBan, Chuong, Dieu, Khoan, Diem (already in database)
+2. Extract only entities that match {entity_types}
+3. entity_name: concise name, title case
+4. entity_type: MUST be one of {entity_types}
+5. entity_description: brief Vietnamese description, clear legal meaning
+6. relationship_strength: integer 1-10
+7. Return complete output as plain text with delimiters, NO JSON
+
+-Example-
+("entity"<|>Thử việc<|>HanhVi<|>Giai đoạn thử việc của người lao động mới)
+##
+("entity"<|>Ba tháng<|>ThoiGioLamViec<|>Thời gian tối đa thử việc)
+##
+("relationship"<|>Thử việc<|>Ba tháng<|>Có thời hạn tối đa là<|>9)
+
+-Input Text-
+{input_text}
