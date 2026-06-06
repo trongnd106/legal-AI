@@ -14,12 +14,23 @@ export interface DocumentItem {
   source: "indexed" | "upload";
 }
 
+export interface DataCitationItem {
+  key: string;
+  type: string;
+  id: string;
+  label: string;
+  detail: string;
+  icon?: string;
+  type_label?: string;
+}
+
 export interface ChatMessage {
   role: "user" | "bot";
   html?: string;
   markdown?: string;
   plain?: string;
   citations?: string[];
+  dataCitations?: DataCitationItem[];
 }
 
 export interface ChatRequest {
@@ -34,6 +45,7 @@ export interface ChatResponse {
   article_citations: string[];
   entities_used?: string[];
   temporal_warnings?: string[];
+  data_citations?: DataCitationItem[];
 }
 
 export interface HealthResponse {
