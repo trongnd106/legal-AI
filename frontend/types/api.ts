@@ -60,6 +60,17 @@ export interface ChatResponse {
   data_citations?: DataCitationItem[];
 }
 
+export interface ContractAnalysisResponse {
+  markdown_report: string;
+  compliance_score: number;
+  filename: string;
+  num_clauses: number;
+  num_violations: number;
+  num_high_risk: number;
+  missing_mandatory: string[];
+  session_id: string;
+}
+
 export interface HealthResponse {
   status: string;
   graphrag_ready: boolean;
