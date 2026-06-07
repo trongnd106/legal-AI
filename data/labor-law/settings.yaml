@@ -8,7 +8,7 @@ completion_models:
     type: litellm
     model_provider: openrouter
     # model: qwen/qwen3-235b-a22b-2507
-    model: deepseek/deepseek-v4-flash
+    model: openai/gpt-4o-mini
     auth_method: api_key
     api_key: ${OPENROUTER_API_KEY}
     api_base: https://openrouter.ai/api/v1
