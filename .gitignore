@@ -70,3 +70,17 @@ packages/graphrag-*/example_notebooks/**/cache
 
 node_modules/
 node_modules/**
+
+data/labor-law/cache/
+data/labor-law/output/
+data/labor-law/settings copy.yaml
+final_latex_report/DATN/
+final_latex_report/latex_report_idea.md
+final_latex_report/references/GraphRAG-report.pdf
+final_latex_report/references/GraphRAG-report.txt
+data.zip
+.cursor/
+CONTRACT_ANALYSIS_REVIEW.md
+OPTIMIZATION_CONTRACT_ANALYSIS.md
+STORAGE_ANALYSIS.md
+temp.py
