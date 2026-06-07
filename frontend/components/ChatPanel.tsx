@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, Paperclip, Send, Sparkles } from "lucide-react";
-import { escapeHtml, sendChatMessage } from "@/lib/api";
+import { analyzeContract, escapeHtml, sendChatMessage } from "@/lib/api";
 import type { ChatMessage } from "@/types/api";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { useToast } from "./ToastProvider";
@@ -104,12 +104,16 @@ export function ChatPanel({
 
   const handleSend = async () => {
     const question = input.trim();
-    if (!question || sending) return;
+    if ((!question && !attachedFile) || sending) return;
 
-    onFirstUserMessage(sessionId, question);
+    const displayQ = question
+      ? attachedFile
+        ? `${question}\n\n📎 ${attachedFile.name}`
+        : question
+      : `📎 Phân tích hợp đồng: ${attachedFile!.name}`;
 
-    let displayQ = question;
-    if (attachedFile) displayQ += `\n\n📎 ${attachedFile.name}`;
+    if (question) onFirstUserMessage(sessionId, question);
+    else onFirstUserMessage(sessionId, displayQ);
 
     setMessages((prev) => [
       ...prev,
@@ -123,21 +127,41 @@ export function ChatPanel({
     setSending(true);
     setTyping(true);
 
+    const fileToAnalyze = attachedFile;
+    clearAttachment();
+
     try {
-      const mode = question.length > 120 ? "global" : "local";
-      const data = await sendChatMessage({ question, mode, domain: "lao_dong" });
-      const answer = data.answer || "Không có câu trả lời.";
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "bot",
-          markdown: answer,
-          plain: answer,
-          citations: data.article_citations || [],
-          dataCitations: data.data_citations || [],
-          timestamp: Date.now(),
-        },
-      ]);
+      if (fileToAnalyze) {
+        // Có file đính kèm → gọi contract analysis pipeline
+        const data = await analyzeContract(fileToAnalyze);
+        const report = data.markdown_report || "Không có kết quả phân tích.";
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "bot",
+            markdown: report,
+            plain: report,
+            citations: [],
+            timestamp: Date.now(),
+          },
+        ]);
+      } else {
+        // Không có file → hỏi đáp luật lao động thông thường
+        const mode = question.length > 120 ? "global" : "local";
+        const data = await sendChatMessage({ question, mode, domain: "lao_dong" });
+        const answer = data.answer || "Không có câu trả lời.";
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "bot",
+            markdown: answer,
+            plain: answer,
+            citations: data.article_citations || [],
+            dataCitations: data.data_citations || [],
+            timestamp: Date.now(),
+          },
+        ]);
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Lỗi khi gửi câu hỏi.";
       setMessages((prev) => [
@@ -152,7 +176,6 @@ export function ChatPanel({
     } finally {
       setTyping(false);
       setSending(false);
-      clearAttachment();
     }
   };
 
@@ -258,8 +281,15 @@ export function ChatPanel({
 
       {attachedFile && (
         <div className="attach-preview">
-          📎 Đính kèm: {attachedFile.name} (chỉ tham khảo ngữ cảnh — hỏi đáp vẫn dựa trên
-          kho luật)
+          📎 {attachedFile.name} — Nhấn Gửi để phân tích hợp đồng
+          <button
+            type="button"
+            className="attach-remove"
+            title="Xóa đính kèm"
+            onClick={clearAttachment}
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -291,7 +321,7 @@ export function ChatPanel({
           disabled={sending}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
+            if (e.key === "Enter" && !e.shiftKey && (input.trim() || attachedFile)) {
               e.preventDefault();
               void handleSend();
             }
@@ -323,7 +353,7 @@ export function ChatPanel({
             className="btn-send-grid"
             type="button"
             title="Gửi"
-            disabled={sending}
+            disabled={sending || (!input.trim() && !attachedFile)}
             onClick={() => void handleSend()}
           >
             <Send size={18} aria-hidden />
