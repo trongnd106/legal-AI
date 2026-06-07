@@ -34,12 +34,15 @@ export interface ChatMessage {
   timestamp?: number;
 }
 
-export interface ChatSession {
+export interface ChatSessionSummary {
   id: string;
   title: string;
-  messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
+}
+
+export interface ChatSession extends ChatSessionSummary {
+  messages: ChatMessage[];
 }
 
 export interface ChatRequest {
@@ -60,4 +63,21 @@ export interface ChatResponse {
 export interface HealthResponse {
   status: string;
   graphrag_ready: boolean;
+}
+
+export interface ChatSessionListResponse {
+  sessions: ChatSessionSummary[];
+  activeSessionId: string;
+  storagePath: string;
+}
+
+export interface CreateSessionRequest {
+  id?: string;
+  title?: string;
+  messages?: ChatMessage[];
+}
+
+export interface UpdateSessionRequest {
+  title?: string;
+  messages?: ChatMessage[];
 }

@@ -1,10 +1,10 @@
 import { MessageSquare, Plus } from "lucide-react";
-import type { ChatSession, TabId } from "@/types/api";
+import type { ChatSessionSummary, TabId } from "@/types/api";
 
 interface SidebarProps {
   activeTab: TabId;
   onTabChange: (tab: TabId) => void;
-  chatSessions: ChatSession[];
+  chatSessions: ChatSessionSummary[];
   activeSessionId: string;
   onNewChat: () => void;
   onSwitchChat: (id: string) => void;

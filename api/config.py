@@ -11,6 +11,13 @@ NORMALIZED_DIR = LABOR_LAW_ROOT / "normalized"
 UPLOADS_DIR = LABOR_LAW_ROOT / "uploads"
 FRONTEND_DIR = REPO_ROOT / "frontend"
 
+# Lịch sử trò chuyện — lưu vĩnh viễn trên máy người dùng
+LEGALAI_DIR = Path.home() / ".legalai"
+CHAT_SESSIONS_DIR = LEGALAI_DIR / "sessions"
+CHAT_INDEX_PATH = LEGALAI_DIR / "index.json"
+# File monolithic cũ — chỉ dùng migrate một lần
+CHAT_HISTORY_LEGACY_PATH = LEGALAI_DIR / "chat-history.json"
+
 # so_hieu → slug (từ scripts/01_prepare_data.py FILE_MAP)
 SO_HIEU_TO_SLUG: dict[str, str] = {
     "45/2019/QH14": "BLLĐ_2019",

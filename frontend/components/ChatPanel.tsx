@@ -34,6 +34,7 @@ function downloadText(text: string, idx: number) {
 interface ChatPanelProps {
   sessionId: string;
   messages: ChatMessage[];
+  loading?: boolean;
   onMessagesChange: (
     sessionId: string,
     updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
@@ -44,6 +45,7 @@ interface ChatPanelProps {
 export function ChatPanel({
   sessionId,
   messages,
+  loading = false,
   onMessagesChange,
   onFirstUserMessage,
 }: ChatPanelProps) {
@@ -165,7 +167,10 @@ export function ChatPanel({
   return (
     <>
       <div ref={messagesRef} className="chat-messages" aria-live="polite">
-        {messages.map((msg, idx) => (
+        {loading && (
+          <div className="session-loading">Đang tải cuộc trò chuyện...</div>
+        )}
+        {!loading && messages.map((msg, idx) => (
           <div key={idx} className={`message ${msg.role}`}>
             {msg.role === "bot" ? (
               <>

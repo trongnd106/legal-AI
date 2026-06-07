@@ -1,5 +1,6 @@
 import type { ChatMessage, ChatSession } from "@/types/api";
 
+/** Key cũ trên localStorage — chỉ dùng để migrate một lần */
 export const CHAT_SESSIONS_KEY = "luat-lao-dong-chat-sessions";
 export const ACTIVE_SESSION_KEY = "luat-lao-dong-active-session";
 export const DEFAULT_NEW_CHAT_TITLE = "Cuộc trò chuyện mới";
@@ -40,7 +41,8 @@ export function truncateTitle(text: string, maxLen = 28): string {
   return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
 }
 
-export function loadSessionsFromStorage(): {
+/** Đọc dữ liệu cũ từ localStorage (migrate một lần sang ~/.legalai) */
+export function loadLegacySessionsFromLocalStorage(): {
   sessions: ChatSession[];
   activeSessionId: string;
 } {
@@ -68,4 +70,10 @@ export function loadSessionsFromStorage(): {
 
   const session = createNewSession();
   return { sessions: [session], activeSessionId: session.id };
+}
+
+export function clearLegacyLocalStorage(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(CHAT_SESSIONS_KEY);
+  localStorage.removeItem(ACTIVE_SESSION_KEY);
 }

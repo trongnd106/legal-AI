@@ -310,6 +310,12 @@ button {
   background: var(--color-bg-main);
 }
 
+.session-loading {
+  margin: auto;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
 .message {
   display: flex;
   align-items: flex-start;
