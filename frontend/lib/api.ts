@@ -3,6 +3,7 @@ import type {
   ChatResponse,
   ChatSession,
   ChatSessionListResponse,
+  ContractAnalysisResponse,
   CreateSessionRequest,
   DocumentItem,
   HealthResponse,
@@ -114,6 +115,22 @@ export async function uploadDocument(
     method: "POST",
     body: form,
   });
+}
+
+export async function analyzeContract(
+  file: File,
+  wageRegion: string = "IV",
+  skipLlmReview: boolean = false,
+): Promise<ContractAnalysisResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("wage_region", wageRegion);
+  form.append("skip_llm_review", String(skipLlmReview));
+  return request<ContractAnalysisResponse>(
+    "/api/contract/analyze",
+    { method: "POST", body: form },
+    300_000, // 5 phút timeout cho phân tích phức tạp
+  );
 }
 
 export async function healthCheck(): Promise<HealthResponse> {
