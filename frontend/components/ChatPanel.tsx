@@ -1,20 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Mic, Paperclip, Send, Sparkles } from "lucide-react";
 import { escapeHtml, sendChatMessage } from "@/lib/api";
 import type { ChatMessage } from "@/types/api";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { useToast } from "./ToastProvider";
-
-const WELCOME_HTML = `
-  <p>Xin chào! Tôi là trợ lý tư vấn <strong>Luật Lao động Việt Nam</strong>.</p>
-  <p>Tôi có thể hỗ trợ bạn tra cứu Bộ luật Lao động 2019 và các Nghị định hướng dẫn.</p>
-  <ul>
-    <li>Quyền và nghĩa vụ của người lao động</li>
-    <li>Hợp đồng lao động, thử việc, chấm dứt HĐLĐ</li>
-    <li>Lương, BHXH, thời giờ làm việc, nghỉ phép</li>
-  </ul>
-`;
 
 function formatMessageTime(ts: number): string {
   const d = new Date(ts);
@@ -23,10 +14,6 @@ function formatMessageTime(ts: number): string {
   const s = String(d.getSeconds()).padStart(2, "0");
   return `${h}:${m}:${s}`;
 }
-
-const INITIAL_MESSAGES: ChatMessage[] = [
-  { role: "bot", html: WELCOME_HTML, plain: "Xin chào!", timestamp: Date.now() },
-];
 
 function copyText(text: string, showToast: (msg: string, err?: boolean) => void) {
   navigator.clipboard.writeText(text).then(
@@ -44,9 +31,23 @@ function downloadText(text: string, idx: number) {
   URL.revokeObjectURL(a.href);
 }
 
-export function ChatPanel() {
+interface ChatPanelProps {
+  sessionId: string;
+  messages: ChatMessage[];
+  onMessagesChange: (
+    sessionId: string,
+    updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[]),
+  ) => void;
+  onFirstUserMessage: (sessionId: string, text: string) => void;
+}
+
+export function ChatPanel({
+  sessionId,
+  messages,
+  onMessagesChange,
+  onFirstUserMessage,
+}: ChatPanelProps) {
   const { showToast } = useToast();
-  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
@@ -57,6 +58,13 @@ export function ChatPanel() {
   const messagesRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  const setMessages = useCallback(
+    (updater: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+      onMessagesChange(sessionId, updater);
+    },
+    [sessionId, onMessagesChange],
+  );
 
   useEffect(() => {
     const el = messagesRef.current;
@@ -95,6 +103,8 @@ export function ChatPanel() {
   const handleSend = async () => {
     const question = input.trim();
     if (!question || sending) return;
+
+    onFirstUserMessage(sessionId, question);
 
     let displayQ = question;
     if (attachedFile) displayQ += `\n\n📎 ${attachedFile.name}`;
@@ -260,12 +270,12 @@ export function ChatPanel() {
           }}
         />
         <button
-          className="input-icon-btn"
+          className="icon-btn"
           type="button"
-          title="Đính kèm"
+          title="Đính kèm file"
           onClick={() => fileInputRef.current?.click()}
         >
-          📎
+          <Paperclip size={20} aria-hidden />
         </button>
         <input
           type="text"
@@ -282,24 +292,38 @@ export function ChatPanel() {
             }
           }}
         />
-        <button
-          className={`input-icon-btn${recording ? " recording" : ""}`}
-          type="button"
-          title={micSupported ? "Giọng nói" : "Trình duyệt không hỗ trợ nhận dạng giọng nói"}
-          disabled={!micSupported}
-          onClick={startMic}
-        >
-          🎤
-        </button>
-        <button
-          className="btn-send"
-          type="button"
-          title="Gửi"
-          disabled={sending}
-          onClick={() => void handleSend()}
-        >
-          ➤
-        </button>
+        <div className="input-right-group">
+          <button
+            className={`icon-btn${recording ? " recording" : ""}`}
+            type="button"
+            title={
+              micSupported
+                ? "Gửi bằng giọng nói"
+                : "Trình duyệt không hỗ trợ nhận dạng giọng nói"
+            }
+            disabled={!micSupported}
+            onClick={startMic}
+          >
+            <Mic size={20} aria-hidden />
+          </button>
+          <button
+            className="icon-btn"
+            type="button"
+            title="Gợi ý AI"
+            onClick={() => showToast("Tính năng gợi ý AI đang được phát triển")}
+          >
+            <Sparkles size={18} aria-hidden />
+          </button>
+          <button
+            className="btn-send-grid"
+            type="button"
+            title="Gửi"
+            disabled={sending}
+            onClick={() => void handleSend()}
+          >
+            <Send size={18} aria-hidden />
+          </button>
+        </div>
       </div>
     </>
   );
