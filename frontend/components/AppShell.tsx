@@ -17,6 +17,8 @@ function AppContent() {
     sessions,
     activeSessionId,
     activeSession,
+    activeMessages,
+    sessionLoading,
     loaded,
     createNewChat,
     switchChat,
@@ -40,12 +42,12 @@ function AppContent() {
   }, [showToast]);
 
   const handleNewChat = () => {
-    createNewChat();
+    void createNewChat();
     setActiveTab("chat");
   };
 
   const handleSwitchChat = (id: string) => {
-    switchChat(id);
+    void switchChat(id);
     setActiveTab("chat");
   };
 
@@ -69,7 +71,8 @@ function AppContent() {
             <ChatPanel
               key={activeSession.id}
               sessionId={activeSession.id}
-              messages={activeSession.messages}
+              messages={activeMessages}
+              loading={sessionLoading}
               onMessagesChange={updateSessionMessages}
               onFirstUserMessage={updateSessionTitle}
             />

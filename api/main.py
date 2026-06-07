@@ -16,7 +16,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routes import chat, documents
+from api.routes import chat, documents, sessions
 from api.services.graph_loader import artifacts_available
 
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +38,7 @@ app.add_middleware(
 
 app.include_router(chat.router)
 app.include_router(documents.router)
+app.include_router(sessions.router)
 
 
 @app.get("/api/health")

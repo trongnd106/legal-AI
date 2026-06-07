@@ -1,8 +1,12 @@
 import type {
   ChatRequest,
   ChatResponse,
+  ChatSession,
+  ChatSessionListResponse,
+  CreateSessionRequest,
   DocumentItem,
   HealthResponse,
+  UpdateSessionRequest,
 } from "@/types/api";
 
 const API_BASE = "";
@@ -114,6 +118,50 @@ export async function uploadDocument(
 
 export async function healthCheck(): Promise<HealthResponse> {
   return request<HealthResponse>("/api/health");
+}
+
+export async function fetchChatSessionList(): Promise<ChatSessionListResponse> {
+  return request<ChatSessionListResponse>("/api/chat-sessions");
+}
+
+export async function fetchChatSession(sessionId: string): Promise<ChatSession> {
+  return request<ChatSession>(
+    `/api/chat-sessions/${encodeURIComponent(sessionId)}`,
+  );
+}
+
+export async function createChatSession(
+  payload: CreateSessionRequest = {},
+): Promise<ChatSession> {
+  return request<ChatSession>("/api/chat-sessions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateChatSession(
+  sessionId: string,
+  payload: UpdateSessionRequest,
+): Promise<ChatSession> {
+  return request<ChatSession>(
+    `/api/chat-sessions/${encodeURIComponent(sessionId)}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export async function setActiveChatSession(
+  activeSessionId: string,
+): Promise<ChatSessionListResponse> {
+  return request<ChatSessionListResponse>("/api/chat-sessions/active", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ activeSessionId }),
+  });
 }
 
 export function escapeHtml(text: string): string {
