@@ -124,7 +124,7 @@ def contexts_from_context_data(
 
 
 def load_questions(path: Path | None) -> list[tuple[str, str]]:
-    """Load (question, reference) pairs from JSON or newline-delimited text."""
+    """Load (question, reference) pairs from CSV, JSON or newline-delimited text."""
     if path is None:
         return [
             ("Tóm tắt các chủ đề chính trong tài liệu đã index.", ""),
@@ -133,6 +133,20 @@ def load_questions(path: Path | None) -> list[tuple[str, str]]:
                 "",
             ),
         ]
+    if path.suffix.lower() == ".csv":
+        import csv as csv_mod
+
+        out: list[tuple[str, str]] = []
+        with path.open(encoding="utf-8", newline="") as f:
+            for row in csv_mod.DictReader(f):
+                q = (row.get("question") or "").strip()
+                if not q:
+                    continue
+                ref = (row.get("reference_answer") or row.get("reference") or "").strip()
+                if row.get("count_main_metrics", "yes") == "no":
+                    continue
+                out.append((q, ref))
+        return out
     text = path.read_text(encoding="utf-8")
     if path.suffix.lower() == ".json":
         data = json.loads(text)
