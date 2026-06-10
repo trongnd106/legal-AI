@@ -1,0 +1,273 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\section{Tổng quan giải pháp}
+\label{section:3.1}
+
+\subsection{Định hướng tiếp cận tổng thể}
+\label{subsection:3.1.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Microsoft GraphRAG làm nền tảng, tùy biến cho domain luật lao động VN
+    \item Ba trụ cột: (1) Knowledge Graph hai lớp, (2) Dual search + multi-hop + temporal filter, (3) Ứng dụng chat + phân tích HĐLĐ
+    \item Baselines thí nghiệm: Basic/Naive RAG, Local Search, Global Search, Local + Multi-hop
+\end{itemize}
+
+\subsection{Phạm vi corpus và giả định thiết kế}
+\label{subsection:3.1.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item 7 văn bản, 581 Điều --- nguồn \texttt{data/txt/}
+    \item Giả định: văn bản đã chuẩn hóa \texttt{.txt}; LLM extraction có thể sai $\rightarrow$ bù bằng Lớp 1 deterministic
+    \item Phạm vi ngoài: bản án, luật dân sự/hình sự (chỉ test mẫu, chưa index)
+\end{itemize}
+
+\section{Xây dựng đồ thị tri thức cho văn bản luật lao động}
+\label{section:3.2}
+
+\subsection{Mục tiêu xây dựng đồ thị tri thức}
+\label{subsection:3.2.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Chuyển văn bản phi cấu trúc $\rightarrow$ tri thức có cấu trúc phục vụ truy vấn và suy luận
+    \item Mọi câu trả lời truy vết được về Điều/Khoản cụ thể
+\end{itemize}
+
+\subsection{Thiết kế ontology hai lớp}
+\label{subsection:3.2.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Lớp 1 (deterministic):} \texttt{VanBan}, \texttt{Chuong}, \texttt{Dieu}, \texttt{Khoan}, \texttt{Diem}; quan hệ \texttt{contains}, \texttt{cites}, \texttt{amends}, \ldots
+    \item \textbf{Lớp 2 (LLM):} \texttt{ChuThe}, \texttt{HanhVi}, \texttt{CheTai}, \texttt{TienLuong}, \ldots; quan hệ \texttt{entitles}, \texttt{obligates}, \texttt{penalizes}, \ldots
+    \item \textbf{Lớp 1.5:} Canonicalization alias ``Điều 35'' $\rightarrow$ \texttt{BLLĐ\_2019\_Điều\_35}
+\end{itemize}
+
+\subsection{Quy trình chuẩn bị dữ liệu}
+\label{subsection:3.2.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Pipeline \texttt{scripts/01\_prepare\_data.py}: parse Phần/Chương/Mục/Điều/Khoản/Điểm
+    \item Gán \texttt{norm\_type}, metadata hiệu lực
+    \item Xuất JSONL + \texttt{metadata.json} + \texttt{normalized/}
+    \item Thống kê: 581 Điều, 2069 Khoản, 1705 Điểm
+\end{itemize}
+
+\subsection{Chiến lược chunking}
+\label{subsection:3.2.4}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{chunking.size: 4000}, \texttt{overlap: 0} --- mục tiêu 1 Điều = 1 chunk
+    \item Khoản là đơn vị pháp lý không được cắt đôi
+    \item \texttt{input.text\_column: noi\_dung}; metadata giữ trong \texttt{raw\_data}
+\end{itemize}
+
+\subsection{Trích xuất entity và quan hệ (Lớp 2)}
+\label{subsection:3.2.5}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Prompt: \texttt{prompts/extract\_graph\_simple.txt}
+    \item Quy tắc domain: phân biệt \texttt{HanhVi}/\texttt{CheTai}/\texttt{XuLyKyLuat}
+    \item \texttt{max\_gleanings: 1} --- cân bằng chi phí/độ phủ
+    \item Không extract Lớp 1 bằng LLM --- tránh duplicate node
+\end{itemize}
+
+\subsection{Merge graph và community detection}
+\label{subsection:3.2.6}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{02\_merge\_structural\_graph.py}: gộp L1 + output GraphRAG
+    \item Community detection (Leiden) + \texttt{community\_report\_labor.txt}
+    \item \texttt{summarize\_descriptions.max\_length: 500}
+\end{itemize}
+
+\section{Chiến lược truy vấn và hỏi đáp}
+\label{section:3.3}
+
+\subsection{Tổng quan truy xuất trong GraphRAG}
+\label{subsection:3.3.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Phân biệt vector retrieval vs graph-augmented retrieval
+    \item Lựa chọn mode theo loại câu hỏi (single-hop vs tổng hợp)
+\end{itemize}
+
+\subsection{Local Search}
+\label{subsection:3.3.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Entity extraction từ query $\rightarrow$ retrieve text units + relationships
+    \item Triển khai: \texttt{query/local\_search.py} $\rightarrow$ \texttt{ask\_local()}
+    \item API: \texttt{POST /api/chat} với \texttt{mode: "local"}
+    \item Phù hợp: tra cứu một Điều (LD001--LD004, LD013)
+\end{itemize}
+
+\subsection{Global Search}
+\label{subsection:3.3.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Map-reduce trên community reports
+    \item Triển khai: \texttt{query/global\_search.py} $\rightarrow$ \texttt{ask\_global()}
+    \item Phù hợp: câu hỏi tổng hợp (quyền NLĐ, loại hình HĐLĐ)
+    \item Trade-off: latency cao hơn Local
+\end{itemize}
+
+\subsection{Basic Search --- baseline Naive RAG}
+\label{subsection:3.3.4}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Vector-only trên text units, không khai thác đồ thị
+    \item Vai trò baseline trong thí nghiệm Chương 4
+\end{itemize}
+
+\subsection{Multi-hop Reasoning Engine}
+\label{subsection:3.3.5}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{query/multihop\_reasoning.py} --- class \texttt{VNLegalReasoningEngine}
+    \item Chain templates: \texttt{violation}, \texttt{entitlement}, \texttt{procedure}
+    \item Ví dụ: ``không trả lương'' $\rightarrow$ \texttt{obligates} $\rightarrow$ \texttt{penalizes} $\rightarrow$ NĐ 12/2022
+    \item Tích hợp: phân tích HĐLĐ (\texttt{mapper\_optimized.py}, Mụ~\ref{subsection:3.5.2.1}); sắp mở rộng cho chat API
+\end{itemize}
+
+\subsection{Temporal Filter --- lọc hiệu lực văn bản}
+\label{subsection:3.3.6}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{query/temporal\_filter.py} --- \texttt{filter\_citations\_by\_effectiveness()}
+    \item Metadata: \texttt{con\_hieu\_luc}, ngày ban hành, \texttt{huong\_dan\_boi}
+    \item Tích hợp API: field \texttt{temporal\_warnings} trong \texttt{ChatResponse}
+\end{itemize}
+
+\subsection{Rule Validator}
+\label{subsection:3.3.7}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{query/rule\_validator.py} --- xác thực câu trả lời với quy tắc cứng
+    \item Kiểm tra Điều bắt buộc, xác thực số liệu (lương tối thiểu, hạn thử việc)
+    \item Sắp integrate vào pipeline query
+\end{itemize}
+
+\section{Tích hợp LLM và sinh câu trả lời}
+\label{section:3.4}
+
+\subsection{Vai trò LLM trong pipeline}
+\label{subsection:3.4.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Indexing: extraction, summarize, community report ($\sim$4000--5000 LLM calls)
+    \item Querying: sinh câu trả lời từ ngữ cảnh retrieved
+    \item LLM không phải nguồn tri thức --- chỉ tổng hợp và diễn đạt
+\end{itemize}
+
+\subsection{Thiết kế ngữ cảnh đầu vào}
+\label{subsection:3.4.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Context: text units + entity descriptions + community summaries
+    \item Giới hạn context window; ưu tiên relevance
+    \item Yêu cầu trích dẫn Điều/Khoản trong system prompt
+\end{itemize}
+
+\subsection{Chiến lược prompt và kiểm soát hallucination}
+\label{subsection:3.4.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Prompt trả lời: chỉ dựa trên ngữ cảnh; từ chối nếu thiếu thông tin
+    \item Prompt extraction: quy tắc JSON output, entity type cố định
+    \item Cache LLM (\texttt{data/labor-law/cache/}) --- tiết kiệm chi phí re-index
+\end{itemize}
+
+\section{Ứng dụng phân tích hợp đồng lao động}
+\label{section:3.5}
+
+\subsection{Mục tiêu và phạm vi}
+\label{subsection:3.5.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Kiểm tra điều khoản HĐLĐ so với BLLĐ 2019 + NĐ hướng dẫn
+    \item Module: \texttt{unified-search-app/app/contract\_analysis/}
+    \item Kiến trúc \textbf{hybrid}: rule-based (deterministic) + đồ thị \texttt{labor-law} (grounding) + LLM (phân tích khoản phức tạp)
+    \item Phạm vi: HĐLĐ dạng text/PDF; không thay thế tư vấn pháp lý chính thức
+\end{itemize}
+
+\subsection{Pipeline phân tích HĐLĐ}
+\label{subsection:3.5.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Bước 1 --- Tiếp nhận tài liệu}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Đầu vào: PDF (text layer hoặc PaddleOCR khi scan), DOCX, TXT
+        \item Đầu ra: \texttt{ContractDocument} gồm văn bản thô và metadata tệp
+    \end{itemize}
+    \item \textbf{Bước 2 --- Tách khoản}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item LLM phân đoạn HĐLĐ thành danh sách \texttt{Clause} (tiêu đề, tóm tắt, category, văn bản gốc)
+        \item Phát hiện điều khoản bắt buộc còn thiếu (\texttt{compute\_missing\_mandatory})
+    \end{itemize}
+    \item \textbf{Bước 3 --- Kiểm tra quy tắc VR001--VR016}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Regex + ngưỡng số học trên từng khoản; thời gian $<$ 5\,ms/khoản
+        \item Căn cứ pháp lý gắn sẵn trong rule (ví dụ VR001: BLLĐ Điều~90 + NĐ~74/2024)
+        \item Tham số \texttt{RuleContext}: vùng lương I--IV, \texttt{max\_probation\_days}
+        \item Đây là lớp phát hiện vi phạm \textbf{ưu tiên} cho các trường hợp rõ ràng (lương, thử việc, giờ làm, phạt tiền NLĐ, \ldots)
+    \end{itemize}
+    \item \textbf{Bước 4 --- Phân loại khoản cần map đồ thị}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Chỉ khoản thuộc nhóm phức tạp hoặc \texttt{UNKNOWN} mới gọi mapper
+        \item Nhóm phức tạp: \texttt{SALARY}, \texttt{WORKING\_HOURS}, \texttt{PROBATION}, \texttt{TERMINATION}, \texttt{SOCIAL\_INSURANCE}, \texttt{PENALTY\_CLAUSE}, \texttt{UNILATERAL\_TERMS}, \texttt{WAIVER\_CLAUSE}, \texttt{NON\_COMPETE}, \texttt{DISPUTE\_RESOLUTION}
+        \item Khoản đơn giản đã có kết quả rule đủ --- bỏ qua bước map để giảm latency
+    \end{itemize}
+    \item \textbf{Bước 5 --- Đối chiếu đồ thị pháp luật} --- xem Mục~\ref{subsection:3.5.2.1}
+    \item \textbf{Bước 6 --- Phân tích LLM bổ sung}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Batch review trên khoản phức tạp/chưa rõ; prompt nhận thêm \texttt{MappedLawSnippet} và tóm tắt rule issues
+        \item \textbf{Bỏ qua LLM} nếu VR001--VR007 đã báo \texttt{VIOLATION} rõ --- tránh trùng lặp và tiết kiệm token
+        \item LLM \emph{không} là nguồn tri thức pháp luật; chỉ đối chiếu khoản HĐ với ngữ cảnh đã retrieve
+    \end{itemize}
+    \item \textbf{Bước 7 --- Sinh báo cáo}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Gộp rule issues + LLM issues; mức độ: \texttt{VIOLATION}, \texttt{HIGH\_RISK}, \texttt{MEDIUM\_RISK}, \texttt{COMPLIANT}
+        \item Mỗi cảnh báo kèm căn cứ Điều/khoản khi có trong ngữ cảnh pháp lý
+    \end{itemize}
+    \item Tuỳ chọn: lưu phiên phân tích vào Neo4j (\texttt{neo4j\_store.py}, label \texttt{ContractSession}, TTL 24h) --- tách biệt đồ thị HĐ và đồ thị \texttt{labor-law}
+\end{itemize}
+
+\subsection{Tích hợp đồ thị \texttt{labor-law} trong phân tích HĐLĐ}
+\label{subsection:3.5.2.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Vai trò}: đồ thị \emph{bổ trợ grounding} cho LLM --- \textbf{không thay thế} VR001--VR016
+    \item \textbf{Nguồn dữ liệu}: artifacts GraphRAG tại \texttt{data/labor-law/} --- \texttt{entities.parquet}, \texttt{relationships.parquet}, \texttt{merged\_entities/relationships} (L1 + L2, xem Mục~\ref{subsection:3.2.6})
+    \item \textbf{Mapper mặc định}:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item \texttt{GraphLoader(root\_dir="data/labor-law")} load parquet đã merge
+        \item \texttt{VNLegalReasoningEngine} (Mục~\ref{subsection:3.3.5}) --- chọn chain theo category khoản:
+        \texttt{violation} (phạt, chấm dứt một phía), \texttt{entitlement} (lương, BHXH, giờ làm), \texttt{procedure} (thử việc, giải quyết tranh chấp)
+        \item Truy vết multi-hop trên entity L1 (\texttt{Dieu}, \texttt{VanBan}) và L2 (\texttt{ChuThe}, \texttt{TienLuong}, \texttt{CheTai}, \ldots) qua quan hệ \texttt{entitles}, \texttt{obligates}, \texttt{penalizes}, \texttt{guided\_by}, \ldots
+        \item Mở rộng láng giềng entity thêm 2 hop trên parquet (\texttt{RELATED\_TO} trong file quan hệ)
+        \item Đầu ra: \texttt{MappedLawSnippet.rag\_answer} --- chuỗi suy luận + danh sách Điều trích dẫn (\texttt{cited\_articles})
+    \end{itemize}
+    \item \textbf{Mapper dự phòng} khi optimized mapper lỗi:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Bước~1: \texttt{basic\_search} --- vector trên \texttt{text\_units} (Naive RAG, không traversal đồ thị)
+        \item Bước~2 (tuỳ chọn): seed \texttt{Entity.id} theo overlap token với khoản HĐ (\texttt{entity\_seed.py}) $\rightarrow$ Cypher \texttt{RELATED\_TO*1..hops} trên Neo4j (\texttt{neo4j\_kg\_expand.py})
+    \end{itemize}
+    \item \textbf{Thông tin khai thác từ đồ thị} (khác với chat Local/Global Search):
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Entity và mô tả ngữ nghĩa (L2): quyền, nghĩa vụ, chế tài, tiền lương, \ldots
+        \item Quan hệ có hướng giữa entity --- phục vụ suy luận đa bước (ví dụ: hành vi $\rightarrow$ \texttt{obligates} $\rightarrow$ quy định $\rightarrow$ \texttt{penalizes} $\rightarrow$ chế tài)
+        \item Điều luật liên quan qua chuỗi reasoning và neighborhood expansion
+        \item \emph{Không} dùng community reports (Global Search) trong pipeline HĐLĐ hiện tại
+    \end{itemize}
+    \item \textbf{Luồng dữ liệu tóm tắt}: khoản HĐ $\rightarrow$ (rule VR) $\rightarrow$ [nếu phức tạp] map đồ thị $\rightarrow$ ngữ cảnh pháp lý $\rightarrow$ LLM review $\rightarrow$ báo cáo
+    \item Tham số pipeline: \texttt{use\_optimized\_mapper=True}, \texttt{skip\_graph\_mapping}, \texttt{use\_neo4j\_knowledge\_graph}, \texttt{neo4j\_graph\_hops} (1--3)
+\end{itemize}
+
+\subsection{Quy tắc VR001--VR016}
+\label{subsection:3.5.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item VR001: Lương $<$ mức tối thiểu vùng (BLLĐ Điều 90 + NĐ 74/2024)
+    \item VR002--VR007: Thử việc, giờ làm, phạt tiền NLĐ, thời hạn HĐLĐ, \ldots
+    \item VR008--VR016: BHXH, nghỉ phép, BHTN, điều kiện làm việc, \ldots
+    \item \texttt{RuleContext}: vùng lương (I--IV), \texttt{max\_probation\_days}
+\end{itemize}
+
+\section{Thiết kế giao diện và API}
+\label{section:3.6}
+
+\subsection{API FastAPI}
+\label{subsection:3.6.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Routes: \texttt{/api/chat}, \texttt{/api/documents}, \texttt{/api/health}
+    \item \texttt{ChatRequest}: \texttt{question}, \texttt{mode}, \texttt{domain}
+    \item \texttt{ChatResponse}: \texttt{answer}, \texttt{article\_citations}, \texttt{entities\_used}, \texttt{temporal\_warnings}
+    \item \texttt{api/services/graph\_loader.py} --- load parquet artifacts
+\end{itemize}
+
+\subsection{Frontend Next.js}
+\label{subsection:3.6.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item UI chat hỏi đáp, quản lý tài liệu
+    \item Luồng: nhập câu hỏi $\rightarrow$ chọn mode $\rightarrow$ nhận câu trả lời + trích dẫn
+\end{itemize}
+
+\end{document}

@@ -1,0 +1,11 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Toàn văn \texttt{data/labor-law/settings.yaml} (rút gọn nếu dài)
+    \item Cấu hình LLM: \texttt{qwen/qwen3-235b-a22b-2507}, \texttt{temperature=0}, \texttt{max\_tokens=4000}
+    \item Cấu hình embedding: \texttt{qwen3-embedding:4b}, \texttt{vector\_size: 2560}
+    \item Cấu hình chunking: \texttt{size: 4000}, \texttt{overlap: 0}
+    \item Biến môi trường: \texttt{OPENROUTER\_API\_KEY}
+    \item Lệnh triển khai: \texttt{graphrag index --root data/labor-law}
+\end{itemize}
+\end{document}
