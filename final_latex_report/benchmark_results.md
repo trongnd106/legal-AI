@@ -62,7 +62,7 @@ Mỗi loại có một search mode được thiết kế phù hợp nhất — b
 ### E1 — So sánh tổng thể trên toàn bộ bộ câu hỏi
 
 <!-- RUN: python tests/evaluation_suite.py -->
-<!-- RUN: python scripts/ragas_graphrag_benchmark.py --root data/labor-law --method local|global|basic|drift --questions scripts/qa_questions.json -->
+<!-- RUN: python scripts/ragas_graphrag_benchmark.py --root data/labor-law --method local|global|basic|drift --questions tests/data/qa_benchmark_questions.csv -->
 <!-- RUN: python scripts/baseline_zeroshot.py -->
 
 #### Bảng 4.2 — So sánh các phương pháp (n = ___ câu hỏi, 5 loại TK/TQ/TH/SL/HL)
@@ -343,7 +343,7 @@ Mỗi loại có một search mode được thiết kế phù hợp nhất — b
 
 ## Appendix — Bộ câu hỏi benchmark
 
-> File đầy đủ: `scripts/qa_benchmark_questions.json`
+> File đầy đủ: `tests/data/qa_benchmark_questions.csv` (68 câu, sinh bởi `scripts/generate_qa_benchmark_csv.py`)
 
 ### Danh sách câu hỏi (n = ___)
 
