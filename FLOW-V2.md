@@ -70,3 +70,10 @@ Run merge script in dry-run mode
 ```bash
 cd /home/trong/Documents/graphrag && python3 scripts/02_merge_structural_graph.py --dry-run
 ```
+
+
+Important
+```bash
+/home/trong/.cursor/projects/home-trong-Documents-graphrag/canvases/benchmark-strategy.canvas.tsx
+/home/trong/.cursor/projects/home-trong-Documents-graphrag/canvases/kg-improvements.canvas.tsx
+```
