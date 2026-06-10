@@ -1,0 +1,58 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\section{Kết luận}
+\label{section:5.1}
+
+\subsection{Các kết quả và đóng góp đạt được}
+\label{subsection:5.1.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Pipeline end-to-end: chuẩn bị dữ liệu $\rightarrow$ indexing GraphRAG $\rightarrow$ query $\rightarrow$ API/UI
+    \item Ontology hai lớp, chunking theo Điều, prompt tiếng Việt
+    \item Ứng dụng: API FastAPI, frontend Next.js, module phân tích HĐLĐ VR001--VR016
+    \item Bộ đánh giá và kết quả accuracy (điền sau khi chạy evaluation)
+\end{itemize}
+
+\subsection{Trả lời các mục tiêu đã đặt ra}
+\label{subsection:5.1.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Đánh giá từng mục tiêu Chương 1.3.1: ontology, pipeline, query layers, ứng dụng, benchmark
+\end{itemize}
+
+\section{Hạn chế}
+\label{section:5.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Corpus và domain coverage hẹp
+    \item Chi phí/thời gian indexing cao ($\sim$4000--5000 LLM calls)
+    \item Phụ thuộc LLM gateway + Ollama local
+    \item Graph tĩnh --- cập nhật văn bản cần re-index
+    \item Global Search latency cao; multi-hop/temporal/rule validator chưa tích hợp đầy đủ vào API
+\end{itemize}
+
+\section{Hướng phát triển}
+\label{section:5.3}
+
+\subsection{Mở rộng dữ liệu và miền ứng dụng}
+\label{subsection:5.3.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Thêm Nghị định/Thông tư lao động; mở rộng BHXH
+    \item Incremental indexing khi văn bản sửa đổi
+\end{itemize}
+
+\subsection{Cải tiến mô hình và phương pháp}
+\label{subsection:5.3.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Fine-tune embedding tiếng Việt pháp luật
+    \item Hoàn thiện Lớp 1.5 canonicalization
+    \item Tích hợp RAGAS vào CI/regression test; tích hợp multi-hop vào chat API
+\end{itemize}
+
+\subsection{Cải tiến triển khai thực tế}
+\label{subsection:5.3.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Streaming response; UX cho NLĐ/NSDLĐ
+    \item OCR HĐLĐ scan (\texttt{ocr\_pdf.py})
+    \item Neo4j store (\texttt{neo4j\_store.py}) cho query graph phức tạp hơn
+\end{itemize}
+
+\end{document}

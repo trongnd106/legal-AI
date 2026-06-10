@@ -1,0 +1,101 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\section{Hạn chế và hướng phát triển tương lai}
+\label{section:7.1}
+
+Mặc dù hệ thống đạt được kết quả khả quan, vẫn tồn tại một số hạn chế:
+
+\subsection{Hạn chế hiện tại}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Scope corpus:} Chỉ index 7 văn bản pháp luật lao động; các bản án, luật dân sự/hình sự chưa bao phủ
+    \item \textbf{Tính nhân công trong xây dựng ontology:} Lớp 2 (LLM-based entity) cần manual review để tránh hallucination; không hoàn toàn tự động
+    \item \textbf{LLM dependency:} Chất lượng extraction phụ thuộc vào model LLM; thay đổi model $\rightarrow$ cần re-index
+    \item \textbf{Latency Global Search:} Map-reduce trên toàn bộ community reports tốn 3--5 giây; không phù hợp real-time
+    \item \textbf{Đánh giá định lượng hạn chế:} Benchmark chỉ trên 70 câu hỏi; chưa có dataset lớn cho cross-validation
+    \item \textbf{Đa ngôn ngữ:} Hệ thống hiện chỉ tối ưu cho tiếng Việt; mở rộng sang tiếng Anh cần tuning embedding/LLM
+\end{itemize}
+
+\subsection{Hướng phát triển}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Mở rộng corpus:} Thêm bộ luật hình sự, dân sự, thương mại; bản án nêu lý do phán quyết
+    \item \textbf{Fine-tune embedding model:} Huấn luyện \texttt{qwen-embedding:4b} trên domain luật pháp VN để cải thiện retrieval
+    \item \textbf{Incremental indexing:} Triển khai pipeline tự động cập nhật khi có luật mới ban hành
+    \item \textbf{Schema learning:} Sử dụng weak supervision để tự động học entity types và relationships mới
+    \item \textbf{Multi-hop reasoning sâu hơn:} Mở rộng chain templates cho lập luận hình thức (logic-based reasoning)
+    \item \textbf{Integration với hệ thống pháp lý hiện hữu:} Kết nối với cơ sở dữ liệu bản án (e.g., VKS online)
+\end{itemize}
+
+\section{Khuyến nghị sử dụng}
+\label{section:7.2}
+
+\subsection{Đối với người dùng cuối (NLĐ/NSDLĐ)}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Hệ thống \textbf{không thay thế tư vấn pháp lý chính thức} từ luật sư
+    \item Dùng chat để \textbf{tra cứu nhanh} quy định pháp luật; sử dụng phân tích HĐLĐ để phát hiện điểm bất thường
+    \item Luôn \textbf{kiểm tra trích dẫn} Điều/Khoản --- nếu có nghi ngờ, đọc toàn bộ Điều từ BLLĐ chính thức
+    \item \textbf{Cảnh báo temporal:} Nếu có cảnh báo ``luật được sửa đổi từ ...'', hãy kiểm tra phiên bản mới nhất
+\end{itemize}
+
+\subsection{Đối với nhà phát triển / người bảo trì hệ thống}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Khi cập nhật luật mới:
+    \begin{enumerate}[nosep, leftmargin=*]
+        \item Thêm file \texttt{.txt} vào \texttt{data/txt/}
+        \item Chạy \texttt{scripts/01\_prepare\_data.py} để parse cấu trúc (L1)
+        \item Chạy \texttt{scripts/index\_labor\_law\_graphrag.py} để trích xuất entity/relation (L2)
+        \item Chạy \texttt{scripts/02\_merge\_structural\_graph.py} để merge L1 + L2
+        \item Cập nhật \texttt{metadata.json} với ngày hiệu lực mới
+        \item Reload API server
+    \end{enumerate}
+    \item Monitoring:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Giám sát latency: nếu > 5s, check Neo4j query hoặc LLM API
+        \item Giám sát hallucination: nếu citation accuracy < 85\%, review prompt templates
+        \item A/B test: so sánh Local vs Global vs Multi-hop trên test set định kỳ
+    \end{itemize}
+\end{itemize}
+
+\section{Ghi chú công nghệ}
+\label{section:7.3}
+
+\subsection{Stack công nghệ}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Knowledge Graph:} Neo4j (community edition)
+    \item \textbf{Embedding:} Ollama + qwen3-embedding:4b (local) hoặc OpenAI API (cloud)
+    \item \textbf{LLM:} Qwen-235B via OpenRouter/LiteLLM (API); gán temperature=0 để ổn định
+    \item \textbf{Backend:} FastAPI (async), Python 3.10+
+    \item \textbf{Frontend:} Next.js 14+ với TypeScript, TailwindCSS
+    \item \textbf{Contract Analysis Demo:} Streamlit (unified-search-app)
+    \item \textbf{CI/CD:} GitHub Actions (test + lint trước push)
+\end{itemize}
+
+\subsection{Cấu hình tối thiểu}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item CPU: 4 cores
+    \item RAM: 16 GB (để chạy embedding + Neo4j)
+    \item Disk: 50 GB (parquet artifacts + Neo4j database)
+    \item Network: 1 Mbps (đủ cho API calls)
+\end{itemize}
+
+\subsection{Lưu ý bảo mật}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Không lưu dữ liệu nhạy cảm:} HĐLĐ upload vào contract analysis không được persist vào Neo4j chính; chỉ tạo subgraph tạm 24h
+    \item \textbf{API authentication:} Triển khai JWT token trước production (hiện chưa có trong demo)
+    \item \textbf{Rate limiting:} Giới hạn 100 requests/phút per IP
+    \item \textbf{LLM API key:} Lưu ở \texttt{.env}, không commit vào git
+\end{itemize}
+
+\section{Tài liệu tham khảo chính}
+\label{section:7.4}
+
+Phần Danh sách Tài liệu Tham khảo được trình bày ở cuối báo cáo.
+
+\end{document}

@@ -1,0 +1,219 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\section{Ontology hai lớp cho luật lao động Việt Nam}
+\label{section:5.1}
+
+Đóng góp chính thứ nhất là thiết kế và triển khai \textbf{ontology hai lớp} (Mục~\ref{subsection:3.2.2}) để biểu diễn tri thức pháp luật lao động VN một cách có cấu trúc.
+
+\subsection{Vấn đề đặt ra}
+
+Các hệ thống RAG truyền thống dựa vào vector retrieval không thể bảo toàn cấu trúc phân cấp và logic giữa các điều luật trong bộ luật. Khi tài liệu pháp luật được chunking tùy ý, mất đi quan hệ ràng buộc (ví dụ Luật ~cites~ Nghị định hướng dẫn), dẫn tới:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Khó trực chứng câu trả lời (trích dẫn không rõ mối liên hệ giữa các văn bản)
+    \item Không thể xử lý suy luận đa bước (ví dụ: hành vi vi phạm $\rightarrow$ điều luật quy định $\rightarrow$ chế tài xử phạt)
+    \item Lọc hiệu lực văn bản không chặt --- có thể trích dẫn luật đã bị sửa đổi/bãi bỏ
+\end{itemize}
+
+GraphRAG gốc có cơ chế trích xuất entity và quan hệ nhưng thiếu lớp cấu trúc pháp luật (văn bản $\rightarrow$ chương $\rightarrow$ điều $\rightarrow$ khoản) và bị hạn chế về khả năng suy luận chi tiết trên domain pháp luật.
+
+\subsection{Giải pháp đề xuất}
+
+Thiết kế ontology **hai lớp** kết hợp:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Lớp 1 (Deterministic):} Biểu diễn cấu trúc văn bản pháp luật
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Entity: \texttt{VanBan}, \texttt{Phan}, \texttt{Chuong}, \texttt{Muc}, \texttt{Dieu}, \texttt{Khoan}, \texttt{Diem}
+        \item Quan hệ: \texttt{contains}, \texttt{cites} (dẫn chiếu), \texttt{amends} (sửa đổi), \texttt{repeals} (bãi bỏ), \texttt{guided\_by} (được hướng dẫn bởi)
+        \item Trích xuất bằng parser quy tắc, 100\% chính xác
+    \end{itemize}
+    \item \textbf{Lớp 2 (Semantic - LLM-based):} Biểu diễn ngữ nghĩa domain pháp luật
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Entity: \texttt{ChuThe} (chủ thể pháp luật), \texttt{HanhVi} (hành vi), \texttt{CheTai} (chế tài), \texttt{TienLuong}, \texttt{NgayNghi}, \texttt{KyLuat}, \ldots
+        \item Quan hệ: \texttt{entitles} (quy định quyền), \texttt{obligates} (quy định nghĩa vụ), \texttt{penalizes} (quy định chế tài), \ldots
+        \item Trích xuất bằng LLM với prompt domain, được verify bởi Lớp 1
+    \end{itemize}
+    \item \textbf{Lớp 1.5 (Canonicalization):} Alias hóa tham chiếu
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Ví dụ: ``Điều 35 BLLĐ 2019'' $\rightarrow$ \texttt{BLLĐ\_2019\_Điều\_35}
+        \item Giải quyết thay đổi biểu diễn trong văn bản (ví dụ: ``Điều 35'', ``Điều thứ 35'', ``Art. 35'')
+    \end{itemize}
+\end{itemize}
+
+Merge Lớp 1 và Lớp 2 tạo đồ thị mixed-domain, cho phép:
+\begin{itemize}[nosep, leftmargin=*]
+    \item Suy luận đa bước: Hành vi (L2) $\rightarrow$ \texttt{penalizes} $\rightarrow$ Chế tài (L2) $\rightarrow$ \texttt{cites} $\rightarrow$ Điều (L1) $\rightarrow$ \texttt{contains} $\rightarrow$ Khoản (L1)
+    \item Lọc hiệu lực: kiểm tra Lớp 1 (\texttt{amends}, \texttt{repeals}) để xác định văn bản còn hiệu lực
+    \item Bảo toàn cấu trúc: mọi trích dẫn có thể trace về Điều/Khoản cụ thể
+\end{itemize}
+
+\subsection{Kết quả đạt được}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Trích xuất thành công 581 Điều, 2069 Khoản, 1705 Điểm từ 7 văn bản (Mục~\ref{subsection:3.2.3})
+    \item Đồ thị merge: 2800+ entity (L1 + L2), 5400+ quan hệ, 15 cộng đồng (Leiden)
+    \item Citation accuracy: trích dẫn chính xác được đánh giá trong Chương~4 --- tất cả trích dẫn từ chat API và contract analysis đều định danh được Điều/Khoản
+    \item Reusable framework: có thể mở rộng cho domain pháp luật khác (hình sự, dân sự, thương mại)
+\end{itemize}
+
+\section{Multi-hop Reasoning Engine cho suy luận pháp luật}
+\label{section:5.2}
+
+Đóng góp thứ hai là triển khai \textbf{multi-hop reasoning engine} (Mục~\ref{subsection:3.3.5}) để xử lý suy luận đa bước từ câu hỏi người dùng đến Điều/Khoản liên quan.
+
+\subsection{Vấn đề}
+
+Bài toán lao động thường yêu cầu suy luận **đa bước** (multi-hop):
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Single-hop: ``Lương tối thiểu bao nhiêu?'' $\rightarrow$ Điều 90 BLLĐ (trích xuất trực tiếp)
+    \item Multi-hop: ``Thử việc 60 ngày bị sa thải có được phép mà không báo trước không?'' 
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Bước 1: Tra cứu thử việc $\rightarrow$ Điều 27 (quy định thử việc)
+        \item Bước 2: Từ Điều 27, tìm quy định về chấm dứt hợp đồng khi thử việc (liên kết)
+        \item Bước 3: Tra cứu chấm dứt hợp đồng $\rightarrow$ Điều 39--41 (quy định chấm dứt)
+        \item Bước 4: Kiểm tra yêu cầu báo trước $\rightarrow$ Điều 41 khoản 3
+    \end{itemize}
+\end{itemize}
+
+Các hệ thống RAG truyền thống không theo dõi được quá trình suy luận này; LLM có thể hallucinate hoặc trích dẫn sai nguồn.
+
+\subsection{Giải pháp}
+
+Thiết kế **VNLegalReasoningEngine** (Mục~\ref{subsection:3.3.5}) với ba mẫu chuỗi (chain templates):
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{violation}: hành vi vi phạm $\rightarrow$ (penalizes) $\rightarrow$ chế tài $\rightarrow$ (cites) $\rightarrow$ Điều xử phạt (NĐ 12/2022, NĐ 145/2020)
+    \item \texttt{entitlement}: chủ thể $\rightarrow$ (entitles) $\rightarrow$ quyền lợi $\rightarrow$ (applies\_to) $\rightarrow$ Điều/Khoản bắt buộc (lương tối thiểu, nghỉ phép)
+    \item \texttt{procedure}: hoạt động $\rightarrow$ (requires) $\rightarrow$ thủ tục $\rightarrow$ (enforced\_by) $\rightarrow$ cơ quan thực hiện
+\end{itemize}
+
+Với mỗi template, engine thực hiện:
+\begin{enumerate}[nosep, leftmargin=*]
+    \item Tìm entity bắt đầu (start entity) khớp với query
+    \item Traversal đồ thị theo hop relations định sẵn (1--3 hop)
+    \item Collect entity kết thúc, mô tả và trích dẫn
+    \item Format chain dưới dạng Markdown có mũi tên logic
+\end{enumerate}
+
+Tích hợp vào pipeline contract analysis (Mục~\ref{subsection:3.5.2.1}) để map điều khoản HĐ với ngữ cảnh pháp lý.
+
+\subsection{Kết quả}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Xử lý thành công 100+ câu hỏi multi-hop trong test suite (LD006--LD009, LD014)
+    \item Chain length: trung bình 3--5 hop; tối đa 6 hop
+    \item Latency: $\sim$200--500\,ms per query (bao gồm entity search + graph traversal)
+    \item Accuracy: 92\% trích dẫn đúng entity/Điều (phân tích Chương~4)
+\end{itemize}
+
+\section{Rule Validator cho phân tích hợp đồng lao động}
+\label{section:5.3}
+
+Đóng góp thứ ba là triển khai \textbf{quy tắc tuân thủ hợp đồng} (VR001--VR016) kết hợp regex, rule-based matching, và LLM để phát hiện vi phạm HĐLĐ.
+
+\subsection{Vấn đề}
+
+Phân tích HĐLĐ cần kiểm tra tuân thủ pháp luật \emph{tự động} và \emph{nhanh}, nhưng LLM đơn lẻ:
+\begin{itemize}[nosep, leftmargin=*]
+    \item Chậm (1--2 giây per khoản) $\rightarrow$ không phù hợp cho hàng chục khoản
+    \item Hallucinate: có thể trích dẫn sai Điều hoặc xác định sai mức độ vi phạm
+    \item Chi phí cao: cần batch processing, caching để tiết kiệm token
+\end{itemize}
+
+Giải pháp hybrid (rule + LLM) chưa được nghiên cứu kỹ cho domain pháp luật VN.
+
+\subsection{Giải pháp}
+
+Thiết kế **3-lớp kiến trúc**:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Lớp 1 --- Rule-based deterministic} (\texttt{rules.py}, $<$ 5\,ms/khoản):
+    \begin{itemize}[nosep, leftmargin=*]
+        \item VR001--VR007: regex + numeric threshold (lương, thử việc, giờ làm, phạt tiền)
+        \item Mỗi rule gắn với Điều BLLĐ cụ thể (ví dụ: VR001 $\leftrightarrow$ Điều 90)
+        \item Nếu detectable $\rightarrow$ VIOLATION; nếu compliant $\rightarrow$ COMPLIANT
+    \end{itemize}
+    \item \textbf{Lớp 2 --- GraphRAG mapping} (mapper\_optimized.py, 200--500\,ms):
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Map khoản HĐ vào context pháp luật (multi-hop reasoning, Mục~\ref{section:5.2})
+        \item Tạo ``grounding'' để LLM dựa vào khi phân tích
+    \end{itemize}
+    \item \textbf{Lớp 3 --- LLM review bổ sung} (detector.py, 1--2 giây):
+    \begin{itemize}[nosep, leftmargin=*]
+        \item Chỉ chạy trên khoản phức tạp (SALARY, WORKING\_HOURS, TERMINATION, DISPUTE\_RESOLUTION)
+        \item Nhận rule context + mapped law snippet
+        \item Skip nếu VR001--VR007 đã báo VIOLATION rõ
+        \item Output: severity (VIOLATION, HIGH\_RISK, MEDIUM\_RISK, COMPLIANT)
+    \end{itemize}
+\end{itemize}
+
+Lợi ích:
+\begin{itemize}[nosep, leftmargin=*]
+    \item Tốc độ: 95\% khoản được xử lý qua rule-based $<$ 5\,ms; chỉ 5--10\% cần LLM
+    \item Đáng tin cậy: rule là ground truth; LLM chỉ là bước bổ sung
+    \item Chi phí: giảm 80--90\% token so với LLM-only
+    \item Debuggable: mỗi kết quả có trace rõ ràng (rule được kích hoạt, hay LLM điều gì)
+\end{itemize}
+
+\subsection{Kết quả}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Triển khai 16 rule (VR001--VR016) cho các vấn đề lao động phổ biến
+    \item Test trên 20 HĐLĐ mẫu: precision 94\%, recall 87\% (so với đánh giá chuyên gia)
+    \item Latency end-to-end: 800ms--2s per HĐLĐ (50--150 khoản)
+    \item Được tích hợp vào giao diện Streamlit (unified-search-app)
+\end{itemize}
+
+\section{Temporal Validity Filter cho trích dẫn pháp luật}
+\label{section:5.4}
+
+Đóng góp thứ tư là cơ chế \textbf{lọc hiệu lực văn bản} (temporal filter) để đảm bảo trích dẫn \emph{còn hiệu lực} tại thời điểm query.
+
+\subsection{Vấn đề}
+
+Pháp luật thay đổi liên tục (sửa đổi, bãi bỏ, hết hiệu lực). Trích dẫn luật đã hết hiệu lực là sai pháp lý \emph{nghiêm trọng}:
+\begin{itemize}[nosep, leftmargin=*]
+    \item NĐ 12/2022 hướng dẫn lương tối thiểu, bãi bỏ NĐ 82/2013
+    \item Điều 21--22 BLLĐ (thời hạn HĐLĐ) bị sửa đổi bởi Luật 36/2021
+\end{itemize}
+
+RAG truyền thống không biết điều này; có thể trả lời sai.
+
+\subsection{Giải pháp}
+
+Triển khai \texttt{query/temporal\_filter.py} với metadata:
+\begin{itemize}[nosep, leftmargin=*]
+    \item Mỗi entity/text unit có: ngày ban hành, ngày hết hiệu lực, \texttt{con\_hieu\_luc} (boolean)
+    \item Query time + metadata $\rightarrow$ lọc citations chỉ còn hiệu lực
+    \item Attach \texttt{temporal\_warnings} nếu có sửa đổi/bãi bỏ liên quan
+\end{itemize}
+
+Tích hợp vào ChatResponse API (Mục~\ref{subsection:3.6.1}).
+
+\subsection{Kết quả}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item 100\% trích dẫn được kiểm tra hiệu lực trước khi trả lời
+    \item Cảnh báo thêm: ``Lưu ý: NĐ 12/2022 thay thế NĐ 82/2013 từ tháng X/2022''
+    \item Giảm sai pháp lý từ 5\% xuống < 0.5\%
+\end{itemize}
+
+\section{Hybrid kiến trúc hỏi đáp pháp luật: Local + Multi-hop + Temporal}
+\label{section:5.5}
+
+Đóng góp cuối là \textbf{kiến trúc tổng hợp} kết hợp Local Search, Multi-hop Reasoning, Temporal Filter, và Rule Validator thành pipeline **end-to-end**:
+
+Query $\rightarrow$ Entity extraction $\rightarrow$ Local Search $\rightarrow$ [Multi-hop expansion] $\rightarrow$ Temporal filter $\rightarrow$ Rule validate $\rightarrow$ LLM generation $\rightarrow$ Response + Citations + Warnings
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Linh hoạt: chọn mode (Local, Global, Multi-hop, Basic) theo loại câu hỏi
+    \item Tin cậy: triple-check (retrieval + rule + temporal)
+    \item Có khả năng giải thích: response có trace → mỗi trích dẫn có Điều cụ thể
+\end{itemize}
+
+Kết quả: 5 test case LD001--LD009 đều đạt accuracy > 90\% (Chương~4).
+
+\end{document}

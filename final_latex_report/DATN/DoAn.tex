@@ -1,0 +1,295 @@
+\documentclass[a4paper,13pt,3p,twoside]{report}
+\usepackage{scrextend}
+\changefontsizes{13pt}
+\usepackage[utf8]{vietnam}
+\usepackage[top=2cm, bottom=2cm, left=3.5cm, right=2.5cm]{geometry}
+
+\usepackage{graphicx}
+\usepackage{fancybox}
+\usepackage{indentfirst}
+\usepackage{amsthm}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{times}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{subfiles}
+\usepackage{titlesec}
+\usepackage{titletoc}
+\usepackage{chngcntr}
+\usepackage{pdflscape}
+\usepackage{afterpage}
+\usepackage[ruled,vlined]{algorithm2e}
+\usepackage{capt-of}
+\usepackage{multirow}
+\usepackage{fancyhdr}
+\usepackage{appendix}
+
+\usepackage[font=small,labelfont=bf]{caption}
+
+\usepackage{listings}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{xurl}
+
+\usepackage[nonumberlist, nopostdot, nogroupskip, acronym]{glossaries}
+\usepackage{glossary-superragged}
+\setglossarystyle{superraggedheaderborder}
+\usepackage{setspace}
+\usepackage{parskip}
+
+\usepackage{tocbasic}
+
+% ===================================================
+
+\renewcommand{\bibname}{Danh_sach_tai_lieu_tham_khao}
+\usepackage[backend=bibtex,style=ieee]{biblatex}
+
+\renewcommand\appendixname{PHỤ LỤC}
+\renewcommand\appendixpagename{PHỤ LỤC}
+\renewcommand\appendixtocname{PHỤ LỤC}
+
+\addbibresource{Danh_sach_tai_lieu_tham_khao.bib}
+
+\include{lstlisting}
+
+\input{Tu_viet_tat}
+
+% ===================================================
+
+\fancypagestyle{plain}{%
+\fancyhf{}
+\fancyfoot[RO,RE]{\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}}
+
+\setlength{\headheight}{10pt}
+
+\def \TITLE{ĐỒ ÁN TỐT NGHIỆP}
+\def \AUTHOR{NGUYỄN ĐẠT TRỌNG}
+
+% ===================================================
+\titleformat{\chapter}[hang]{\centering\bfseries}{CHƯƠNG \thechapter.\ }{0pt}{}[]
+
+\titleformat
+    {\chapter}
+    [hang]
+    {\centering\bfseries}
+    {CHƯƠNG \thechapter.\ }
+    {0pt}
+    {}
+    []
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titleformat
+    {\section}
+    [hang]
+    {\bfseries}
+    {\thechapter.\arabic{section}\ \ \ \ }
+    {0pt}
+    {}
+    []
+\titlespacing{\section}{0pt}{\parskip}{0.5\parskip}
+
+\titleformat
+    {\subsection}
+    [hang]
+    {\bfseries}
+    {\thechapter.\arabic{section}.\arabic{subsection}\ \ \ \ }
+    {0pt}
+    {}
+    []
+\titlespacing{\subsection}{30pt}{\parskip}{0.5\parskip}
+
+\renewcommand\thesubsubsection{\alph{subsubsection}}
+\titleformat
+    {\subsubsection}
+    [hang]
+    {\bfseries}
+    {\alph{subsubsection}, \ }
+    {0pt}
+    {}
+    []
+\titlespacing{\subsubsection}{50pt}{\parskip}{0.5\parskip}
+
+% ===================================================
+\usepackage{hyperref}
+\hypersetup{pdfborder = {0 0 0}}
+\hypersetup{pdftitle={\TITLE},
+	pdfauthor={\AUTHOR}}
+
+\usepackage[all]{hypcap}
+
+\graphicspath{{figures/}{../figures/}}
+
+\counterwithin{figure}{chapter}
+
+\title{\bf \TITLE}
+\author{\AUTHOR}
+
+\setcounter{secnumdepth}{3}
+
+\theoremstyle{definition}
+\newtheorem{example}{Ví dụ}[chapter]
+
+\onehalfspacing
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{15pt}
+
+% =========================== BODY ===============
+\begin{document}
+
+\subfile{Bia}
+\subfile{Bia_lot}
+
+% ===================================================
+\pagenumbering{roman}
+
+\newpage
+\pagenumbering{gobble}
+\subfile{Chuong/0_2_Loi_cam_on.tex}
+
+\newpage
+\pagenumbering{gobble}
+\subfile{Chuong/0_3_Tom_tat_noi_dung.tex}
+
+\newpage
+\pagenumbering{gobble}
+\subfile{Chuong/0_4_Tom_tat_noi_dung_English.tex}
+
+% ===================================================
+\newpage
+\pagenumbering{roman}
+\renewcommand*\contentsname{MỤC LỤC}
+
+\titlecontents{chapter}
+    [0.0cm]
+    {\bfseries\vspace{0.3cm}}
+    {{\bfseries{\scshape}
+    CHƯƠNG \thecontentslabel.\ }}
+    {}
+    {\titlerule*[0.3pc]{.}\contentspage}
+
+\titlecontents{section}
+    [0.0cm]
+    {\vspace{0.3cm}}
+    {\thecontentslabel \ }
+    {}
+    {\titlerule*[0.3pc]{.}\contentspage}
+
+\titlecontents{subsection}
+    [1.0cm]
+    {\vspace{0.3cm}}
+    {\thecontentslabel \ }
+    {}
+    {\titlerule*[0.3pc]{.}\contentspage}
+
+\addtocontents{toc}{\protect\thispagestyle{empty}}
+\tableofcontents
+\thispagestyle{empty}
+\cleardoublepage
+
+\renewcommand{\listfigurename}{DANH MỤC HÌNH VẼ}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Hình~\oldnumberline}
+\listoffigures}
+\newpage
+
+\renewcommand{\listtablename}{DANH MỤC BẢNG BIỂU}
+{\let\oldnumberline\numberline
+\renewcommand{\numberline}{Bảng~\oldnumberline}
+\listoftables}
+
+\glsaddall
+\renewcommand*{\glossaryname}{Danh sách thuật ngữ}
+\renewcommand*{\acronymname}{DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT}
+\renewcommand*{\entryname}{Thuật ngữ}
+\renewcommand*{\descriptionname}{Ý nghĩa}
+\printnoidxglossaries
+
+% ===================================================
+
+\newpage
+\pagenumbering{arabic}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[RE, LO]{\leftmark}
+\fancyfoot[RE, LO]{\thepage}
+
+\chapter{GIỚI THIỆU ĐỀ TÀI}
+\label{chapter:Introduction}
+\subfile{Chuong/1_Gioi_thieu.tex}
+
+\newpage
+\chapter{NỀN TẢNG LÝ THUYẾT}
+\label{chapter:Theory}
+\subfile{Chuong/2_Khao_sat.tex}
+
+\newpage
+\chapter{PHƯƠNG PHÁP ĐỀ XUẤT}
+\label{chapter:Methodology}
+\subfile{Chuong/3_Cong_nghe.tex}
+
+\newpage
+\chapter{ĐÁNH GIÁ THỰC NGHIỆM}
+\label{chapter:Experiment}
+\subfile{Chuong/4_Ket_qua_thuc_nghiem.tex}
+
+\newpage
+\chapter{CÁC GIẢI PHÁP ĐÓNG GÓP}
+\label{chapter:Contributions}
+\subfile{Chuong/5_Giai_phap_dong_gop.tex}
+
+\newpage
+\chapter{KẾT LUẬN}
+\label{chapter:conclusion}
+\subfile{Chuong/6_Ket_luan.tex}
+
+\newpage
+\chapter{LƯU Ý VÀ KHUYẾN NGHỊ}
+\label{chapter:recommendations}
+\subfile{Chuong/7_Luu_y_tai_lieu_tham_khao.tex}
+
+% ===================================================
+\newpage
+\renewcommand\bibname{TÀI LIỆU THAM KHẢO}
+\printbibliography
+\phantomsection\addcontentsline{toc}{chapter}{TÀI LIỆU THAM KHẢO}
+
+\appendixpage
+\appendices
+\addappheadtotoc
+
+\titleformat{\chapter}[hang]{\centering\bfseries}{ \thechapter.\ }{0pt}{}[]
+\titlespacing*{\chapter}{0pt}{-20pt}{20pt}
+
+\titlecontents{chapter}
+    [0.0cm]
+    {\bfseries\vspace{0.3cm}}
+    {{\bfseries{\scshape} \thecontentslabel.\ }}
+    {}
+    {\titlerule*[0.3pc]{.}\contentspage}
+
+\chapter{Cấu hình hệ thống}
+\subfile{Chuong/Phu_luc_A.tex}
+
+\newpage
+\chapter{Prompt templates}
+\subfile{Chuong/Phu_luc_B.tex}
+
+\newpage
+\chapter{Cấu trúc thư mục dự án}
+\subfile{Chuong/Phu_luc_C.tex}
+
+\newpage
+\chapter{Bộ test cases đầy đủ}
+\subfile{Chuong/Phu_luc_D.tex}
+
+\newpage
+\chapter{Case study hợp đồng lao động}
+\subfile{Chuong/Phu_luc_E.tex}
+
+\end{document}

@@ -1,0 +1,77 @@
+\documentclass[../DoAn.tex]{subfiles}
+\begin{document}
+
+\section{Đặt vấn đề}
+\label{section:1.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Bối cảnh chuyển đổi số và nhu cầu tra cứu pháp luật lao động của NLĐ, NSDLĐ, luật sư nội bộ
+    \item Đặc thù văn bản pháp luật VN: phân cấp Phần $\rightarrow$ Chương $\rightarrow$ Mục $\rightarrow$ Điều $\rightarrow$ Khoản $\rightarrow$ Điểm; dẫn chiếu chéo BLLĐ $\leftrightarrow$ Nghị định $\leftrightarrow$ Thông tư
+    \item Quy mô corpus: 581 Điều, 2069 Khoản trên 7 văn bản pháp luật lao động
+    \item Thách thức câu hỏi single-hop, multi-hop và kiểm tra điều khoản HĐLĐ
+    \item Hạn chế chatbot LLM thuần: hallucination, trích sai Điều, không kiểm soát hiệu lực văn bản
+\end{itemize}
+
+\section{Các giải pháp hiện tại và hạn chế}
+\label{section:1.2}
+
+\subsection{Phương pháp tra cứu pháp luật truyền thống}
+\label{subsection:1.2.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Tra cứu từ khóa trên cổng thông tin điện tử, thư viện pháp luật
+    \item BM25/TF-IDF, Elasticsearch: mạnh keyword, yếu ngữ nghĩa và quan hệ chéo giữa văn bản
+    \item Không tổng hợp, không suy luận chuỗi quy phạm $\rightarrow$ chế tài
+\end{itemize}
+
+\subsection{Phương pháp dựa trên LLM và RAG truyền thống}
+\label{subsection:1.2.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item ChatGPT/Gemini tra cứu chung: thiếu corpus đã index, rủi ro điều luật lỗi thời
+    \item Naive RAG (chunk + embedding): cắt giữa Khoản, mất ngữ cảnh pháp lý
+    \item Vector search không nắm quan hệ \texttt{obligates}, \texttt{penalizes}, \texttt{cites}
+    \item Khó trả lời câu hỏi tổng hợp (ví dụ: toàn bộ quyền NLĐ khi nghỉ việc)
+\end{itemize}
+
+\subsection{Phương pháp dựa trên đồ thị tri thức và GraphRAG}
+\label{subsection:1.2.3}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Knowledge Graph thủ công: chính xác nhưng tốn công, khó mở rộng khi văn bản sửa đổi
+    \item Microsoft GraphRAG: tự động trích entity/relationship, community detection, Local + Global Search
+    \item Hạn chế khi áp dụng trực tiếp: schema mặc định không phù hợp domain luật lao động; thiếu lớp cấu trúc văn bản và kiểm chứng quy tắc HĐLĐ
+\end{itemize}
+
+\section{Mục tiêu và định hướng giải pháp}
+\label{section:1.3}
+
+\subsection{Mục tiêu của đồ án}
+\label{subsection:1.3.1}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Tổng quát:} Xây dựng Trợ lý Ảo Luật Lao Động VN dựa trên GraphRAG, hỗ trợ hỏi đáp có trích dẫn và phân tích HĐLĐ
+    \item Thiết kế ontology hai lớp cho corpus luật lao động
+    \item Xây dựng pipeline chuẩn bị dữ liệu deterministic (Lớp 1) + indexing GraphRAG (Lớp 2)
+    \item Triển khai Local Search, Global Search, multi-hop, temporal filter, rule validator
+    \item Phát triển API FastAPI + frontend Next.js; module phân tích HĐLĐ (VR001--VR016)
+    \item Đánh giá trên bộ benchmark \texttt{evaluation\_suite.py}
+\end{itemize}
+
+\subsection{Định hướng giải pháp}
+\label{subsection:1.3.2}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Kết hợp truy xuất có cấu trúc (đồ thị pháp luật) và truy xuất ngữ nghĩa (embedding)
+    \item Lớp 1 build bằng rule (không LLM) $\rightarrow$ cấu trúc Điều/Khoản chính xác
+    \item Lớp 2 extract bằng LLM với prompt domain tiếng Việt
+    \item Merge graph $\rightarrow$ multi-hop trên quan hệ \texttt{entitles}, \texttt{penalizes}, \texttt{cites}, \ldots
+    \item Kiểm soát đầu ra: trích dẫn Điều, lọc văn bản hết hiệu lực, rules cứng cho HĐLĐ
+\end{itemize}
+
+\section{Đóng góp chính}
+\label{section:1.4}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Ontology luật lao động hai lớp (\texttt{settings.yaml}, \texttt{02\_ontology\_design.md})
+    \item Chunking theo Điều, metadata \texttt{norm\_type} (\texttt{01\_prepare\_data.py})
+    \item Prompt extraction + community report tiếng Việt
+    \item Lớp query nâng cao: multi-hop, temporal filter, rule validator
+    \item Ứng dụng thực tế: API, frontend, contract analysis
+    \item Bộ đánh giá \texttt{evaluation\_suite.py}
+\end{itemize}
+
+\end{document}
