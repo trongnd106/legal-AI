@@ -203,7 +203,7 @@ export function ChatPanel({
                     {msg.markdown ? (
                       <MarkdownMessage
                         content={msg.markdown}
-                        dataCitations={msg.dataCitations}
+                        dataCitations={msg.dataCitations ?? []}
                       />
                     ) : msg.html ? (
                       <div dangerouslySetInnerHTML={{ __html: msg.html }} />

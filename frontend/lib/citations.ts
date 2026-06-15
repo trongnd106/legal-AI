@@ -10,7 +10,7 @@ export type ContentPart =
 export function buildCitationMap(
   items: DataCitationItem[],
 ): Map<string, DataCitationItem> {
-  return new Map(items.map((item) => [item.key, item]));
+  return new Map((items ?? []).map((item) => [item.key, item]));
 }
 
 export function parseCitationGroups(
