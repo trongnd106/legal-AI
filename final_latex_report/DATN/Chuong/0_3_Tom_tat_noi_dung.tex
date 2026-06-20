@@ -4,17 +4,24 @@
 \begin{center}
     \Large{\textbf{TÓM TẮT NỘI DUNG ĐỒ ÁN}}\\
 \end{center}
-\vspace{1cm}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Vấn đề:} Tra cứu luật lao động đa văn bản (BLLĐ, NĐ, TT) cần suy luận nhiều Điều, trích dẫn chính xác, tránh ảo giác (hallucination)
-    \item \textbf{Giải pháp:} Trợ lý ảo trên Microsoft GraphRAG với ontology hai lớp, Local/Global Search, multi-hop reasoning, lọc hiệu lực văn bản, phân tích HĐLĐ
-    \item \textbf{Kết quả:} Pipeline end-to-end trên 581 Điều / 7 văn bản; benchmark keyword/citation accuracy; demo API + frontend + contract analysis
-\end{itemize}
+% \vspace{0.5cm}
+
+% \noindent\textbf{Tên đề tài:} Trợ lý ảo luật lao động Việt Nam
+
+\vspace{0.8cm}
+
+Đồ án nghiên cứu và triển khai phương pháp hỏi đáp tăng cường truy xuất dựa trên đồ thị hay còn gọi là \gls{GraphRAG} nhằm hỗ trợ tra cứu, phân tích và tổng hợp pháp luật lao động Việt Nam. Trước nhu cầu của \gls{NLD}, người sử dụng lao động (NSDLĐ) và bộ phận nhân sự--pháp chế, các công cụ tra cứu truyền thống yếu ở hỏi đáp tự nhiên và suy luận chéo văn bản; Chatbot \gls{LLM} tổng quát dễ trích dẫn sai hoặc lỗi thời. Đồ án xây dựng hệ thống \textbf{Trợ lý ảo luật lao động Việt Nam} trên nền Microsoft GraphRAG, kết hợp nguyên lý Retrieval-Augmented Generation, để tra cứu pháp luật có trích dẫn và rà soát sơ bộ \gls{HDLD}.
+
+Trên cơ sở \gls{KG} mô tả cấu trúc phân cấp văn bản và quan hệ giữa các quy phạm, đồ án thiết kế ontology hai lớp: lớp cấu trúc phân tích phân cấp Điều--Khoản--Điểm và thông tin hiệu lực; lớp ngữ nghĩa trích xuất thực thể và quan hệ domain. Corpus gồm 7 văn bản pháp luật lao động (581 Điều). Hệ thống hỗ trợ tra cứu đơn điều, suy luận nhiều bước giữa BLLĐ và Nghị định hướng dẫn, lọc văn bản hết hiệu lực và phân tích tuân thủ HĐLĐ; triển khai dưới dạng ứng dụng web hỏi đáp và rà soát hợp đồng. Hệ thống chỉ mang tính hỗ trợ, không thay thế tư vấn pháp lý chính thức.
+
+Kết quả thực nghiệm cho thấy phương pháp dựa trên đồ thị vượt trội so với LLM thuần và RAG vector truyền thống trên các câu hỏi pháp luật phức tạp. Phân tích HĐLĐ mẫu phát hiện vi phạm nghỉ phép dưới mức tối thiểu theo BLLĐ 2019. Đồ án góp phần chứng minh tính khả thi của Legal GraphRAG tiếng Việt; hạn chế chính là phạm vi corpus và chưa có xác thực bởi chuyên gia pháp lý.
+
+\vspace{1.5cm}
+
 \begin{flushright}
-Sinh viên thực hiện\\
-\begin{tabular}{@{}c@{}}
-\textit{(Ký và ghi rõ họ tên)}
-\end{tabular}
+\textbf{Sinh viên thực hiện}\\[0.1cm]
+\textit{(Ký và ghi rõ họ tên)}\\[2.5cm]
+\textbf{Nguyễn Đạt Trọng}
 \end{flushright}
 
 \end{document}

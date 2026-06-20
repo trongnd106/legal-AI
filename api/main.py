@@ -36,6 +36,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def keep_alive_header(request, call_next):
+    """Trả header Keep-Alive tường minh để Next.js proxy biết TTL socket."""
+    response = await call_next(request)
+    response.headers["Connection"] = "keep-alive"
+    response.headers["Keep-Alive"] = "timeout=75"
+    return response
+
 app.include_router(chat.router)
 app.include_router(contract.router)
 app.include_router(documents.router)
@@ -59,4 +68,7 @@ if __name__ == "__main__":
         port=8000,
         reload=False,
         loop="asyncio",
+        # Next.js proxy giữ socket trong pool; nếu uvicorn đóng socket sớm hơn
+        # Node.js tái sử dụng nó → ECONNRESET. 75s > thời gian đọc câu trả lời.
+        timeout_keep_alive=75,
     )

@@ -34,9 +34,9 @@
 \usepackage{subcaption}
 \usepackage{xurl}
 
-\usepackage[nonumberlist, nopostdot, nogroupskip, acronym]{glossaries}
-\usepackage{glossary-superragged}
-\setglossarystyle{superraggedheaderborder}
+\usepackage[nonumberlist, nopostdot, nogroupskip, acronym, sort=def]{glossaries}
+\setglossarystyle{long}
+\setlength{\glsdescwidth}{0.62\textwidth}
 \usepackage{setspace}
 \usepackage{parskip}
 
@@ -203,11 +203,8 @@
 \listoftables}
 
 \glsaddall
-\renewcommand*{\glossaryname}{Danh sách thuật ngữ}
 \renewcommand*{\acronymname}{DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT}
-\renewcommand*{\entryname}{Thuật ngữ}
-\renewcommand*{\descriptionname}{Ý nghĩa}
-\printnoidxglossaries
+\printnoidxglossary[type=\acronymtype,title={DANH MỤC THUẬT NGỮ VÀ TỪ VIẾT TẮT}]
 
 % ===================================================
 
@@ -248,10 +245,10 @@
 \label{chapter:conclusion}
 \subfile{Chuong/6_Ket_luan.tex}
 
-\newpage
-\chapter{LƯU Ý VÀ KHUYẾN NGHỊ}
-\label{chapter:recommendations}
-\subfile{Chuong/7_Luu_y_tai_lieu_tham_khao.tex}
+% \newpage
+% \chapter{LƯU Ý VÀ KHUYẾN NGHỊ}
+% \label{chapter:recommendations}
+% \subfile{Chuong/7_Luu_y_tai_lieu_tham_khao.tex}
 
 % ===================================================
 \newpage

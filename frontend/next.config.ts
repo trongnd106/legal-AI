@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Tăng timeout proxy lên 120s (chat request có thể mất 60-90s do GraphRAG)
+  // Giá trị mặc định quá ngắn gây ECONNRESET khi backend xử lý lâu.
+  experimental: {
+    proxyTimeout: 120_000,
+  },
 };
 
 export default nextConfig;

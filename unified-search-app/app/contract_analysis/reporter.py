@@ -24,6 +24,43 @@ _EMOJI = {
 
 _SEVERITY_ORDER = ["VIOLATION", "HIGH_RISK", "MEDIUM_RISK", "NOT_COVERED", "COMPLIANT"]
 
+_SEVERITY_VI: dict[str, str] = {
+    "VIOLATION":   "Vi phạm pháp luật",
+    "HIGH_RISK":   "Rủi ro cao",
+    "MEDIUM_RISK": "Cần lưu ý",
+    "COMPLIANT":   "Tuân thủ",
+    "NOT_COVERED": "Chưa xác định",
+}
+
+_CATEGORY_VI: dict[str, str] = {
+    "PARTY_INFO":         "Thông tin các bên",
+    "CONTRACT_TYPE":      "Loại hợp đồng",
+    "CONTRACT_DURATION":  "Thời hạn hợp đồng",
+    "JOB_DESCRIPTION":    "Mô tả công việc",
+    "WORKPLACE":          "Địa điểm làm việc",
+    "WORKING_HOURS":      "Thời giờ làm việc và nghỉ ngơi",
+    "SALARY":             "Tiền lương",
+    "SOCIAL_INSURANCE":   "Bảo hiểm xã hội, y tế",
+    "TRAINING":           "Đào tạo và bồi dưỡng",
+    "PROBATION":          "Thử việc",
+    "ALLOWANCES":         "Phụ cấp và trợ cấp",
+    "BONUS":              "Thưởng",
+    "LEAVE":              "Nghỉ phép",
+    "TERMINATION":        "Chấm dứt hợp đồng",
+    "CONFIDENTIALITY":    "Bảo mật thông tin",
+    "NON_COMPETE":        "Không cạnh tranh",
+    "INTELLECTUAL_PROP":  "Sở hữu trí tuệ",
+    "DISPUTE_RESOLUTION": "Giải quyết tranh chấp",
+    "PENALTY_CLAUSE":     "Điều khoản phạt vi phạm",
+    "UNILATERAL_TERMS":   "Điều khoản đơn phương",
+    "WAIVER_CLAUSE":      "Từ bỏ quyền lợi",
+    "UNKNOWN":            "Điều khoản khác",
+}
+
+
+def _vi_category(key: str) -> str:
+    return _CATEGORY_VI.get(key, key)
+
 
 def calculate_compliance_score(result: ContractAnalysisResult) -> float:
     """100 điểm trừ theo mức độ vấn đề và điều khoản thiếu."""
@@ -85,93 +122,91 @@ def build_markdown_report(result: ContractAnalysisResult) -> str:
 
     lines: list[str] = ["## Báo cáo phân tích hợp đồng lao động", ""]
 
-    # ── Phần 0: Executive Summary ─────────────────────────────────────────
-    badge = _score_badge(result.compliance_score)
+    # ── Phần 0: Tóm tắt ──────────────────────────────────────────────────
     lines += [
-        "### 0. Tóm tắt nhanh",
+        "### Tóm tắt",
         "",
-        f"| Chỉ số | Giá trị |",
-        f"|--------|---------|",
-        f"| Điểm tuân thủ (ước lượng) | **{result.compliance_score:.1f}/100** {badge} |",
-        f"| Độ tin cậy HĐLĐ | {m.labor_keyword_score:.0%} |",
-        f"| File | {m.filename} — {m.extraction_method} |",
-        f"| Số điều khoản | {len(result.clauses)} |",
-        f"| Vi phạm (🔴) | {by_sev.get('VIOLATION', 0)} |",
-        f"| Rủi ro cao (🟠) | {by_sev.get('HIGH_RISK', 0)} |",
-        f"| Rủi ro trung bình (🟡) | {by_sev.get('MEDIUM_RISK', 0)} |",
-        f"| Điều khoản bắt buộc thiếu | {len(result.missing_mandatory)} |",
+        "| Thông tin | Chi tiết |",
+        "|-----------|---------|",
+        f"| Tên file | {m.filename} |",
+        f"| Số điều khoản phân tích | {len(result.clauses)} |",
+        f"| Vi phạm pháp luật 🔴 | {by_sev.get('VIOLATION', 0)} vấn đề |",
+        f"| Rủi ro cao 🟠 | {by_sev.get('HIGH_RISK', 0)} vấn đề |",
+        f"| Cần lưu ý 🟡 | {by_sev.get('MEDIUM_RISK', 0)} vấn đề |",
+        f"| Điều khoản bắt buộc còn thiếu | {len(result.missing_mandatory)} mục |",
         "",
     ]
 
-    if result.analysis_session_id:
-        lines.append(f"> Phiên phân tích (Neo4j): `{result.analysis_session_id}`\n")
-
     if m.contract_type == "unknown":
         lines += [
-            "> ⚠️ Văn bản có thể **không phải** hợp đồng lao động điển hình "
-            "(ít từ khóa). Kết quả chỉ mang tính tham khảo.",
+            "> ⚠️ **Lưu ý:** Văn bản tải lên có thể không phải hợp đồng lao động "
+            "điển hình. Kết quả phân tích chỉ mang tính tham khảo.",
             "",
         ]
 
     # ── Phần 1: Hành động ưu tiên ────────────────────────────────────────
     priority = _priority_actions(all_issues)
-    lines += ["### 1. Hành động ưu tiên", ""]
+    lines += ["### Những điểm cần xử lý ngay", ""]
     if priority:
         lines.extend(priority)
     else:
-        lines.append("✅ Không có vi phạm/rủi ro cao rõ ràng.")
+        lines.append("✅ Không phát hiện vi phạm hay rủi ro cao đáng lo ngại.")
     lines.append("")
 
     # ── Phần 2: Điều khoản bắt buộc còn thiếu ────────────────────────────
-    lines += ["### 2. Điều khoản bắt buộc còn thiếu"]
+    lines += ["### Điều khoản bắt buộc còn thiếu"]
     if result.missing_mandatory:
         for k in result.missing_mandatory:
             basis = MANDATORY_CLAUSE_LEGAL_BASIS.get(k, k)
-            lines.append(f"- 🟡 **{k}** — {basis}")
+            vi_name = _vi_category(k)
+            lines.append(f"- 🟡 **{vi_name}** — {basis}")
     else:
-        lines.append("- ✅ Không phát hiện khuyết category bắt buộc rõ ràng.")
+        lines.append("- ✅ Hợp đồng đã có đầy đủ các điều khoản bắt buộc theo quy định.")
     lines.append("")
 
     # ── Phần 3: Rủi ro & vi phạm theo điều khoản ─────────────────────────
-    lines += ["### 3. Rủi ro và vi phạm tiềm ẩn"]
+    lines += ["### Chi tiết rủi ro và vi phạm"]
     any_issue = False
     for ca in result.per_clause:
         all_cl_issues = ca.rule_issues + ca.llm_issues
         if not all_cl_issues:
             continue
         any_issue = True
-        title = ca.clause.title or ca.clause.category
-        lines.append(f"\n#### {title} (`{ca.clause.clause_id}`)")
+        title = ca.clause.title or _vi_category(ca.clause.category)
+        lines.append(f"\n#### {title}")
         for iss in sorted(all_cl_issues, key=lambda i: _SEVERITY_ORDER.index(i.severity)):
             e = _EMOJI.get(iss.severity, "⚪")
-            source = "rule" if iss.issue_id.startswith("VR") else "llm"
+            sev_label = _SEVERITY_VI.get(iss.severity, iss.severity)
             lines.append(
-                f"- {e} **{iss.severity}** [{iss.issue_id}·{source}]: {iss.description}  \n"
-                f"  *Căn cứ:* {iss.legal_basis or '—'}  \n"
+                f"- {e} **{sev_label}:** {iss.description}  \n"
+                f"  *Căn cứ pháp lý:* {iss.legal_basis or '—'}  \n"
                 f"  *Khuyến nghị:* {iss.recommendation or '—'}  \n"
-                f"  *Bên bị ảnh hưởng:* {iss.affected_party or '—'}"
+                f"  *Bên liên quan:* {iss.affected_party or '—'}"
             )
     if not any_issue:
-        lines.append("- ⚪ Không có cảnh báo rule/LLM rõ ràng trong phạm vi kiểm tra.")
+        lines.append("✅ Không phát hiện vấn đề cụ thể trong phạm vi kiểm tra.")
     lines.append("")
 
-    # ── Phần 4: Breakdown theo mức độ ────────────────────────────────────
-    lines += ["### 4. Phân tích theo mức độ"]
+    # ── Phần 4: Tổng hợp theo mức độ ──────────────────────────────────────
+    lines += ["### Tổng hợp theo mức độ"]
+    has_any = False
     for sev in _SEVERITY_ORDER:
         count = by_sev.get(sev, 0)
         if count == 0:
             continue
+        has_any = True
         e = _EMOJI.get(sev, "⚪")
+        sev_label = _SEVERITY_VI.get(sev, sev)
         group_issues = [i for i in all_issues if i.severity == sev]
-        lines.append(f"\n**{e} {sev} ({count} vấn đề)**")
+        lines.append(f"\n**{e} {sev_label} ({count} vấn đề)**")
         for iss in group_issues:
-            lines.append(f"  - [{iss.issue_id}] {iss.description[:120]}")
-    if not all_issues:
+            lines.append(f"  - {iss.description[:120]}")
+    if not has_any:
         lines.append("✅ Không có vấn đề nào.")
     lines.append("")
 
-    # ── Phần 5: Breakdown theo category ──────────────────────────────────
-    lines += ["### 5. Phân tích theo điều khoản"]
+    # ── Phần 5: Tổng hợp theo điều khoản ─────────────────────────────────
+    lines += ["### Tổng hợp theo từng điều khoản"]
     cat_summary: dict[str, list[str]] = {}
     for ca in result.per_clause:
         cat = ca.clause.category
@@ -182,17 +217,22 @@ def build_markdown_report(result: ContractAnalysisResult) -> str:
         cat_summary.setdefault(cat, []).extend(issues_str)
 
     for cat, iss_list in sorted(cat_summary.items()):
+        vi_name = _vi_category(cat)
         mark = "✅" if not iss_list else ("🔴" if any("🔴" in s for s in iss_list) else "🟠")
-        lines.append(f"- {mark} **{cat}**" + (f": {len(iss_list)} vấn đề" if iss_list else ": OK"))
+        lines.append(
+            f"- {mark} **{vi_name}**"
+            + (f": {len(iss_list)} vấn đề cần xem lại" if iss_list else ": Không có vấn đề")
+        )
     lines.append("")
 
-    # ── Phần 6: Ghi chú ──────────────────────────────────────────────────
+    # ── Phần 6: Lưu ý chung ──────────────────────────────────────────────
     lines += [
-        "### 6. Ghi chú",
-        "- Kết quả **không thay thế** tư vấn luật sư.",
-        "- Mapping pháp luật: GraphRAG **basic_search** (text_units)"
-        " + Neo4j `RELATED_TO` (khi bật).",
-        "- Rules: VR001–VR016 áp dụng với BLLĐ 2019 + NĐ 74/2024.",
+        "### Lưu ý",
+        "- Kết quả phân tích này **không thay thế tư vấn từ luật sư** hoặc "
+        "chuyên gia pháp lý. Nếu phát hiện vi phạm nghiêm trọng, bạn nên tham khảo "
+        "ý kiến chuyên môn trước khi ký hợp đồng.",
+        "- Phân tích dựa trên **Bộ luật Lao động 2019** và các nghị định hướng dẫn "
+        "hiện hành (NĐ 74/2024).",
         "",
     ]
 

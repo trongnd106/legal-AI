@@ -3,75 +3,159 @@
 
 \section{Đặt vấn đề}
 \label{section:1.1}
+
+Trong bối cảnh chuyển đổi số và sự phát triển nhanh của trí tuệ nhân tạo, nhu cầu tra cứu, hiểu và áp dụng pháp luật lao động Việt Nam ngày càng lớn. \gls{NLD} cần biết quyền lợi, khiếu nại và nghĩa vụ của bản thân của bản thân khi tham gia vào tổ chức lao động; \gls{NSDLD} và bộ phận nhân sự phải soạn thảo, rà soát \gls{HDLD} cho đúng quy định; luật sư nội bộ và cán bộ pháp chế doanh nghiệp cần phản hồi nhanh các câu hỏi tuân thủ pháp luật. Các cổng thông tin điện tử và thư viện pháp luật truyền thống hỗ trợ tra cứu theo từ khóa, nhưng không đáp ứng được kỳ vọng về \emph{hỏi đáp tự nhiên}, \emph{tổng hợp nhiều điều luật} và \emph{trích dẫn có căn cứ} -- những yêu cầu then chốt trong bối cảnh ứng dụng trí tuệ nhân tạo vào lĩnh vực pháp luật.
+
+\subsection{Đặc thù văn bản pháp luật lao động Việt Nam}
+\label{subsection:1.1.1}
+
+Văn bản pháp luật lao động Việt Nam có cấu trúc phân cấp chặt chẽ: Phần $\rightarrow$ Chương $\rightarrow$ Mục $\rightarrow$ Điều $\rightarrow$ Khoản $\rightarrow$ Điểm. Một quy phạm thường không đứng độc lập mà liên kết chéo giữa nhiều văn bản ở các cấp: \gls{BLLD} 2019 là luật gốc, được hướng dẫn bởi các Nghị định (NĐ 145/2020, NĐ 12/2022, NĐ 74/2024, NĐ 70/2023) và Thông tư (TT 10/2020). Các quan hệ dẫn chiếu, sửa đổi và bãi bỏ tạo thành mạng lưới quy phạm mà hệ thống tra cứu đơn giản khó nắm bắt.
+
+Ngoài cấu trúc hình thức, mỗi điều khoản mang tính chất quy phạm khác nhau: quyền, nghĩa vụ, cấm đoán, thủ tục hay chế tài. Việc phân loại này (metadata) ảnh hưởng trực tiếp đến cách trả lời câu hỏi pháp lý --- ví dụ câu hỏi về ``quyền đơn phương chấm dứt'' khác hẳn câu hỏi về ``mức phạt khi vi phạm''.
+
+\subsection{Quy mô corpus và độ phức tạp bài toán}
+\label{subsection:1.1.2}
+
+Đồ án tập trung vào corpus gồm \textbf{7 văn bản pháp luật lao động}, tương ứng \textbf{581 Điều}, \textbf{2069 Khoản} và \textbf{1705 Điểm} sau khi chuẩn hóa. Quy mô này đủ lớn để phản ánh thách thức thực tế nhưng vẫn trong tầm triển khai và đánh giá có kiểm soát.
+
+Bài toán hỏi đáp pháp luật lao động có thể phân thành ba mức độ khó:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Bối cảnh chuyển đổi số và nhu cầu tra cứu pháp luật lao động của NLĐ, NSDLĐ, luật sư nội bộ
-    \item Đặc thù văn bản pháp luật VN: phân cấp Phần $\rightarrow$ Chương $\rightarrow$ Mục $\rightarrow$ Điều $\rightarrow$ Khoản $\rightarrow$ Điểm; dẫn chiếu chéo BLLĐ $\leftrightarrow$ Nghị định $\leftrightarrow$ Thông tư
-    \item Quy mô corpus: 581 Điều, 2069 Khoản trên 7 văn bản pháp luật lao động
-    \item Thách thức câu hỏi single-hop, multi-hop và kiểm tra điều khoản HĐLĐ
-    \item Hạn chế chatbot LLM thuần: hallucination, trích sai Điều, không kiểm soát hiệu lực văn bản
+    \item \textbf{Single-hop:} câu trả lời nằm trực tiếp trong một Điều/Khoản (ví dụ: ``Thời gian thử việc tối đa là bao lâu?'' $\rightarrow$ Điều 27 \gls{BLLD}).
+    \item \textbf{Multi-hop:} cần suy luận qua chuỗi quy phạm (ví dụ: ``NSDLĐ không trả trợ cấp thôi việc thì bị xử lý thế nào?'' $\rightarrow$ Điều 46 về nghĩa vụ $\rightarrow$ NĐ 12/2022 về chế tài).
+    \item \textbf{Kiểm tra tuân thủ HĐLĐ:} so khớp điều khoản hợp đồng với ngưỡng pháp lý cụ thể (ví dụ: ``nghỉ phép năm tối thiểu 12 ngày`` theo Điều 113, ``mức lương tối thiểu vùng`` theo Điều 90 và NĐ 74/2024).
 \end{itemize}
+
+\subsection{Thách thức khi áp dụng LLM thuần}
+\label{subsection:1.1.3}
+
+Các Chatbot với \gls{LLM} tổng quát (ChatGPT, Gemini, Claude\ldots) có khả năng diễn đạt tự nhiên nhưng gặp hạn chế nghiêm trọng khi tra cứu pháp luật:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Ảo giác:} sinh nội dung nghe có vẻ hợp lý nhưng không có trong văn bản gốc, hoặc trích sai số liệu.
+    \item \textbf{Trích dẫn không chính xác:} ghi ``Điều X'' mà không chỉ rõ Khoản, hoặc nhầm lẫn giữa các phiên bản văn bản.
+    \item \textbf{Không kiểm soát hiệu lực:} có thể trích điều luật đã bị sửa đổi, bãi bỏ hoặc thay thế bởi văn bản mới hơn.
+    \item \textbf{Thiếu kho dữ liệu (corpus) chuyên biệt:} không index sẵn bộ văn bản lao động Việt Nam, dẫn đến câu trả lời dựa trên tri thức huấn luyện chung, có thể lỗi thời.
+\end{itemize}
+
+Trong lĩnh vực pháp luật, sai sót không chỉ là vấn đề kỹ thuật mà còn là rủi ro pháp lý thực tế. Do đó, hệ thống hỏi đáp pháp luật cần đảm bảo tính \textbf{grounding} -- mọi khẳng định phải có căn cứ trong văn bản đã index và có thể truy vết về Điều/Khoản cụ thể.
 
 \section{Các giải pháp hiện tại và hạn chế}
 \label{section:1.2}
 
 \subsection{Phương pháp tra cứu pháp luật truyền thống}
 \label{subsection:1.2.1}
+
+Phương pháp tra cứu pháp luật truyền thống dựa trên tìm kiếm từ khóa trên các cổng thông tin điện tử (Cổng thông tin điện tử Chính phủ, thuvienphapluat.vn, luatvietnam.vn\ldots) hoặc tra cứu thủ công trong sách, tài liệu in.
+
+Các công cụ tìm kiếm văn bản thường sử dụng thuật toán BM25, TF-IDF hoặc Elasticsearch. Phương pháp này mạnh khi người dùng biết chính xác từ khóa cần tìm (``Điều 113'', ``nghỉ phép năm''), nhưng yếu ở các khía cạnh sau:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Tra cứu từ khóa trên cổng thông tin điện tử, thư viện pháp luật
-    \item BM25/TF-IDF, Elasticsearch: mạnh keyword, yếu ngữ nghĩa và quan hệ chéo giữa văn bản
-    \item Không tổng hợp, không suy luận chuỗi quy phạm $\rightarrow$ chế tài
+    \item \textbf{Thiếu hiểu ngữ nghĩa:} truy vấn ``NLĐ được nghỉ bao lâu khi vợ sinh con?'' có thể không khớp văn bản dùng từ ``thai sản'' hoặc ``nghỉ việc riêng''.
+    \item \textbf{Không nắm quan hệ chéo:} trả về danh sách đoạn văn rời rạc, không tổng hợp mối liên hệ giữa BLLĐ và Nghị định hướng dẫn.
+    \item \textbf{Không suy luận:} không trả lời được câu hỏi dạng ``hành vi X vi phạm thì bị phạt bao nhiêu?'' vì cần nối chuỗi quy phạm $\rightarrow$ hậu quả $\rightarrow$ chế tài trên nhiều văn bản.
 \end{itemize}
 
 \subsection{Phương pháp dựa trên LLM và RAG truyền thống}
 \label{subsection:1.2.2}
+
+\gls{RAG} kết hợp retriever và generator bằng \gls{LLM}, cho phép hệ thống truy xuất ngữ cảnh liên quan rồi sinh câu trả lời dựa trên ngữ cảnh đó. Đây là hướng tiếp cận phổ biến để giảm ảo giác (hallucination) so với LLM thuần.
+
+Tuy nhiên, \gls{NaiveRAG} -- chunk văn bản theo kích thước cố định, embedding và tìm kiếm theo vector search gặp một số hạn chế đặc thù khi áp dụng cho văn bản pháp luật:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item ChatGPT/Gemini tra cứu chung: thiếu corpus đã index, rủi ro điều luật lỗi thời
-    \item Naive RAG (chunk + embedding): cắt giữa Khoản, mất ngữ cảnh pháp lý
-    \item Vector search không nắm quan hệ \texttt{obligates}, \texttt{penalizes}, \texttt{cites}
-    \item Khó trả lời câu hỏi tổng hợp (ví dụ: toàn bộ quyền NLĐ khi nghỉ việc)
+    \item \textbf{Chunking cắt giữa Khoản:} chia đoạn theo số lượng token cố định có thể cắt đôi một Khoản pháp lý, làm mất ngữ cảnh và khó trích dẫn chính xác.
+    \item \textbf{Vector search không nắm quan hệ:} embedding gần nhau về ngữ nghĩa không đồng nghĩa có quan hệ pháp lý.
+    \item \textbf{Khó trả lời câu hỏi tổng hợp:} các câu hỏi như``Liệt kê toàn bộ quyền của NLĐ khi chấm dứt HĐLĐ'' cần gom thông tin từ nhiều Điều (35, 46, 48\ldots), vượt khả năng một lần retrieve.
+    \item \textbf{Rủi ro điều luật lỗi thời:} nếu kho dữ liệu (corpus) không cập nhật hoặc không có metadata hiệu lực, hệ thống vẫn có thể trích văn bản đã bị thay thế.
 \end{itemize}
 
 \subsection{Phương pháp dựa trên đồ thị tri thức và GraphRAG}
 \label{subsection:1.2.3}
+
+\gls{KG} biểu diễn tri thức dưới dạng thực thể (entity) và quan hệ (relationship), phù hợp với cấu trúc phân cấp và dẫn chiếu của văn bản pháp luật. Các hệ thống Legal KG xây dựng thủ công (LKIF, Akoma Ntoso) đạt độ chính xác cao nhưng tốn công bảo trì và khó mở rộng khi văn bản sửa đổi.
+
+Microsoft \gls{GraphRAG} tự động hóa quy trình: trích xuất entity/relationship bằng LLM, phát hiện cộng đồng (community detection), sinh các bản tóm tắt cộng đồng (\gls{CommunityReport}), và hỗ trợ hai chế độ truy vấn \gls{LocalSearch} (entity + text units cục bộ) và \gls{GlobalSearch} (tổng hợp qua community reports). Đây là nền tảng được lựa chọn trong đồ án.
+
+Tuy nhiên, GraphRAG gốc chưa được thiết kế cho domain luật lao động Việt Nam. Các hạn chế khi áp dụng trực tiếp gồm:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Knowledge Graph thủ công: chính xác nhưng tốn công, khó mở rộng khi văn bản sửa đổi
-    \item Microsoft GraphRAG: tự động trích entity/relationship, community detection, Local + Global Search
-    \item Hạn chế khi áp dụng trực tiếp: schema mặc định không phù hợp domain luật lao động; thiếu lớp cấu trúc văn bản và kiểm chứng quy tắc HĐLĐ
+    \item Schema entity/relationship mặc định (ORGANIZATION, PERSON\ldots) không phản ánh được các Chủ thể, Hành vi, Chế tài,... trong pháp luật lao động.
+    \item Thiếu lớp cấu trúc văn bản (Văn bản $\rightarrow$ Điều $\rightarrow$ Khoản) được xây dựng deterministic, dẫn đến trích dẫn không ổn định.
+    \item Chưa có cơ chế lọc hiệu lực văn bản và kiểm tra quy tắc tuân thủ HĐLĐ.
+    \item Prompt extraction mặc định bằng tiếng Anh, chưa tối ưu cho thuật ngữ pháp luật tiếng Việt.
 \end{itemize}
+
+Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \textbf{xây dựng trợ lý hỏi đáp pháp luật lao động Việt Nam trên nền GraphRAG, kết hợp cấu trúc pháp lý deterministic, suy luận đa bước và kiểm tra tuân thủ HĐLĐ}.
 
 \section{Mục tiêu và định hướng giải pháp}
 \label{section:1.3}
 
 \subsection{Mục tiêu của đồ án}
 \label{subsection:1.3.1}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Tổng quát:} Xây dựng Trợ lý Ảo Luật Lao Động VN dựa trên GraphRAG, hỗ trợ hỏi đáp có trích dẫn và phân tích HĐLĐ
-    \item Thiết kế ontology hai lớp cho corpus luật lao động
-    \item Xây dựng pipeline chuẩn bị dữ liệu deterministic (Lớp 1) + indexing GraphRAG (Lớp 2)
-    \item Triển khai Local Search, Global Search, multi-hop, temporal filter, rule validator
-    \item Phát triển API FastAPI + frontend Next.js; module phân tích HĐLĐ (VR001--VR016)
-    \item Đánh giá trên bộ benchmark \texttt{evaluation\_suite.py}
-\end{itemize}
+
+\textbf{Mục tiêu tổng quát:} Xây dựng \textbf{Trợ lý Ảo Luật Lao Động Việt Nam} dựa trên Microsoft GraphRAG, hỗ trợ (1)~hỏi đáp pháp luật có trích dẫn Điều/Khoản và (2)~phân tích tuân thủ HĐLĐ theo quy tắc domain.
+
+Các mục tiêu cụ thể:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Thiết kế ontology hai lớp} cho corpus luật lao động: Lớp 1 (deterministic) biểu diễn cấu trúc văn bản; Lớp 2 (LLM) biểu diễn ngữ nghĩa domain (chủ thể, hành vi, chế tài).
+    \item \textbf{Xây dựng pipeline chuẩn bị dữ liệu end-to-end:} parse văn bản $\rightarrow$ chunk theo Điều $\rightarrow$ index GraphRAG $\rightarrow$ merge đồ thị cấu trúc và semantic.
+    \item \textbf{Triển khai các lớp truy vấn nâng cao:} Local Search, Global Search, \gls{MultiHop}, temporal validity filter (lọc văn bản hết hiệu lực), rule validator (quy tắc đánh giá tính xác thực) cho HĐLĐ.
+    \item \textbf{Phát triển ứng dụng thực tế:} Backend API FastAPI, frontend Next.js.
+    \item \textbf{Đánh giá có hệ thống} trên bộ benchmark với tiêu chí keyword accuracy, citation accuracy và phân loại single-hop/multi-hop.
+\end{enumerate}
 
 \subsection{Định hướng giải pháp}
 \label{subsection:1.3.2}
+
+Để đạt các mục tiêu trên, đồ án theo định hướng \textbf{hybrid retrieval} --- kết hợp truy xuất có cấu trúc (đồ thị pháp luật) và truy xuất ngữ nghĩa (embedding):
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Kết hợp truy xuất có cấu trúc (đồ thị pháp luật) và truy xuất ngữ nghĩa (embedding)
-    \item Lớp 1 build bằng rule (không LLM) $\rightarrow$ cấu trúc Điều/Khoản chính xác
-    \item Lớp 2 extract bằng LLM với prompt domain tiếng Việt
-    \item Merge graph $\rightarrow$ multi-hop trên quan hệ \texttt{entitles}, \texttt{penalizes}, \texttt{cites}, \ldots
-    \item Kiểm soát đầu ra: trích dẫn Điều, lọc văn bản hết hiệu lực, rules cứng cho HĐLĐ
+    \item \textbf{Lớp build bằng rule (không call LLM):} các thuật toán tiền xử lý file dữ liệu đầu vào, phân tách chính xác theo các Phần/Chương/Mục/Điều/Khoản/Điểm, gán \texttt{norm\_type} và metadata hiệu lực văn bản, đảm bảo cấu trúc pháp lý không phụ thuộc vào độ chính xác của LLM.
+    \item \textbf{Lớp extract bằng LLM với prompt domain tiếng Việt:} trích xuất thực thế (entity) và quan hệ (relationship) từ nội dung từng Điều.
+    \item \textbf{Merge graph và community detection:} gộp 2 lớp trên, phát hiện cộng đồng chủ đề (Leiden) phục vụ cho Global Search.
+    \item \textbf{Multi-hop trên quan hệ:} từ entity/câu hỏi ban đầu, duyệt chuỗi quan hệ để tìm Điều/Khoản liên quan ở bước tiếp theo.
+    \item \textbf{Kiểm soát đầu ra:} mọi câu trả lời kèm trích dẫn Điều/Khoản; lọc văn bản hết hiệu lực trước khi đưa vào ngữ cảnh; rules cứng VR001--VR016 cho phân tích HĐLĐ.
 \end{itemize}
 
 \section{Đóng góp chính}
 \label{section:1.4}
+
+Đồ án đóng góp các giải pháp kỹ thuật và ứng dụng sau:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Ontology luật lao động hai lớp}: thiết kế schema entity/relationship phù hợp domain, tách biệt cấu trúc pháp lý (Lớp 1) và ngữ nghĩa (Lớp 2), có lớp canonicalization alias.
+    \item \textbf{Pipeline chuẩn bị dữ liệu deterministic}: chunking theo Điều (một Điều = một chunk), metadata, xử lý 581 Điều / 2069 Khoản từ 7 văn bản.
+    \item \textbf{Prompt extraction và community report tiếng Việt}: tối ưu cho thuật ngữ pháp luật lao động Việt Nam.
+    \item \textbf{Lớp query nâng cao:} multi-hop reasoning engine, temporal validity filter, rule validator VR001--VR016 bổ sung khả năng suy luận và kiểm tra tuân thủ mà GraphRAG gốc chưa có.
+    \item \textbf{Ứng dụng end-to-end:} API FastAPI, frontend Next.js, module phân tích HĐLĐ với báo cáo tuân thủ có căn cứ pháp lý.
+    \item \textbf{Bộ đánh giá đa lĩnh vực}: test cases phân loại single-hop, multi-hop, cross-domain với ground truth về keyword và citation.
+\end{enumerate}
+
+Các đóng góp trên được phân tích chi tiết ở Chương 5 và đánh giá thực nghiệm ở Chương 4.
+
+\section{Phạm vi và giới hạn nghiên cứu}
+\label{section:1.5}
+
+\subsection{Phạm vi}
+\label{subsection:1.5.1}
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Ontology luật lao động hai lớp (\texttt{settings.yaml}, \texttt{02\_ontology\_design.md})
-    \item Chunking theo Điều, metadata \texttt{norm\_type} (\texttt{01\_prepare\_data.py})
-    \item Prompt extraction + community report tiếng Việt
-    \item Lớp query nâng cao: multi-hop, temporal filter, rule validator
-    \item Ứng dụng thực tế: API, frontend, contract analysis
-    \item Bộ đánh giá \texttt{evaluation\_suite.py}
+    \item \textbf{Kho dữ liệu:} 7 văn bản pháp luật lao động (BLLĐ 2019, NĐ 145/2020, NĐ 12/2022, NĐ 74/2024, NĐ 70/2023, TT 10/2020, VBHN BHXH), nguồn Thư viện pháp luật.
+    \item \textbf{Bài toán:} hỏi đáp pháp luật lao động (single-hop, multi-hop) và phân tích tuân thủ HĐLĐ mẫu.
+    \item \textbf{Công nghệ:} Microsoft GraphRAG làm nền tảng indexing/query; LLM qua OpenRouter; embedding qua Ollama hoặc Gemini tùy cấu hình.
+    \item \textbf{Đầu ra:} pipeline có thể chạy lại, API demo, frontend tra cứu, báo cáo phân tích HĐLĐ.
+\end{itemize}
+
+\subsection{Giới hạn}
+\label{subsection:1.5.2}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Chưa bao phủ toàn bộ văn bản pháp luật lao động (bản án, quyết định tòa án, thỏa ước lao động tập thể).
+    \item Kết quả phân tích HĐLĐ mang tính hỗ trợ, \textbf{không thay thế} tư vấn pháp lý chuyên nghiệp.
+    \item Chi phí indexing cao ($\sim$4000--5000 lần gọi LLM); cập nhật văn bản mới yêu cầu re-index.
+    \item Một số thành phần (multi-hop, temporal filter) triển khai ở tầng script/benchmark, chưa tích hợp đầy đủ vào API chat production.
 \end{itemize}
 
 \end{document}

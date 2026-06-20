@@ -19,6 +19,15 @@ completion_models:
     retry:
       type: exponential_backoff
       max_retries: 2
+  # default_completion_model:
+  #   type: litellm
+  #   model_provider: openai
+  #   model: kilo-auto/free
+  #   auth_method: api_key
+  #   api_key: ${KILO_API_KEY}
+  #   api_base: https://api.kilo.ai/api/gateway
+  #   retry:
+  #     type: exponential_backoff
 
 # ─── Embedding — OpenRouter ──────────────────────────────────────────────────
 embedding_models:

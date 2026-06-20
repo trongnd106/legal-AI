@@ -15,6 +15,30 @@ const API_BASE = "";
 const DEFAULT_TIMEOUT_MS = 15_000;
 const CHAT_TIMEOUT_MS = 160_000;
 
+// Lỗi mạng tạm thời — đáng retry (không phải lỗi logic từ server)
+const RETRYABLE_MESSAGES = [
+  "Failed to fetch",
+  "NetworkError",
+  "ECONNRESET",
+  "socket hang up",
+  "Load failed",          // Safari
+  "network error",
+];
+
+function isRetryableNetworkError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return RETRYABLE_MESSAGES.some((s) => msg.toLowerCase().includes(s.toLowerCase()));
+}
+
+function isRetryableStatus(status: number): boolean {
+  // 503 = server overload / unavailable, 502/504 = proxy/gateway timeout
+  return status === 502 || status === 503 || status === 504;
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -36,18 +60,6 @@ async function request<T>(
         `Yêu cầu quá thời gian chờ (${Math.round(timeoutMs / 1000)}s). Vui lòng thử lại.`,
       );
     }
-    // Lỗi mạng / kết nối bị ngắt (ECONNRESET, Failed to fetch, v.v.)
-    const msg = err instanceof Error ? err.message : String(err);
-    if (
-      msg.includes("Failed to fetch") ||
-      msg.includes("NetworkError") ||
-      msg.includes("ECONNRESET") ||
-      msg.includes("socket hang up")
-    ) {
-      throw new Error(
-        "Kết nối đến server bị gián đoạn. Server có thể đang xử lý câu hỏi — vui lòng thử lại.",
-      );
-    }
     throw err;
   } finally {
     clearTimeout(timer);
@@ -64,7 +76,6 @@ async function request<T>(
         detail = JSON.stringify(raw);
       }
     } catch {
-      // Body không phải JSON (ví dụ: HTML error page từ proxy)
       if (res.status === 503) {
         detail = "Model AI đang quá tải, vui lòng thử lại sau ít phút.";
       } else if (res.status === 504) {
@@ -73,15 +84,69 @@ async function request<T>(
         detail = "Lỗi server nội bộ. Vui lòng thử lại hoặc liên hệ quản trị viên.";
       }
     }
-    throw new Error(detail);
+    const error = new Error(detail) as Error & { status?: number };
+    error.status = res.status;
+    throw error;
   }
 
   if (res.status === 204) return null as T;
   return res.json() as Promise<T>;
 }
 
-export async function sendChatMessage(payload: ChatRequest): Promise<ChatResponse> {
-  return request<ChatResponse>(
+export type RetryOptions = {
+  /** Số lần thử tối đa (lần đầu + số lần retry). Mặc định 3. */
+  maxAttempts?: number;
+  /** Delay ban đầu (ms) trước retry 1. Tăng gấp đôi mỗi lần. Mặc định 1000ms. */
+  baseDelayMs?: number;
+  /** Callback được gọi mỗi lần chuẩn bị retry, với lần thử tiếp theo và delay (ms). */
+  onRetry?: (attempt: number, delayMs: number, reason: string) => void;
+};
+
+/**
+ * Bọc request() với auto-retry cho lỗi mạng tạm thời (ECONNRESET, 502/503/504).
+ * Lỗi logic (400, 401, 404, 422) không được retry vì server trả lời hợp lệ.
+ */
+async function requestWithRetry<T>(
+  path: string,
+  options: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  retryOpts: RetryOptions = {},
+): Promise<T> {
+  const { maxAttempts = 3, baseDelayMs = 1_000, onRetry } = retryOpts;
+
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await request<T>(path, options, timeoutMs);
+    } catch (err) {
+      lastError = err;
+
+      const status = (err as { status?: number }).status;
+      const retryable = isRetryableNetworkError(err) || (status !== undefined && isRetryableStatus(status));
+
+      // Không retry nếu: lỗi logic, lần thử cuối, hoặc user đã abort
+      if (!retryable || attempt === maxAttempts) break;
+      if (err instanceof DOMException && err.name === "AbortError") break;
+
+      const delayMs = baseDelayMs * 2 ** (attempt - 1); // 1s, 2s, 4s...
+      const reason = isRetryableNetworkError(err)
+        ? "kết nối bị ngắt"
+        : `lỗi server ${status}`;
+
+      onRetry?.(attempt + 1, delayMs, reason);
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
+}
+
+export async function sendChatMessage(
+  payload: ChatRequest,
+  retryOpts?: RetryOptions,
+): Promise<ChatResponse> {
+  return requestWithRetry<ChatResponse>(
     "/api/chat",
     {
       method: "POST",
@@ -89,6 +154,7 @@ export async function sendChatMessage(payload: ChatRequest): Promise<ChatRespons
       body: JSON.stringify(payload),
     },
     CHAT_TIMEOUT_MS,
+    retryOpts,
   );
 }
 
@@ -121,15 +187,17 @@ export async function analyzeContract(
   file: File,
   wageRegion: string = "IV",
   skipLlmReview: boolean = false,
+  retryOpts?: RetryOptions,
 ): Promise<ContractAnalysisResponse> {
   const form = new FormData();
   form.append("file", file);
   form.append("wage_region", wageRegion);
   form.append("skip_llm_review", String(skipLlmReview));
-  return request<ContractAnalysisResponse>(
+  return requestWithRetry<ContractAnalysisResponse>(
     "/api/contract/analyze",
     { method: "POST", body: form },
-    300_000, // 5 phút timeout cho phân tích phức tạp
+    300_000,
+    { maxAttempts: 2, baseDelayMs: 2_000, ...retryOpts }, // contract analysis nặng → chỉ retry 1 lần
   );
 }
 

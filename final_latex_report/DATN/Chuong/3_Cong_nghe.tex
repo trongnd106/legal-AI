@@ -4,20 +4,46 @@
 \section{Tổng quan giải pháp}
 \label{section:3.1}
 
+Chương này trình bày phương pháp đề xuất xây dựng Trợ lý Ảo Luật Lao Động Việt Nam dưới góc độ khoa học: kiến trúc tổng thể, quy trình xây dựng đồ thị tri thức, chiến lược truy vấn, tích hợp \gls{LLM}, và ứng dụng phân tích tuân thủ \gls{HDLD}. Nội dung bám sát các nguyên tắc thiết kế cốt lõi nhằm đảm bảo tính chính xác, truy vết và khả năng mở rộng.
+
 \subsection{Định hướng tiếp cận tổng thể}
 \label{subsection:3.1.1}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Microsoft GraphRAG làm nền tảng, tùy biến cho domain luật lao động VN
-    \item Ba trụ cột: (1) Knowledge Graph hai lớp, (2) Dual search + multi-hop + temporal filter, (3) Ứng dụng chat + phân tích HĐLĐ
-    \item Baselines thí nghiệm: Basic/Naive RAG, Local Search, Global Search, Local + Multi-hop
-\end{itemize}
+
+Giải pháp lấy Microsoft \gls{GraphRAG} và \gls{RAG} làm nền tảng, tùy biến sâu cho miền pháp luật lao động Việt Nam. Ba trụ cột thiết kế gồm:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Đồ thị tri thức hai lớp với canonicalization:} Lớp cấu trúc xác định biểu diễn phân cấp hình thức và siêu dữ liệu từ phân tích pháp lý (Phần, Chương, Mục, Điều, Khoản, Điểm); Lớp ngữ nghĩa trích xuất bằng LLM để biểu diễn các khái niệm miền (quyền, nghĩa vụ, hành vi, chế tài). Hai lớp được hợp nhất thông qua lớp canonicalization, giải quyết xung đột và trùng lặp giữa biểu diễn tự do (từ LLM) và định danh chuẩn (từ cấu trúc), tạo thành đồ thị thống nhất phục vụ suy luận và trích dẫn chính xác.
+    
+    \item \textbf{Chiến lược truy vấn đa chế độ với kiểm soát ngữ cảnh:} Kết hợp truy xuất cục bộ entity-centric, truy xuất toàn cục dựa trên cộng đồng chủ đề, cùng các lớp mở rộng như suy luận đa bước (multi-hop reasoning) duyệt trên quan hệ pháp lý, lọc theo hiệu lực tạm thời để ngăn trích dẫn văn bản lỗi thời, và xác thực quy tắc để kiểm tra tính hợp lệ. Mỗi chế độ được lựa chọn dựa trên loại câu hỏi, độ phức tạp và yêu cầu grounding.
+    
+    \item \textbf{Ứng dụng thực tiễn end-to-end với kiểm soát hallucination:} Hệ thống tương tác hỏi đáp tra cứu pháp luật có trích dẫn, kết hợp sức mạnh của đồ thị, LLM và quy tắc xác định. Ba lớp kiểm soát hallucination được áp dụng: grounding từ corpus đã index, kỹ thuật prompt yêu cầu format cố định, và post-processing kiểm tra trích dẫn.
+\end{enumerate}
+
+Kiến trúc tổng thể gồm bốn tầng:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Tầng dữ liệu (Data Layer):} Tiếp nhận tài liệu pháp lý phi cấu trúc, chuẩn hóa, phân tích và cấu trúc hóa thành các đơn vị pháp lý (Điều, Khoản, Điểm) kèm siêu dữ liệu (loại quy phạm, hiệu lực, tham chiếu). Đầu ra là tập dữ liệu có cấu trúc khả tương tác, đảm bảo tính nguyên vẹn đơn vị pháp lý.
+    
+    \item \textbf{Tầng tri thức (Knowledge Layer):} Xây dựng đồ thị merged gồm thực thể (phân cấp, ngữ nghĩa), quan hệ (dẫn chiếu, logic pháp lý), báo cáo cộng đồng (community reports) phản ánh các chủ đề quy phạm và embedding vector --- lưu trữ tổng hợp tri thức pháp lý có cấu trúc.
+    
+    \item \textbf{Tầng truy vấn (Query Layer):} Cung cấp nhiều chế độ truy vấn thích ứng với loại câu hỏi: từ tra cứu đơn giản đến suy luận chéo văn bản, kèm kiểm soát hiệu lực văn bản và xác thực quy tắc. Mục tiêu là cân bằng giữa chính xác, latency và khả năng giải thích.
+    
+    \item \textbf{Tầng ứng dụng (Application Layer):} Giao diện chat hỏi đáp pháp luật có trích dẫn và module phân tích tuân thủ hợp đồng, cung cấp trải nghiệm người dùng tích hợp, dễ sử dụng và đáng tin cậy.
+\end{enumerate}
+
+Các phương pháp so sánh (baseline) được thiết kế để đo lường đóng góp từng thành phần: truy xuất vector thuần (Naive RAG), Local Search, Global Search, Local kết hợp Multi-hop. Điều này cho phép định lượng lợi ích của cấu trúc đồ thị so với truy xuất vector đơn thuần.
 
 \subsection{Phạm vi corpus và giả định thiết kế}
 \label{subsection:3.1.2}
+
+\textbf{Phạm vi corpus:} 7 văn bản pháp luật lao động gồm: BLLĐ 45/2019/QH14 (luật gốc), Nghị định 145/2020 (lương tối thiểu), Nghị định 12/2022 (chế tài vi phạm lao động), Nghị định 74/2024 (lương tối thiểu năm 2024), Nghị định 70/2023 (bảo hiểm thất nghiệp), Thông tư 10/2020 (hướng dẫn BHXH), và Văn bản hợp nhất BHXH. Tổng cộng: 581 Điều, 2069 Khoản, 1705 Điểm. Chi tiết corpus ở Chương~\ref{chapter:Theory}.
+
+\textbf{Giả định thiết kế:}
 \begin{itemize}[nosep, leftmargin=*]
-    \item 7 văn bản, 581 Điều --- nguồn \texttt{data/txt/}
-    \item Giả định: văn bản đã chuẩn hóa \texttt{.txt}; LLM extraction có thể sai $\rightarrow$ bù bằng Lớp 1 deterministic
-    \item Phạm vi ngoài: bản án, luật dân sự/hình sự (chỉ test mẫu, chưa index)
+    \item Văn bản đầu vào đã được chuẩn hóa dạng văn bản thuần với cấu trúc phân cấp (Phần, Chương, Mục, Điều, Khoản, Điểm) nhận diện được bằng biểu thức chính quy hoặc mẫu cấu trúc quy ước.
+    \item LLM extraction (Lớp 2) có thể thiếu, trích sai hoặc trích dư thực thể --- được bù bằng lớp cấu trúc xác định 100\% độ tin cậy và quy trình hợp nhất/giải quyết xung đột, dedup entity cùng tên.
+    \item Người dùng câu hỏi bằng tiếng Việt tự nhiên; câu trả lời yêu cầu trích dẫn rõ ràng với Điều/Khoản cụ thể khi có căn cứ; thiếu grounding là lỗi khó chấp nhận trong domain pháp lý.
+    \item Hệ thống chạy offline hoặc semi-online --- corpus được re-index khi có cập nhật luật, không hỗ trợ real-time streaming từ nguồn luật mới.
 \end{itemize}
 
 \section{Xây dựng đồ thị tri thức cho văn bản luật lao động}
@@ -25,249 +51,365 @@
 
 \subsection{Mục tiêu xây dựng đồ thị tri thức}
 \label{subsection:3.2.1}
+
+Mục tiêu chính của quy trình indexing là chuyển đổi tập hợp các tài liệu pháp lý phi cấu trúc (văn bản thô) thành một biểu diễn tri thức có cấu trúc, phục vụ ba nhu cầu cốt lõi:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Chuyển văn bản phi cấu trúc $\rightarrow$ tri thức có cấu trúc phục vụ truy vấn và suy luận
-    \item Mọi câu trả lời truy vết được về Điều/Khoản cụ thể
+    \item \textbf{Truy vấn ngữ nghĩa cục bộ và tổng hợp:} Cho phép tìm kiếm thực thể/quan hệ liên quan câu hỏi, từ tra cứu một quy định cụ thể đến tổng hợp một chủ đề rộng.
+    \item \textbf{Suy luận đa bước:} Tìm hiểu chuỗi nhân quả trên quan hệ pháp lý (ví dụ: hành vi $\rightarrow$ quy định $\rightarrow$ chế tài), không chỉ dựa trên keyword mà trên logic pháp lý.
+    \item \textbf{Truy vết (Traceability):} Mọi khẳng định trong câu trả lời có thể được truy về Điều/Khoản gốc cụ thể, đảm bảo grounding --- yêu cầu cốt lõi cho ứng dụng pháp lý.
 \end{itemize}
 
-\subsection{Thiết kế ontology hai lớp}
+Đầu ra cuối cùng gồm: danh sách thực thể merged, danh sách quan hệ merged, text units (từng Điều), báo cáo cộng đồng và embedding vector --- tất cả được lưu dưới dạng parquet để hiệu suất cao.
+
+\subsection{Thiết kế ontology hai lớp với canonicalization}
 \label{subsection:3.2.2}
+
+Ontology được thiết kế theo nguyên tắc tách biệt cấu trúc và ngữ nghĩa, cộng với lớp canonicalization để giải quyết xung đột:
+
+\textbf{Lớp cấu trúc (deterministic, 100\% tin cậy):}
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Lớp 1 (deterministic):} \texttt{VanBan}, \texttt{Chuong}, \texttt{Dieu}, \texttt{Khoan}, \texttt{Diem}; quan hệ \texttt{contains}, \texttt{cites}, \texttt{amends}, \ldots
-    \item \textbf{Lớp 2 (LLM):} \texttt{ChuThe}, \texttt{HanhVi}, \texttt{CheTai}, \texttt{TienLuong}, \ldots; quan hệ \texttt{entitles}, \texttt{obligates}, \texttt{penalizes}, \ldots
-    \item \textbf{Lớp 1.5:} Canonicalization alias ``Điều 35'' $\rightarrow$ \texttt{BLLĐ\_2019\_Điều\_35}
+    \item \textbf{Thực thể:} Văn bản pháp lý (với định danh chuẩn như 45/2019/QH14), Phần, Chương, Mục, Điều, Khoản, Điểm --- biểu diễn phân cấp hình thức của tài liệu pháp luật. Mỗi thực thể được gán định danh duy nhất không thay đổi, ví dụ: \texttt{BLLĐ\_45\_2019\_Điều\_90}.
+    \item \textbf{Quan hệ:} Quan hệ phân cấp (\texttt{contains}, \texttt{nested\_in}), quan hệ tham chiếu chéo (\texttt{cites}, \texttt{amends}, \texttt{repeals}, \texttt{guided\_by}, \texttt{issued\_by}). Một Điều có thể dẫn chiếu tới Nghị định, hoặc bị sửa đổi bởi văn bản mới hơn.
+    \item \textbf{Siêu dữ liệu:} Loại quy phạm (\texttt{norm\_type}: quyền, nghĩa vụ, cấm, thủ tục, chế tài), trạng thái hiệu lực, ngày có hiệu lực, văn bản hướng dẫn, văn bản thay thế.
+    \item \textbf{Nguồn:} Phân tích quy tắc, không sử dụng LLM --- do đó độ tin cậy 100\%, lặp lại được (deterministic).
 \end{itemize}
 
-\subsection{Quy trình chuẩn bị dữ liệu}
+\textbf{Lớp ngữ nghĩa (trích xuất bằng LLM):}
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Thực thể domain:} Chủ thể luật (Người lao động, Người sử dụng lao động, Cơ quan, Công đoàn), Hành vi được điều chỉnh (Trả lương, Tính lương, Cộng lương thêm, Phát hành giấy xác nhận, Nghỉ phép), Quyền lợi (Quyền nghỉ, Quyền khiếu nại, Quyền tiếp cận thông tin), Chế tài (Phạt tiền, Kỷ luật nội bộ, Bãi bỏ HĐLĐ).
+    \item \textbf{Quan hệ ngữ nghĩa:} \texttt{entitles} (cấp quyền), \texttt{obligates} (bắt buộc), \texttt{prohibits} (cấm), \texttt{penalizes} (phạt), \texttt{applies\_to} (áp dụng cho), \texttt{enforced\_by} (được thực thi bởi), \texttt{regulates} (điều chỉnh). Các quan hệ này cho phép biểu diễn logic pháp lý: hành vi X bị cấm, do đó sẽ bị phạt theo Điều Y.
+    \item \textbf{Độ tin cậy:} Thay đổi từ 0 đến 1, phụ thuộc vào confidence score từ LLM.
+\end{itemize}
+
+\textbf{Lớp canonicalization (Lớp 1.5):}
+
+Lớp này là thành phần quan trọng để giải quyết xung đột. LLM có thể sinh ra biểu diễn chuỗi tự do (``Khoản 1 của Điều 90 BLLĐ 2019''), trong khi lớp cấu trúc sử dụng định danh cố định (``BLLĐ\_45\_2019\_Điều\_90\_Khoản\_1''). Canonicalization ánh xạ mọi biểu diễn về cùng một định danh:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Xây dựng bảng ánh xạ (lookup table): (số\_điều, văn\_bản) $\rightarrow$ định\_danh\_chuẩn.
+    \item Khi merge graph, kiểm tra xem thực thể LLM output có tương ứng với thực thể cấu trúc không.
+    \item Nếu có, giữ định danh cấu trúc; ghi nhận confidence từ LLM; dedup node trùng.
+    \item Nếu không, tạo nút ngữ nghĩa mới (không bị nhầm lẫn với cấu trúc).
+\end{itemize}
+
+Nguyên tắc quan trọng: \textbf{không bao giờ trích xuất lớp cấu trúc bằng LLM} --- vì LLM không đảm bảo nhất quán, dẫn tới trùng lặp node (``Điều 35'' xuất hiện hai lần với ID khác nhau), làm đồ thị không khả tin.
+
+\subsection{Quy trình chuẩn bị dữ liệu chi tiết}
 \label{subsection:3.2.3}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Pipeline \texttt{scripts/01\_prepare\_data.py}: parse Phần/Chương/Mục/Điều/Khoản/Điểm
-    \item Gán \texttt{norm\_type}, metadata hiệu lực
-    \item Xuất JSONL + \texttt{metadata.json} + \texttt{normalized/}
-    \item Thống kê: 581 Điều, 2069 Khoản, 1705 Điểm
-\end{itemize}
 
-\subsection{Chiến lược chunking}
+Pipeline chuẩn bị dữ liệu là bước quan trọng để tạo input chất lượng cao cho indexing:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Đọc và ánh xạ:} Tiếp nhận các tệp văn bản pháp luật (ví dụ: \texttt{BLLĐ\_2019.txt}); kiểm tra cấu trúc; ánh xạ tới định danh chính thức (45/2019/QH14). Ghi nhận ngôn ngữ, nguồn gốc, ngày công bố.
+    
+    \item \textbf{Chuẩn hóa:} Làm sạch ký tự không cần thiết (dấu in lỗi, ký tự điều khiển); chuẩn hóa ngắt dòng (lỗi cắt dòng từ quét PDF hoặc sao chép); thống nhất khoảng trắng. Giữ lại số hiệu Điều/Khoản gốc để không mất thông tin.
+    
+    \item \textbf{Phân tích cấu trúc:} Sử dụng biểu thức chính quy (regex) và heuristic để nhận diện Phần, Chương, Mục, Điều, Khoản, Điểm. Ví dụ: Điều thường bắt đầu với ``Điều \d+'', Khoản với ``Khoản \d+'' hoặc `` - '' (dấu ngoặc). Nếu nhận diện sai, ghi nhận vào log để review thủ công.
+    
+    \item \textbf{Gán loại quy phạm:} Dựa trên từ khóa (``quyền'', ``được'', ``không được'', ``phải'', ``lương'', ``phạt'') để phân loại \texttt{norm\_type}. Ví dụ: nếu Điều chứa ``lương tối thiểu không được thấp hơn'', gán \texttt{norm\_type = obligation}. Heuristic có thể sai, nhưng cung cấp gợi ý ban đầu cho LLM sau này.
+    
+    \item \textbf{Xuất JSONL:} Mỗi bản ghi = 1 Điều hoàn chỉnh, chứa:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item \texttt{id}: định danh chuẩn (ví dụ: \texttt{BLLĐ\_45\_2019\_Điều\_90})
+        \item \texttt{van\_ban}: định danh văn bản (45/2019/QH14)
+        \item \texttt{so\_dieu}: số Điều (90)
+        \item \texttt{tieu\_de}: tiêu đề nếu có
+        \item \texttt{chuong\_so}: số Chương (III)
+        \item \texttt{norm\_type}: loại quy phạm
+        \item \texttt{noi\_dung}: nội dung Điều đầy đủ
+        \item \texttt{khoans[]}: danh sách Khoản con
+    \end{itemize}
+    
+    \item \textbf{Tạo metadata:} Ghi nhận \texttt{metadata.json} với các trường:
+    \begin{itemize}[nosep, leftmargin=*]
+        \item \texttt{tinh\_trang}: "con\_hieu\_luc" hoặc "het\_hieu\_luc"
+        \item \texttt{ngay\_hieu\_luc}: ngày văn bản có hiệu lực
+        \item \texttt{huong\_dan\_boi}: văn bản hướng dẫn (nếu có)
+        \item \texttt{thay\_the\_boi}: văn bản thay thế (nếu bị thay thế)
+    \end{itemize}
+\end{enumerate}
+
+Đầu ra: 581 Điều, 2069 Khoản, 1705 Điểm được cấu trúc hóa, siêu dữ liệu đầy đủ, sẵn sàng cho giai đoạn indexing. Dữ liệu được xác thực: kiểm tra không có Điều nào bị cắt, không có khoảng trống bất thường, tổng số Khoản khớp với dự kiến.
+
+\subsection{Chiến lược chunking phục vụ tính nguyên vẹn đơn vị pháp lý}
 \label{subsection:3.2.4}
+
+Chunking là bước quan trọng trong RAG, ảnh hưởng trực tiếp tới chất lượng retrieval. Chiến lược ở đây khác so với Naive RAG:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{chunking.size: 4000}, \texttt{overlap: 0} --- mục tiêu 1 Điều = 1 chunk
-    \item Khoản là đơn vị pháp lý không được cắt đôi
-    \item \texttt{input.text\_column: noi\_dung}; metadata giữ trong \texttt{raw\_data}
+    \item \textbf{Đơn vị chunk = 1 Điều:} Thay vì chunk theo kích thước token cố định (ví dụ: 512 token, overlap 50), mỗi Điều --- với nội dung trung bình 2000 ký tự --- được xem như một đơn vị chunk. Cách tiếp cận này \textbf{tránh cắt ngang Khoản} hoặc mất ngữ cảnh pháp lý.
+    
+    \item \textbf{Siêu dữ liệu giữ lại:} Loại quy phạm (\texttt{norm\_type}), định danh văn bản, số Điều, danh sách Khoản được giữ trong \texttt{raw\_data} của text unit, phục vụ trích dẫn chính xác và lọc theo hiệu lực sau này.
+    
+    \item \textbf{Lợi ích:} Ensure ngữ cảnh pháp lý toàn bộ, giảm bị cắt giữa Khoản, cho phép trích dẫn chính xác tới Khoản con.
+    
+    \item \textbf{Nhược điểm:} Một Điều dài (3000+ token) có thể vượt \texttt{max\_context\_tokens} khi query, nhưng điều này hiếm, và xử lý được bằng cách cắt từ Khoản thứ N nếu cần.
 \end{itemize}
 
-\subsection{Trích xuất entity và quan hệ (Lớp 2)}
+\subsection{Trích xuất thực thể và quan hệ (Lớp 2) chi tiết}
 \label{subsection:3.2.5}
+
+Sau khi chuẩn bị JSONL, toàn bộ corpus được indexing bằng GraphRAG. Giai đoạn trích xuất sử dụng LLM với các yêu cầu miền pháp luật cụ thể:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Prompt: \texttt{prompts/extract\_graph\_simple.txt}
-    \item Quy tắc domain: phân biệt \texttt{HanhVi}/\texttt{CheTai}/\texttt{XuLyKyLuat}
-    \item \texttt{max\_gleanings: 1} --- cân bằng chi phí/độ phủ
-    \item Không extract Lớp 1 bằng LLM --- tránh duplicate node
+    \item \textbf{Phân biệt ngữ pháp-ngữ nghĩa:} Hành vi được điều chỉnh (``trả lương'', ``phải cấp bằng chứng lao động'') khác với hậu quả (``phạt tiền từ X đến Y'') khác với chủ thể (``người lao động'', ``cơ quan lao động'').
+    
+    \item \textbf{Prompt tiếng Việt, miền cụ thể:} Prompt yêu cầu LLM extract entity types chính xác, ví dụ: \texttt{ChuThe}, \texttt{HanhVi}, \texttt{QuyenLoi}, \texttt{CheTai}. Không sử dụng schema mặc định ORGANIZATION/PERSON của GraphRAG gốc.
+    
+    \item \textbf{Cấu trúc output cố định:} JSON schema xác định trước (entity, relation types cụ thể), không cho LLM tự do sinh ra. Giới hạn \texttt{max\_gleanings: 1} (2 lần gọi LLM per chunk) --- cân bằng chi phí API và độ phủ extraction.
+    
+    \item \textbf{Xử lý lỗi:} Nếu LLM output sai format, retry với prompt khác hoặc skip chunk đó (log warning). Đây là trade-off giữa tin cậy tư động và độ phủ.
 \end{itemize}
 
-\subsection{Merge graph và community detection}
+\subsection{Hợp nhất đồ thị và phát hiện cộng đồng}
 \label{subsection:3.2.6}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{02\_merge\_structural\_graph.py}: gộp L1 + output GraphRAG
-    \item Community detection (Leiden) + \texttt{community\_report\_labor.txt}
-    \item \texttt{summarize\_descriptions.max\_length: 500}
-\end{itemize}
+
+Quá trình hợp nhất (merge) là bước quan trọng để kết hợp lớp cấu trúc và output GraphRAG:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Xây dựng lớp cấu trúc từ JSONL:} Tạo thực thể từng Văn bản pháp lý, Chương, Điều, Khoản; tạo quan hệ phân cấp (\texttt{contains}, \texttt{nested\_in}).
+    
+    \item \textbf{Xây dựng quan hệ tham chiếu chéo:} Từ \texttt{metadata.json}, tạo quan hệ \texttt{issued\_by}, \texttt{guided\_by}, \texttt{amends}, \texttt{repeals}. Ví dụ: NĐ 145/2020 \texttt{guides} BLLĐ 2019 Điều 90.
+    
+    \item \textbf{Canonicalization lookup:} Xây dựng bảng ánh xạ (số\_điều, văn\_bản) → định\_danh\_chuẩn, để chuẩn hóa output LLM.
+    
+    \item \textbf{Load parquet GraphRAG:} Đọc entities và relationships từ GraphRAG; để mỗi thực thể LLM, kiểm tra xem có khớp với canonicalization không. Nếu khớp, cộng thêm confidence từ LLM; nếu không, tạo node mới.
+    
+    \item \textbf{Dedup và giải quyết xung đột:} Nếu thực thể LLM ``Người lao động'' và \texttt{CoQuan} trùng tên, giữ lại một, ghi nhận alias.
+    
+    \item \textbf{Ghi output:} Viết \texttt{merged\_entities.parquet}, \texttt{merged\_relationships.parquet}, \texttt{text\_units.parquet}, \texttt{community\_reports.parquet}.
+\end{enumerate}
+
+Sau merge, GraphRAG tiếp tục phát hiện cộng đồng (thuật toán Leiden, mục tiêu minimize modularity), sinh báo cáo cộng đồng với prompt tiếng Việt nhấn mạnh các khía cạnh quyền, nghĩa vụ, chế tài. Tham số \texttt{summarize\_descriptions.max\_length: 500} giới hạn độ dài mô tả mỗi entity.
+
+Đồ thị merged kết quả chứa: hàng ngàn thực thể (cấu trúc + ngữ nghĩa), hàng ngàn quan hệ (phân cấp, tham chiếu, logic), khoảng 15 cộng đồng chủ đề (``Nghỉ phép'', ``Kỷ luật lao động'', ``BHXH'', v.v.). Thống kê chi tiết ở Chương~\ref{chapter:Experiment}.
 
 \section{Chiến lược truy vấn và hỏi đáp}
 \label{section:3.3}
 
-\subsection{Tổng quan truy xuất trong GraphRAG}
+\subsection{Tổng quan truy xuất}
 \label{subsection:3.3.1}
+
+Hệ thống phân biệt hai họ phương pháp truy xuất cơ bản:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Phân biệt vector retrieval vs graph-augmented retrieval
-    \item Lựa chọn mode theo loại câu hỏi (single-hop vs tổng hợp)
+    \item \textbf{Truy xuất vector:} Embedding câu hỏi; tìm text units có embedding tương tự. Ưu điểm: bắt được paraphrase, từ đồng nghĩa. Nhược điểm: không nắm quan hệ logic (``vi phạm'' không tự động dẫn tới ``chế tài''), thường cần vector similarity cao (>0.8) nên dễ miss khi từ ngữ khác.
+    
+    \item \textbf{Truy xuất tăng cường đồ thị:} Khai thác thực thể, quan hệ, cộng đồng từ đồ thị merged. Ưu điểm: bắt được quan hệ logic, suy luận multi-hop. Nhược điểm: phụ thuộc chất lượng extraction LLM (có thể miss entity hoặc quan hệ), phức tạp hơn.
 \end{itemize}
 
-\subsection{Local Search}
+Lựa chọn mode theo loại câu hỏi:
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Local Search (entity-centric):} Câu hỏi về một Điều cụ thể (``Thử việc tối đa bao lâu?''), single-hop, cần latency thấp.
+    \item \textbf{Global Search (cộng đồng):} Câu hỏi tổng hợp, khảo sát (``Quyền của NLĐ khi thai sản gồm những gì?''), yêu cầu tổng hợp từ nhiều Điều.
+    \item \textbf{Multi-hop:} Câu hỏi suy luận (``Không trả lương sẽ bị xử phạt thế nào?''), cần tìm chuỗi ``hành vi → quy định → chế tài''.
+\end{itemize}
+
+\subsection{Suy luận đa bước (Multi-hop Reasoning)}
 \label{subsection:3.3.2}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Entity extraction từ query $\rightarrow$ retrieve text units + relationships
-    \item Triển khai: \texttt{query/local\_search.py} $\rightarrow$ \texttt{ask\_local()}
-    \item API: \texttt{POST /api/chat} với \texttt{mode: "local"}
-    \item Phù hợp: tra cứu một Điều (LD001--LD004, LD013)
-\end{itemize}
 
-\subsection{Global Search}
+Engine suy luận multi-hop thực hiện tìm kiếm trên đồ thị theo chuỗi quan hệ pháp lý. Các loại chuỗi được định nghĩa:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Vi phạm (Violation Chain):} Hành vi vi phạm $\rightarrow$ quy định bắt buộc $\rightarrow$ chế tài. Quan hệ: \texttt{violates} → \texttt{obligates} → \texttt{penalizes}. Ví dụ: ``Không trả lương'' (HanhVi) $\rightarrow$ ``Bắt buộc trả lương'' (Điều 90 BLLĐ) $\rightarrow$ ``Phạt tiền'' (NĐ 12/2022).
+    
+    \item \textbf{Quyền lợi (Entitlement Chain):} Chủ thể $\rightarrow$ quyền được cấp $\rightarrow$ điều kiện áp dụng. Quan hệ: \texttt{is\_entitled\_to} → \texttt{applies\_when}. Ví dụ: ``NLĐ'' (ChuThe) $\rightarrow$ ``Quyền nghỉ phép'' (QuyenLoi) $\rightarrow$ ``Khi đã làm việc 12 tháng'' (DieuKien).
+    
+    \item \textbf{Thủ tục (Procedure Chain):} Mục tiêu $\rightarrow$ quy trình $\rightarrow$ cơ quan phụ trách. Quan hệ: \texttt{requires\_procedure} → \texttt{enforced\_by}.
+\end{enumerate}
+
+Thuật toán: DFS hoặc BFS trên merged graph; với độ sâu giới hạn (2--3 hop) để tránh explosion. Output: \texttt{ReasoningChain} gồm \texttt{steps[]}, \texttt{cited\_articles[]}, \texttt{final\_answer}. Tích hợp hiện tại ở tầng script/benchmark; dự kiến mở rộng vào chat API.
+
+\subsection{Lọc hiệu lực văn bản (Temporal Filter)}
 \label{subsection:3.3.3}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Map-reduce trên community reports
-    \item Triển khai: \texttt{query/global\_search.py} $\rightarrow$ \texttt{ask\_global()}
-    \item Phù hợp: câu hỏi tổng hợp (quyền NLĐ, loại hình HĐLĐ)
-    \item Trade-off: latency cao hơn Local
-\end{itemize}
 
-\subsection{Basic Search --- baseline Naive RAG}
+Module lọc kiểm tra trích dẫn sau giai đoạn retrieve, trước khi LLM sinh câu trả lời. Dữ liệu: \texttt{metadata.json} chứa \texttt{tinh\_trang}, \texttt{ngay\_hieu\_luc}, \texttt{huong\_dan\_boi}. Hàm \texttt{is\_effective(van\_ban\_id, as\_of\_date)} xác định văn bản còn hiệu lực tại thời điểm tra cứu.
+
+Ví dụ: Nếu NĐ 90/2019 hết hiệu lực vào 01/07/2024 do bị thay thế bởi NĐ 74/2024, và người dùng query sau 01/07/2024, hệ thống cảnh báo: ``Trích dẫn NĐ 90/2019 có thể lỗi thời; xem NĐ 74/2024 thay thế''.
+
+Tích hợp API: field \texttt{temporal\_warnings} trong response --- cảnh báo người dùng nếu câu trả lời trích văn bản không còn hiệu lực.
+
+\subsection{Xác thực quy tắc}
 \label{subsection:3.3.4}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Vector-only trên text units, không khai thác đồ thị
-    \item Vai trò baseline trong thí nghiệm Chương 4
-\end{itemize}
 
-\subsection{Multi-hop Reasoning Engine}
-\label{subsection:3.3.5}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{query/multihop\_reasoning.py} --- class \texttt{VNLegalReasoningEngine}
-    \item Chain templates: \texttt{violation}, \texttt{entitlement}, \texttt{procedure}
-    \item Ví dụ: ``không trả lương'' $\rightarrow$ \texttt{obligates} $\rightarrow$ \texttt{penalizes} $\rightarrow$ NĐ 12/2022
-    \item Tích hợp: phân tích HĐLĐ (\texttt{mapper\_optimized.py}, Mụ~\ref{subsection:3.5.2.1}); sắp mở rộng cho chat API
-\end{itemize}
-
-\subsection{Temporal Filter --- lọc hiệu lực văn bản}
-\label{subsection:3.3.6}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{query/temporal\_filter.py} --- \texttt{filter\_citations\_by\_effectiveness()}
-    \item Metadata: \texttt{con\_hieu\_luc}, ngày ban hành, \texttt{huong\_dan\_boi}
-    \item Tích hợp API: field \texttt{temporal\_warnings} trong \texttt{ChatResponse}
-\end{itemize}
-
-\subsection{Rule Validator}
-\label{subsection:3.3.7}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{query/rule\_validator.py} --- xác thực câu trả lời với quy tắc cứng
-    \item Kiểm tra Điều bắt buộc, xác thực số liệu (lương tối thiểu, hạn thử việc)
-    \item Sắp integrate vào pipeline query
-\end{itemize}
+Module xác thực (rule validator) kiểm tra câu trả lời LLM với quy tắc cứng: bắt buộc một số Điều có mặt, xác thực ngưỡng số (lương tối thiểu, hạn thử việc, số ngày nghỉ tối thiểu). Hiện tích hợp ở tầng script/benchmark; dự kiến mở rộng vào pipeline query production.
 
 \section{Tích hợp LLM và sinh câu trả lời}
 \label{section:3.4}
 
 \subsection{Vai trò LLM trong pipeline}
 \label{subsection:3.4.1}
+
+LLM đóng ba vai trò trong hệ thống, nhưng \textbf{không phải nguồn tri thức chính} mà là công cụ xử lý và diễn đạt:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Indexing: extraction, summarize, community report ($\sim$4000--5000 LLM calls)
-    \item Querying: sinh câu trả lời từ ngữ cảnh retrieved
-    \item LLM không phải nguồn tri thức --- chỉ tổng hợp và diễn đạt
+    \item \textbf{Indexing:} Trích xuất entity/quan hệ từ text, tóm tắt mô tả entity, sinh báo cáo cộng đồng. Lượng: khoảng 4000--5000 lần gọi LLM cho toàn corpus.
+    
+    \item \textbf{Querying:} Sinh câu trả lời từ ngữ cảnh retrieved. Local Search: 1 lần gọi; Global Search: nhiều lần (map-reduce); Multi-hop: tùy số bước.
+    
+    \item \textbf{Contract analysis:} Phân đoạn HĐLĐ, review khoản phức tạp (batch).
 \end{itemize}
+
+Tri thức pháp luật nằm trong corpus đã index (text units) và đồ thị merged (entity, relation) --- LLM chỉ tổng hợp, diễn đạt lại thông tin có trong ngữ cảnh được cung cấp, không sinh kiến thức mới.
 
 \subsection{Thiết kế ngữ cảnh đầu vào}
 \label{subsection:3.4.2}
+
+Ngữ cảnh cho LLM khi query gồm:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Context: text units + entity descriptions + community summaries
-    \item Giới hạn context window; ưu tiên relevance
-    \item Yêu cầu trích dẫn Điều/Khoản trong system prompt
+    \item \textbf{Text units:} Nội dung Điều/Khoản gốc --- nguồn grounding chính, từ retriever.
+    \item \textbf{Mô tả entity:} Cô đọc khái niệm từ lớp ngữ nghĩa (Lớp 2).
+    \item \textbf{Báo cáo cộng đồng:} Tóm tắt chủ đề. Local: tỷ lệ nhỏ (10\%); Global: toàn bộ cộng đồng liên quan.
+    \item \textbf{Quan hệ:} Kết nối giữa entity được retrieve.
 \end{itemize}
 
-\subsection{Chiến lược prompt và kiểm soát hallucination}
+Giới hạn token đầu vào buộc ưu tiên relevance --- entity và text unit có độ tương tự cao nhất được đưa vào trước. System prompt:
+\begin{itemize}[nosep, leftmargin=*]
+    \item Chỉ trả lời dựa trên ngữ cảnh cung cấp.
+    \item Trích dẫn Điều/Khoản cụ thể khi có căn cứ.
+    \item Từ chối trả lời nếu thiếu thông tin trong ngữ cảnh.
+    \item Cảnh báo về bất kỳ điều không chắc chắn.
+\end{itemize}
+
+\subsection{Kiểm soát hallucination ba lớp}
 \label{subsection:3.4.3}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Prompt trả lời: chỉ dựa trên ngữ cảnh; từ chối nếu thiếu thông tin
-    \item Prompt extraction: quy tắc JSON output, entity type cố định
-    \item Cache LLM (\texttt{data/labor-law/cache/}) --- tiết kiệm chi phí re-index
-\end{itemize}
 
-\section{Ứng dụng phân tích hợp đồng lao động}
+Ba lớp kiểm soát hallucination:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Grounding retrieval:} Mọi câu trả lời phải có ngữ cảnh từ corpus đã index. Nếu LLM sinh thông tin không có trong context, nó vi phạm grounding. Hạn chế: nếu context quá hẹp, LLM có thể không trả lời hoặc trả lời sai.
+    
+    \item \textbf{Kỹ thuật prompt:} Extraction prompt quy định JSON schema cố định; answer prompt cấm bịa số liệu (ví dụ: mức phạt), yêu cầu format trích dẫn theo mẫu (Điều X, Khoản Y, Nghị định Z).
+    
+    \item \textbf{Post-processing:} \texttt{citation\_resolver} trích \texttt{article\_citations} từ response; temporal filter cảnh báo văn bản hết hiệu lực; rule validator (khi bật) kiểm tra ngưỡng số.
+\end{enumerate}
+
+LLM được cấu hình \texttt{temperature=0} → output xác định (deterministic). Cache kết quả extraction/summary qua nhiều lần chạy --- quan trọng khi re-index hoặc dùng free tier API.
+
+\section{Ứng dụng phân tích tuân thủ hợp đồng lao động}
 \label{section:3.5}
 
-\subsection{Mục tiêu và phạm vi}
+\subsection{Kiến trúc hybrid ba thành phần}
 \label{subsection:3.5.1}
+
+Module phân tích hợp đồng kiểm tra điều khoản so với BLLĐ 2019 và Nghị định hướng dẫn, sử dụng kiến trúc hybrid kết hợp:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Kiểm tra điều khoản HĐLĐ so với BLLĐ 2019 + NĐ hướng dẫn
-    \item Module: \texttt{unified-search-app/app/contract\_analysis/}
-    \item Kiến trúc \textbf{hybrid}: rule-based (deterministic) + đồ thị \texttt{labor-law} (grounding) + LLM (phân tích khoản phức tạp)
-    \item Phạm vi: HĐLĐ dạng text/PDF; không thay thế tư vấn pháp lý chính thức
+    \item \textbf{Quy tắc xác định (VR001--VR016):} Phát hiện vi phạm rõ ràng (ví dụ: lương < tối thiểu, thử việc > 60 ngày) với latency $<$ 5ms/khoản. Độ tin cậy cao, không sai sót.
+    
+    \item \textbf{Grounding đồ thị:} Đồ thị luật lao động --- suy luận multi-hop để tìm Điều liên quan khoản HĐLĐ cần phân tích. Ví dụ: khoản ``lương thêm ca'' → map tới Điều về tính lương, Điều về lương tối thiểu, Nghị định lương vùng.
+    
+    \item \textbf{Phân tích LLM bổ sung:} Review khoản phức tạp hoặc khoản chưa có quy tắc rõ (semantic risk). Chỉ gọi LLM khi quy tắc chưa đủ, để tiết kiệm token.
 \end{itemize}
 
-\subsection{Pipeline phân tích HĐLĐ}
+Kết quả mang tính hỗ trợ, không thay thế tư vấn pháp lý chuyên nghiệp. Đầu vào: PDF (text layer hoặc OCR), DOCX, TXT. Đầu ra: báo cáo tuân thủ với điểm số, danh sách vi phạm, khuyến nghị.
+
+\subsection{Pipeline phân tích chi tiết}
 \label{subsection:3.5.2}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Bước 1 --- Tiếp nhận tài liệu}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Đầu vào: PDF (text layer hoặc PaddleOCR khi scan), DOCX, TXT
-        \item Đầu ra: \texttt{ContractDocument} gồm văn bản thô và metadata tệp
-    \end{itemize}
-    \item \textbf{Bước 2 --- Tách khoản}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item LLM phân đoạn HĐLĐ thành danh sách \texttt{Clause} (tiêu đề, tóm tắt, category, văn bản gốc)
-        \item Phát hiện điều khoản bắt buộc còn thiếu (\texttt{compute\_missing\_mandatory})
-    \end{itemize}
-    \item \textbf{Bước 3 --- Kiểm tra quy tắc VR001--VR016}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Regex + ngưỡng số học trên từng khoản; thời gian $<$ 5\,ms/khoản
-        \item Căn cứ pháp lý gắn sẵn trong rule (ví dụ VR001: BLLĐ Điều~90 + NĐ~74/2024)
-        \item Tham số \texttt{RuleContext}: vùng lương I--IV, \texttt{max\_probation\_days}
-        \item Đây là lớp phát hiện vi phạm \textbf{ưu tiên} cho các trường hợp rõ ràng (lương, thử việc, giờ làm, phạt tiền NLĐ, \ldots)
-    \end{itemize}
-    \item \textbf{Bước 4 --- Phân loại khoản cần map đồ thị}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Chỉ khoản thuộc nhóm phức tạp hoặc \texttt{UNKNOWN} mới gọi mapper
-        \item Nhóm phức tạp: \texttt{SALARY}, \texttt{WORKING\_HOURS}, \texttt{PROBATION}, \texttt{TERMINATION}, \texttt{SOCIAL\_INSURANCE}, \texttt{PENALTY\_CLAUSE}, \texttt{UNILATERAL\_TERMS}, \texttt{WAIVER\_CLAUSE}, \texttt{NON\_COMPETE}, \texttt{DISPUTE\_RESOLUTION}
-        \item Khoản đơn giản đã có kết quả rule đủ --- bỏ qua bước map để giảm latency
-    \end{itemize}
-    \item \textbf{Bước 5 --- Đối chiếu đồ thị pháp luật} --- xem Mục~\ref{subsection:3.5.2.1}
-    \item \textbf{Bước 6 --- Phân tích LLM bổ sung}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Batch review trên khoản phức tạp/chưa rõ; prompt nhận thêm \texttt{MappedLawSnippet} và tóm tắt rule issues
-        \item \textbf{Bỏ qua LLM} nếu VR001--VR007 đã báo \texttt{VIOLATION} rõ --- tránh trùng lặp và tiết kiệm token
-        \item LLM \emph{không} là nguồn tri thức pháp luật; chỉ đối chiếu khoản HĐ với ngữ cảnh đã retrieve
-    \end{itemize}
-    \item \textbf{Bước 7 --- Sinh báo cáo}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Gộp rule issues + LLM issues; mức độ: \texttt{VIOLATION}, \texttt{HIGH\_RISK}, \texttt{MEDIUM\_RISK}, \texttt{COMPLIANT}
-        \item Mỗi cảnh báo kèm căn cứ Điều/khoản khi có trong ngữ cảnh pháp lý
-    \end{itemize}
-    \item Tuỳ chọn: lưu phiên phân tích vào Neo4j (\texttt{neo4j\_store.py}, label \texttt{ContractSession}, TTL 24h) --- tách biệt đồ thị HĐ và đồ thị \texttt{labor-law}
-\end{itemize}
 
-\subsection{Tích hợp đồ thị \texttt{labor-law} trong phân tích HĐLĐ}
-\label{subsection:3.5.2.1}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Vai trò}: đồ thị \emph{bổ trợ grounding} cho LLM --- \textbf{không thay thế} VR001--VR016
-    \item \textbf{Nguồn dữ liệu}: artifacts GraphRAG tại \texttt{data/labor-law/} --- \texttt{entities.parquet}, \texttt{relationships.parquet}, \texttt{merged\_entities/relationships} (L1 + L2, xem Mục~\ref{subsection:3.2.6})
-    \item \textbf{Mapper mặc định}:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item \texttt{GraphLoader(root\_dir="data/labor-law")} load parquet đã merge
-        \item \texttt{VNLegalReasoningEngine} (Mục~\ref{subsection:3.3.5}) --- chọn chain theo category khoản:
-        \texttt{violation} (phạt, chấm dứt một phía), \texttt{entitlement} (lương, BHXH, giờ làm), \texttt{procedure} (thử việc, giải quyết tranh chấp)
-        \item Truy vết multi-hop trên entity L1 (\texttt{Dieu}, \texttt{VanBan}) và L2 (\texttt{ChuThe}, \texttt{TienLuong}, \texttt{CheTai}, \ldots) qua quan hệ \texttt{entitles}, \texttt{obligates}, \texttt{penalizes}, \texttt{guided\_by}, \ldots
-        \item Mở rộng láng giềng entity thêm 2 hop trên parquet (\texttt{RELATED\_TO} trong file quan hệ)
-        \item Đầu ra: \texttt{MappedLawSnippet.rag\_answer} --- chuỗi suy luận + danh sách Điều trích dẫn (\texttt{cited\_articles})
-    \end{itemize}
-    \item \textbf{Mapper dự phòng} khi optimized mapper lỗi:
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Bước~1: \texttt{basic\_search} --- vector trên \texttt{text\_units} (Naive RAG, không traversal đồ thị)
-        \item Bước~2 (tuỳ chọn): seed \texttt{Entity.id} theo overlap token với khoản HĐ (\texttt{entity\_seed.py}) $\rightarrow$ Cypher \texttt{RELATED\_TO*1..hops} trên Neo4j (\texttt{neo4j\_kg\_expand.py})
-    \end{itemize}
-    \item \textbf{Thông tin khai thác từ đồ thị} (khác với chat Local/Global Search):
-    \begin{itemize}[nosep, leftmargin=*]
-        \item Entity và mô tả ngữ nghĩa (L2): quyền, nghĩa vụ, chế tài, tiền lương, \ldots
-        \item Quan hệ có hướng giữa entity --- phục vụ suy luận đa bước (ví dụ: hành vi $\rightarrow$ \texttt{obligates} $\rightarrow$ quy định $\rightarrow$ \texttt{penalizes} $\rightarrow$ chế tài)
-        \item Điều luật liên quan qua chuỗi reasoning và neighborhood expansion
-        \item \emph{Không} dùng community reports (Global Search) trong pipeline HĐLĐ hiện tại
-    \end{itemize}
-    \item \textbf{Luồng dữ liệu tóm tắt}: khoản HĐ $\rightarrow$ (rule VR) $\rightarrow$ [nếu phức tạp] map đồ thị $\rightarrow$ ngữ cảnh pháp lý $\rightarrow$ LLM review $\rightarrow$ báo cáo
-    \item Tham số pipeline: \texttt{use\_optimized\_mapper=True}, \texttt{skip\_graph\_mapping}, \texttt{use\_neo4j\_knowledge\_graph}, \texttt{neo4j\_graph\_hops} (1--3)
-\end{itemize}
+Pipeline gồm 7 bước:
 
-\subsection{Quy tắc VR001--VR016}
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Tiếp nhận:} Đọc HĐLĐ (PDF/DOCX/TXT); nếu scan, OCR (PaddleOCR). Output: \texttt{ContractDocument}.
+    
+    \item \textbf{Tách khoản:} LLM phân đoạn HĐLĐ thành danh sách khoản (tiêu đề, nội dung). Phát hiện điều bắt buộc thiếu (theo Điều 21 BLLĐ: địa điểm, thời gian làm việc, lương, BHXH, v.v.).
+    
+    \item \textbf{Kiểm tra quy tắc:} Áp dụng 16 quy tắc VR001--VR016; xác định vi phạm rõ ràng (mức độ: VIOLATION, HIGH\_RISK, MEDIUM\_RISK, COMPLIANT).
+    
+    \item \textbf{Lọc khoản phức tạp:} Chỉ khoản category ``SALARY'', ``WORKING\_HOURS'', ``PROBATION'', ``TERMINATION'', v.v. hoặc \texttt{UNKNOWN} mới được map tới đồ thị --- giảm latency.
+    
+    \item \textbf{Đối chiếu đồ thị:} Multi-hop reasoning trên merged graph; trích Điều liên quan khoản. Output: \texttt{MappedLawSnippet}.
+    
+    \item \textbf{Phân tích LLM bổ sung:} Nếu quy tắc không đủ, gọi LLM review khoản với context từ bước 5. Nhưng nếu quy tắc đã báo VIOLATION rõ, skip LLM.
+    
+    \item \textbf{Sinh báo cáo:} Gộp issues; phân loại mức độ; mỗi cảnh báo kèm trích dẫn Điều/Khoản, khuyến nghị. Markdown report hoặc PDF.
+\end{enumerate}
+
+Tuỳ chọn: lưu session vào Neo4j (label \texttt{ContractSession}, TTL 24h) --- tách biệt đồ thị HĐLĐ riêng.
+
+\subsection{16 quy tắc kiểm tra (VR001--VR016)}
 \label{subsection:3.5.3}
+
+Bảng~\ref{table:vr_rules} tóm tắt các quy tắc với căn cứ pháp lý. Mỗi quy tắc có ngưỡng cụ thể, ví dụ:
 \begin{itemize}[nosep, leftmargin=*]
-    \item VR001: Lương $<$ mức tối thiểu vùng (BLLĐ Điều 90 + NĐ 74/2024)
-    \item VR002--VR007: Thử việc, giờ làm, phạt tiền NLĐ, thời hạn HĐLĐ, \ldots
-    \item VR008--VR016: BHXH, nghỉ phép, BHTN, điều kiện làm việc, \ldots
-    \item \texttt{RuleContext}: vùng lương (I--IV), \texttt{max\_probation\_days}
+    \item \textbf{VR001:} Lương < mức tối thiểu vùng (từ \texttt{REGIONAL\_MINIMUM\_WAGE[region]}).
+    \item \textbf{VR002:} Thử việc > 60 ngày (Điều 27 BLLĐ: tối đa 60 ngày).
+    \item \textbf{VR008:} Nghỉ phép < 12 ngày/năm (Điều 113 BLLĐ: tối thiểu 12 ngày).
 \end{itemize}
 
-\section{Thiết kế giao diện và API}
+Phát hiện vi phạm được liên kết với Điều/Khoản tương ứng, giúp người dùng tra cứu thêm hoặc kiểm chứng.
+
+\begin{table}[H]
+\centering
+\caption{Quy tắc kiểm tra tuân thủ hợp đồng lao động (VR001--VR016)}
+\label{table:vr_rules}
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{|c|p{5.5cm}|p{4.5cm}|}
+\hline
+\textbf{Quy tắc} & \textbf{Kiểm tra} & \textbf{Căn cứ pháp lý} \\
+\hline
+VR001 & Lương $<$ mức tối thiểu vùng & BLLĐ Điều 90, NĐ 74/2024 \\
+VR002 & Thử việc $>$ 60 ngày & BLLĐ Điều 27 \\
+VR003 & Giờ làm/tuần $>$ 48 & BLLĐ Điều 107 \\
+VR004 & Lương thử việc $<$ 85\% & BLLĐ Điều 27 \\
+VR005 & Phạt tiền NLĐ (bị cấm) & BLLĐ Điều 127 \\
+VR006 & HĐLĐ xđ thời hạn $>$ 36 tháng & BLLĐ Điều 20 \\
+VR007 & Ký HĐLĐ xđ thời hạn lần $\geq$ 3 & BLLĐ Điều 20 \\
+VR008 & Nghỉ phép $<$ 12 ngày/năm & BLLĐ Điều 113 \\
+VR009 & Không đề cập BHXH/BHYT & BLLĐ Điều 168 \\
+VR010 & Báo trước chấm dứt $<$ 30 ngày & BLLĐ Điều 35, 41 \\
+VR011 & Thiếu trợ cấp thôi việc & BLLĐ Điều 46 \\
+VR012 & Điều khoản bất lợi một chiều & BLLĐ Điều 21 \\
+VR013 & Từ bỏ quyền lợi (vô hiệu) & BLLĐ Điều 21 \\
+VR014 & Non-compete $>$ 12 tháng & BLLĐ Điều 21 \\
+VR015 & Thiếu địa điểm làm việc & BLLĐ Điều 21 \\
+VR016 & Thời hạn trả lương $>$ 1 tháng & BLLĐ Điều 94 \\
+\hline
+\end{tabular}%
+}
+\end{table}
+
+\section{Thiết kế giao diện người dùng}
 \label{section:3.6}
 
-\subsection{API FastAPI}
+\subsection{API dịch vụ}
 \label{subsection:3.6.1}
+
+Hệ thống cung cấp các điểm cuối API chuẩn cho:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Routes: \texttt{/api/chat}, \texttt{/api/documents}, \texttt{/api/health}
-    \item \texttt{ChatRequest}: \texttt{question}, \texttt{mode}, \texttt{domain}
-    \item \texttt{ChatResponse}: \texttt{answer}, \texttt{article\_citations}, \texttt{entities\_used}, \texttt{temporal\_warnings}
-    \item \texttt{api/services/graph\_loader.py} --- load parquet artifacts
+    \item \textbf{Kiểm tra trạng thái:} Cung cấp trạng thái hệ thống, sẵn sàng của đồ thị merged.
+    \item \textbf{Hỏi đáp pháp luật:} Chấp nhận câu hỏi theo chế độ (Local, Global, Multi-hop); trả lời kèm trích dẫn Điều, cảnh báo temporal.
+    \item \textbf{Phân tích hợp đồng:} Tiếp nhận HĐLĐ; trả báo cáo tuân thủ (vi phạm, rủi ro, tuân thủ).
+    \item \textbf{Quản lý corpus:} Lấy danh sách tài liệu, siêu dữ liệu, trạng thái hiệu lực.
+    \item \textbf{Quản lý phiên:} Lưu, lấy lịch sử hội thoại người dùng.
 \end{itemize}
 
-\subsection{Frontend Next.js}
+Schema đầu vào/đầu ra chuẩn hóa (ChatRequest, ChatResponse, ContractAnalysisRequest, ContractAnalysisResponse). Timeout: 90 giây server-side. CORS tương thích frontend. Keep-Alive được cấu hình để phù hợp proxy.
+
+\subsection{Giao diện web}
 \label{subsection:3.6.2}
+
+Giao diện người dùng web cung cấp:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item UI chat hỏi đáp, quản lý tài liệu
-    \item Luồng: nhập câu hỏi $\rightarrow$ chọn mode $\rightarrow$ nhận câu trả lời + trích dẫn
+    \item \textbf{Chat pháp luật:} Nhập câu hỏi tự nhiên; chọn chế độ Local/Global; hiển thị câu trả lời kèm trích dẫn Điều, cảnh báo hiệu lực, cấu trúc dễ đọc.
+    
+    \item \textbf{Upload và phân tích HĐLĐ:} Tải file (PDF/DOCX); xem báo cáo phân tích với điểm số tuân thủ, danh sách vi phạm, khuyến nghị sửa chữa.
+    
+    \item \textbf{Lịch sử và bookmark:} Xem các câu hỏi và phân tích trước đây; bookmark những kết quả quan trọng.
+    
+    \item \textbf{Tham chiếu:} Sidebar với liên kết tới Điều/Khoản, định nghĩa thuật ngữ.
 \end{itemize}
+
+Proxy API từ giao diện web tới backend FastAPI --- tránh CORS issues.
+
+\section{Tổng kết phương pháp}
+\label{section:3.7}
+
+Chương này đã trình bày phương pháp đề xuất end-to-end từ góc độ khoa học: thiết kế ontology hai lớp với canonicalization để đảm bảo nhất quán; quy trình chuẩn bị dữ liệu chi tiết bảo vệ tính nguyên vẹn Điều/Khoản; xây dựng đồ thị tri thức qua merge cấu trúc + ngữ nghĩa; chiến lược truy vấn đa chế độ (Local, Global, Multi-hop) với kiểm soát hiệu lực; tích hợp LLM có kiểm soát hallucination ba lớp; ứng dụng phân tích hợp đồng kết hợp quy tắc, đồ thị, LLM. Lựa chọn thiết kế được cân nhắc để cân bằng độ chính xác, latency, và khả năng mở rộng. Chương 4 sẽ trình bày đánh giá định lượng các thành phần; Chương 5 sẽ phân tích đóng góp kỹ thuật chi tiết.
 
 \end{document}

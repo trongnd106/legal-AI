@@ -2,13 +2,23 @@
 \begin{document}
 
 \begin{center}
-    \Large{\textbf{ABSTRACT}}\\
+\Large{\textbf{ABSTRACT}}
 \end{center}
-\vspace{1cm}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Problem:} Vietnamese labor law spans multiple legal documents; Q\&A requires multi-article reasoning, accurate citations, and hallucination control
-    \item \textbf{Solution:} Virtual assistant based on Microsoft GraphRAG with two-layer ontology, Local/Global Search, multi-hop reasoning, temporal validity filtering, and labor contract analysis
-    \item \textbf{Results:} End-to-end pipeline over 581 articles / 7 documents; keyword/citation accuracy benchmark; API, frontend, and contract analysis demo
-\end{itemize}
+
+\vspace{0.8cm}
+
+This thesis investigates and implements a graph-based retrieval-augmented question-answering approach, commonly referred to as \gls{GraphRAG}, to support the retrieval, analysis, and synthesis of Vietnamese labor law. In response to the needs of employees (NLD), employers (NSDLĐ), and human resources and legal departments, traditional legal search tools often perform poorly in natural-language question answering and cross-document reasoning, while general-purpose \gls{LLM}-based chatbots are prone to providing inaccurate or outdated citations. To address these limitations, this thesis develops a \textbf{Vietnamese Labor Law Virtual Assistant} based on Microsoft GraphRAG, integrating Retrieval-Augmented Generation principles to provide citation-grounded legal information retrieval and preliminary labor contract (HĐLĐ) compliance review.
+
+Based on a \gls{KG} representing the hierarchical structure of legal documents and the relationships among legal provisions, the thesis designs a two-layer ontology. The structural layer models the hierarchy of Articles, Clauses, and Points, together with validity information, while the semantic layer extracts domain-specific entities and relationships. The corpus consists of seven labor-law-related legal documents comprising 581 articles. The system supports single-article retrieval, multi-step reasoning across the Labor Code and its implementing decrees, filtering of expired legal documents, and labor contract compliance analysis. It is deployed as a web-based application that provides legal question answering and contract review functionalities. The system is intended solely as a decision-support tool and does not replace official legal consultation.
+
+Experimental results demonstrate that the graph-based approach outperforms both standalone LLMs and traditional vector-based RAG systems on complex legal questions. A case study involving a sample labor contract successfully identified a violation related to annual leave entitlements below the minimum requirements stipulated by the 2019 Labor Code. This thesis contributes evidence of the feasibility of Vietnamese Legal GraphRAG systems. However, its primary limitations include the restricted scope of the corpus and the absence of validation by legal experts.
+
+\vspace{1.5cm}
+
+\begin{flushright}
+\textbf{Author}\\[0.1cm]
+\textit{(Signature and Full Name)}\\[2.5cm]
+\textbf{Nguyen Dat Trong}
+\end{flushright}
 
 \end{document}

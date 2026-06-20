@@ -691,6 +691,19 @@ button {
   background: #f0f0f0;
 }
 
+.retry-status {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  animation: pulse-opacity 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse-opacity {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
 .typing-indicator {
   display: flex;
   gap: 4px;

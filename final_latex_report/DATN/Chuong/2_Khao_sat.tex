@@ -4,157 +4,295 @@
 \section{Ngữ cảnh bài toán hỏi đáp pháp luật lao động}
 \label{section:2.1}
 
+Chương này trình bày nền tảng lý thuyết phục vụ thiết kế Trợ lý Ảo Luật Lao Động Việt Nam. Nội dung gồm: (1)~đặc thù bài toán tra cứu pháp luật lao động, (2)~các nghiên cứu liên quan, (3)~kiến thức nền về \gls{RAG}, đồ thị tri thức và \gls{GraphRAG}, (4)~vai trò \gls{LLM} và \gls{Embedding} trong hệ thống triển khai.
+
 \subsection{Đặc điểm văn bản pháp luật lao động Việt Nam}
 \label{subsection:2.1.1}
+
+Hệ thống pháp luật Việt Nam tuân theo nguyên tắc thứ bậc: Hiến pháp $\rightarrow$ Luật $\rightarrow$ Nghị định $\rightarrow$ Thông tư $\rightarrow$ Quyết định. Trong lĩnh vực lao động, \gls{BLLD} số 45/2019/QH14 (có hiệu lực từ 01/01/2021) là văn bản gốc, quy định quyền và nghĩa vụ của \gls{NLD}, \gls{NSDLD}, nội dung \gls{HDLD}, thời giờ làm việc, tiền lương, kỷ luật lao động, giải quyết tranh chấp\ldots\ Các Nghị định và Thông tư hướng dẫn chi tiết hoặc quy định chế tài xử phạt vi phạm hành chính.
+
+Về mặt hình thức, mỗi văn bản được tổ chức theo cấu trúc phân cấp: Phần $\rightarrow$ Chương $\rightarrow$ Mục $\rightarrow$ Điều $\rightarrow$ Khoản $\rightarrow$ Điểm. Đơn vị trích dẫn pháp lý chuẩn là \textbf{Điều} và \textbf{Khoản}; việc cắt văn bản giữa Khoản sẽ làm sai lệch nghĩa quy phạm. Về mặt nội dung, các văn bản liên kết với nhau qua quan hệ dẫn chiếu (\texttt{cites}), hướng dẫn (\texttt{guided\_by}), sửa đổi (\texttt{amends}) và bãi bỏ (\texttt{repeals}) --- đây là các quan hệ cốt lõi của Lớp 1 trong ontology hai lớp.
+
+Ngoài cấu trúc hình thức, mỗi điều khoản mang tính chất quy phạm khác nhau, được gán nhãn \texttt{norm\_type} trong pipeline chuẩn bị dữ liệu:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Cấu trúc phân cấp và tính ràng buộc thứ bậc (Hiến pháp $\rightarrow$ Luật $\rightarrow$ Nghị định $\rightarrow$ Thông tư)
-    \item Quan hệ dẫn chiếu: \texttt{guided\_by}, \texttt{cites}, \texttt{amends}, \texttt{repeals} (Lớp 1 ontology)
-    \item Phân loại quy phạm: quyền, nghĩa vụ, cấm đoán, thủ tục --- field \texttt{norm\_type}
-    \item Corpus triển khai: 7 văn bản (BLLĐ 2019, NĐ 145/2020, NĐ 12/2022, NĐ 74/2024, NĐ 70/2023, TT 10/2020, VBHN BHXH)
+    \item \textbf{Quyền} (\texttt{quyen}): quyền lợi được pháp luật bảo vệ (ví dụ: quyền đơn phương chấm dứt HĐLĐ --- Điều 35).
+    \item \textbf{Nghĩa vụ} (\texttt{nghia\_vu}): trách nhiệm phải thực hiện (ví dụ: trả lương đúng hạn --- Điều 94).
+    \item \textbf{Cấm đoán} (\texttt{cam\_doan}): hành vi bị nghiêm cấm (ví dụ: phạt tiền thay vì kỷ luật --- Điều 127).
+    \item \textbf{Thủ tục} (\texttt{thu\_tuc}): quy trình, hình thức thực hiện (ví dụ: thủ tục ký HĐLĐ --- Điều 21).
+    \item \textbf{Chế tài} (\texttt{che\_tai}): hậu quả pháp lý khi vi phạm.
 \end{itemize}
+
+Corpus triển khai trong đồ án gồm \textbf{7 văn bản} (Bảng~\ref{table:corpus}), tổng cộng 581 Điều, 2069 Khoản và 1705 Điểm sau khi chuẩn hóa bằng \texttt{scripts/01\_prepare\_data.py}.
+
+\begin{table}[H]
+\centering
+\caption{Corpus văn bản pháp luật lao động trong đồ án}
+\label{table:corpus}
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Ký hiệu} & \textbf{Số hiệu} & \textbf{Nội dung chính} \\
+\hline
+BLLĐ 2019 & 45/2019/QH14 & Bộ luật Lao động \\
+NĐ 145/2020 & 145/2020/NĐ-CP & Hướng dẫn BLLĐ về lao động \\
+NĐ 12/2022 & 12/2022/NĐ-CP & Xử phạt vi phạm hành chính lao động \\
+NĐ 74/2024 & 74/2024/NĐ-CP & Mức lương tối thiểu vùng \\
+NĐ 70/2023 & 70/2023/NĐ-CP & BHXH bắt buộc \\
+TT 10/2020 & 10/2020/TT-BLĐTBXH & Hướng dẫn thỏa ước lao động tập thể \\
+VBHN BHXH & --- & Văn bản hợp nhất BHXH \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsection{Vai trò truy xuất tri thức trong hệ thống hỏi đáp pháp luật}
 \label{subsection:2.1.2}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Hallucination và yêu cầu trích dẫn nguồn (Điều/Khoản) --- tính pháp lý của câu trả lời
-    \item Grounding: mọi khẳng định phải có căn cứ trong văn bản đã index
-\end{itemize}
+
+Khác với chatbot tổng quát, hệ thống hỏi đáp pháp luật phải đáp ứng hai yêu cầu then chốt: \textbf{độ chính xác nội dung} và \textbf{khả năng truy vết nguồn}.
+
+\textbf{Hallucination} (ảo giác) là hiện tượng \gls{LLM} sinh thông tin không có trong corpus -- đặc biệt nguy hiểm khi ``bịa'' số liệu (thường gặp với mức lương tối thiểu, số ngày nghỉ phép) hoặc trích sai Điều/Khoản. Trong bối cảnh pháp luật, câu trả lời sai có thể dẫn đến quyết định tuân thủ hoặc tranh chấp sai lầm.
+
+\textbf{Grounding} (neo nguồn) yêu cầu mọi khẳng định trong câu trả lời phải có căn cứ trong văn bản đã index. Hệ thống cần trả về trích dẫn cụ thể (ví dụ: ``Điều 113 khoản 1 BLLĐ 2019'') để người dùng tự kiểm chứng. Đây là tiêu chí \textbf{citation accuracy} --- một trong các metric đánh giá chính của đồ án.
+
+Truy xuất tri thức (retrieval) đóng vai trò cầu nối giữa câu hỏi người dùng và corpus pháp luật: tìm các đoạn văn bản, entity hoặc quan hệ liên quan, đưa vào ngữ cảnh (context) cho \gls{LLM} sinh câu trả lời. Chất lượng retrieval quyết định trần (upper bound) của toàn hệ thống -- nếu không retrieve được Điều liên quan, LLM dù mạnh cũng không thể trả lời đúng.
 
 \subsection{Yêu cầu suy luận đa bước trong bài toán lao động}
 \label{subsection:2.1.3}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Single-hop: một Điều trả lời trực tiếp (ví dụ: thử việc 60 ngày --- Điều 27)
-    \item Multi-hop: chuỗi quy phạm $\rightarrow$ hậu quả $\rightarrow$ chế tài (ví dụ: lương tối thiểu $\rightarrow$ NĐ 12/2022)
-    \item Suy luận theo cấu trúc pháp luật và hiệu lực văn bản (khác suy luận thời gian tin tức)
-\end{itemize}
+
+Câu hỏi pháp luật lao động không đồng nhất về độ phức tạp. Phân loại theo số bước suy luận cần thiết:
+
+\textbf{Single-hop} --- câu trả lời nằm trực tiếp trong một Điều/Khoản:
+\begin{example}
+``Thời gian thử việc tối đa đối với công việc đòi hỏi trình độ chuyên môn là bao lâu?''\\
+$\rightarrow$ Điều 27 BLLĐ 2019: tối đa 60 ngày.
+\end{example}
+
+\textbf{Multi-hop} --- cần nối chuỗi quy phạm qua nhiều văn bản:
+\begin{example}
+``Công ty trả lương dưới mức tối thiểu vùng IV thì bị phạt bao nhiêu?''\\
+$\rightarrow$ Bước 1: Điều 90 BLLĐ (nghĩa vụ trả lương không thấp hơn mức tối thiểu vùng).\\
+$\rightarrow$ Bước 2: NĐ 12/2022 (mức phạt tiền khi vi phạm).
+\end{example}
+
+\textbf{Suy luận theo hiệu lực văn bản}: khác với suy luận thời gian trong tin tức (Temporal GraphRAG): cần xác định văn bản còn hiệu lực tại thời điểm tra cứu, loại bỏ điều khoản đã bị sửa đổi (\texttt{amends}) hoặc bãi bỏ (\texttt{repeals}). Ví dụ: ``mức lương tối thiểu vùng'' được cập nhật qua NĐ 74/2024, thay thế các quy định cũ.
+
+\textbf{Kiểm tra tuân thủ HĐLĐ}: so khớp điều khoản hợp đồng với ngưỡng pháp lý (lương tối thiểu, số ngày nghỉ phép, thời gian thử việc\ldots). Bài toán này kết hợp truy xuất pháp luật và kiểm tra quy tắc (rule-based), được triển khai qua module \texttt{contract\_analysis/} với 16 quy tắc VR001--VR016 được định nghĩa rõ ràng trên cơ sở bao phủ toàn bộ khung dữ liệu.
 
 \section{Các nghiên cứu liên quan}
 \label{section:2.2}
 
 \subsection{Nghiên cứu về RAG và Legal AI}
 \label{subsection:2.2.1}
+
+\textbf{Retrieval-Augmented Generation} (\gls{RAG}) được Lewis et al. đề xuất như mô hình kết hợp retriever (truy xuất tài liệu liên quan) và generator (\gls{LLM}) để trả lời câu hỏi dựa trên tri thức bên ngoài. Kiến trúc RAG gồm ba bước: (1)~encode câu hỏi, (2)~retrieve top-$k$ đoạn văn bản liên quan, (3)~augment prompt và generate câu trả lời. Ưu điểm chính: giảm hallucination, cập nhật tri thức mà không cần fine-tune LLM.
+
+Trong lĩnh vực \textbf{Legal AI}, các nghiên cứu Legal Question Answering (Legal QA) và Legal Information Retrieval (Legal IR) tập trung vào:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item RAG (Lewis et al., 2020): retriever + generator
-    \item Legal QA, Legal Information Retrieval: thách thức văn bản luật tiếng Việt, thuật ngữ chuyên ngành
-    \item Ứng dụng LLM trong pháp luật: rủi ro và nhu cầu RAG
+    \item Trích xuất và phân loại điều khoản pháp luật.
+    \item Hỏi đáp trên corpus luật (COLIEE, JEC-QA, Vietnamese Legal QA).
+    \item Phân tích hợp đồng và kiểm tra tuân thủ (compliance checking).
 \end{itemize}
+
+Đối với tiếng Việt, thách thức bao gồm: thuật ngữ pháp lý chuyên ngành, cấu trúc văn bản phân cấp, quan hệ dẫn chiếu chéo giữa Luật và Nghị định, và thiếu benchmark chuẩn hóa quy mô lớn. Các ứng dụng \gls{LLM} thuần trong pháp luật cho thấy rủi ro hallucination cao, củng cố nhu cầu RAG có grounding và trích dẫn nguồn.
 
 \subsection{Nghiên cứu về Knowledge Graph trong hỏi đáp pháp luật}
 \label{subsection:2.2.2}
+
+\gls{KG} (Knowledge Graph) biểu diễn tri thức dưới dạng đồ thị: \textbf{nodes} (entities) và \textbf{edges} (relationships). Trong domain pháp luật, các ontology và chuẩn biểu diễn đã được phát triển:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Legal Knowledge Graph: LKIF, Akoma Ntoso, các ontology pháp luật
-    \item Graph-based QA: graph traversal, subgraph retrieval
-    \item Hạn chế: chi phí xây dựng thủ công; khó scale với văn bản mới
+    \item \textbf{LKIF} (Legal Knowledge Interchange Format): ontology pháp luật châu Âu, mô hình hóa norm, role, process.
+    \item \textbf{Akoma Ntoso / LegalDocML}: chuẩn XML/OASIS cho cấu trúc văn bản pháp luật (Phần, Chương, Điều, Khoản).
+    \item \textbf{Legal Knowledge Graphs} thực nghiệm: ELI (European Legislation Identifier), các KG tòa án và luật quốc gia.
 \end{itemize}
+
+Phương pháp \textbf{graph-based QA} sử dụng graph traversal hoặc subgraph retrieval: từ entity trong câu hỏi, duyệt các cạnh quan hệ để tìm thông tin liên quan. Cách tiếp cận này bảo toàn quan hệ logic (quyền $\rightarrow$ nghĩa vụ $\rightarrow$ chế tài) và hỗ trợ multi-hop tự nhiên.
+
+Hạn chế chính: xây dựng KG thủ công tốn công, đòi hỏi chuyên gia pháp lý annotate; khó scale khi văn bản mới ban hành hoặc sửa đổi. GraphRAG hướng tới tự động hóa phần lớn quy trình, trong khi đồ án bổ sung Lớp deterministic để đảm bảo cấu trúc pháp lý chính xác.
 
 \subsection{GraphRAG và các biến thể gần đây}
 \label{subsection:2.2.3}
+
+Microsoft GraphRAG mở rộng RAG truyền thống bằng cách xây dựng đồ thị tri thức từ corpus, phát hiện cộng đồng (community detection) và sinh \gls{CommunityReport} -- báo cáo tóm tắt theo chủ đề. Hệ thống hỗ trợ ba chế độ truy vấn:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Microsoft GraphRAG: indexing pipeline, community reports, Local/Global Search
-    \item So sánh LightRAG, Nano GraphRAG, Temporal GraphRAG, Fast GraphRAG, HippoRAG2 --- tham chiếu để quyết định thiết kế
-    \item Lựa chọn: GraphRAG gốc (Microsoft) + tùy biến domain (ontology 2 lớp, prompt tiếng Việt)
-    \item Luật lao động VN là đóng góp domain mới trên GraphRAG
+    \item \textbf{Basic Search}: truy xuất vector thuần trên text units -- tương đương \gls{NaiveRAG}, dùng làm baseline.
+    \item \textbf{Local Search}: entity-centric, kết hợp mô tả entity, quan hệ lân cận và text units --- phù hợp câu hỏi cụ thể.
+    \item \textbf{Global Search}: map-reduce trên community reports, phù hợp câu hỏi tổng hợp, khám phá chủ đề.
 \end{itemize}
+
+Các biến thể GraphRAG gần đây được khảo sát khi thiết kế đồ án (Bảng~\ref{table:graphrag_variants}):
+
+\begin{table}[H]
+\centering
+\caption{So sánh GraphRAG và các biến thể liên quan}
+\label{table:graphrag_variants}
+\small
+\begin{tabular}{|p{2.8cm}|p{4.5cm}|p{4.5cm}|}
+\hline
+\textbf{Hệ thống} & \textbf{Đặc điểm} & \textbf{Hạn chế với luật lao động VN} \\
+\hline
+Microsoft GraphRAG & Pipeline đầy đủ, community reports, Local/Global Search & Schema mặc định không phù hợp domain pháp luật \\
+LightRAG & Nhẹ, dual-level retrieval & Thiếu community reports cho câu hỏi tổng hợp \\
+Nano GraphRAG & Triển khai gọn, dễ tùy biến & Chưa mature cho production \\
+Temporal GraphRAG & Suy luận theo thời gian sự kiện & Khác bài toán hiệu lực văn bản pháp luật \\
+HippoRAG2 & Neurobiological-inspired indexing & Chưa hỗ trợ ontology pháp luật \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Lựa chọn của đồ án:} Microsoft GraphRAG gốc làm nền tảng, tùy biển domain qua ontology hai lớp, prompt extraction tiếng Việt, merge graph cấu trúc (Lớp 1) và semantic (Lớp 2). Luật lao động Việt Nam là domain mới chưa được GraphRAG áp dụng có hệ thống trong tài liệu công bố.
 
 \subsection{Nghiên cứu phân tích hợp đồng và tuân thủ pháp luật}
 \label{subsection:2.2.4}
+
+Phân tích hợp đồng lao động là bài toán NLP kết hợp \textbf{rule-based compliance checking} và \textbf{LLM-based analysis}:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Contract analysis bằng NLP + rules
-    \item Rule-based compliance checking vs LLM-based analysis
-    \item Vị trí module \texttt{contract\_analysis/} trong bối cảnh nghiên cứu
+    \item \textbf{Rule-based:} định nghĩa quy tắc cứng (regex, ngưỡng số) gắn với Điều luật cụ thể --- chính xác, giải thích được, nhưng khó bao phủ diễn đạt đa dạng.
+    \item \textbf{LLM-based:} phân tích ngữ nghĩa điều khoản, phát hiện rủi ro mơ hồ --- linh hoạt nhưng có thể hallucination, khó kiểm chứng.
 \end{itemize}
+
+Đồ án áp dụng \textbf{hybrid}: VR001--VR007 dùng regex và ngưỡng số (lương, thử việc, giờ làm, phạt tiền); VR008--VR016 kiểm tra điều khoản bắt buộc; LLM bổ sung phân tích rủi ro (L001) khi rule không phát hiện vi phạm rõ.
 
 \section{Kiến thức nền tảng về RAG}
-\label{section:2.3}
+\label{section:rag_foundation}
 
 \subsection{Khái niệm và kiến trúc RAG}
-\label{subsection:2.3.1}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Thành phần: Retriever, Generator (LLM)
-    \item Luồng: encode query $\rightarrow$ retrieve $\rightarrow$ augment prompt $\rightarrow$ generate
-    \item Lợi ích: giảm hallucination, cập nhật tri thức không cần fine-tune
-\end{itemize}
+\label{subsection:rag_architecture}
+
+Kiến trúc RAG gồm hai thành phần chính:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Retriever:} nhận câu hỏi, tìm $k$ đoạn văn bản (passages) hoặc tài liệu liên quan nhất từ corpus đã index.
+    \item \textbf{Generator (LLM):} nhận câu hỏi kèm ngữ cảnh retrieved, sinh câu trả lời tự nhiên.
+\end{enumerate}
+
+Luồng xử lý:
+\[
+\text{Query} \xrightarrow{\text{encode}} \mathbf{q} \xrightarrow{\text{retrieve}} \{d_1, \ldots, d_k\} \xrightarrow{\text{augment}} \text{Prompt}(q, d_1, \ldots, d_k) \xrightarrow{\text{LLM}} \text{Answer}
+\]
+
+Lợi ích so với LLM thuần: (1)~giảm hallucination nhờ grounding trong tài liệu thực, (2)~cập nhật tri thức bằng cách thay đổi corpus/index mà không fine-tune model, (3)~truy vết nguồn qua các passage retrieved.
 
 \subsection{Truy xuất dựa trên vector}
-\label{subsection:2.3.2}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Embedding: \texttt{qwen3-embedding:4b} (Ollama, dim 2560)
-    \item Cosine similarity, vector store
-    \item GraphRAG Basic Search như baseline Naive RAG
-\end{itemize}
+\label{subsection:vector_retrieval}
+
+Truy xuất vector là phương pháp phổ biến nhất trong RAG hiện đại:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Embedding:} mỗi đoạn văn bản và câu hỏi được chuyển thành vector $\mathbf{v} \in \mathbb{R}^d$ bởi mô hình embedding. Đồ án sử dụng mô hình \texttt{qwen/qwen3-embedding-4b} (dim 2560) qua OpenRouter bởi tính tương thích tốt của nó với ngôn ngữ tiếng Việt.
+    \item \textbf{Vector store:} lưu trữ embedding của toàn bộ text units, entity descriptions, community reports.
+    \item \textbf{Similarity search:} tính cosine similarity $\text{sim}(\mathbf{q}, \mathbf{d}) = \frac{\mathbf{q} \cdot \mathbf{d}}{\|\mathbf{q}\| \|\mathbf{d}\|}$, trả về top-$k$ đoạn có similarity cao nhất.
+\end{enumerate}
+
+GraphRAG \textbf{Basic Search} sử dụng cơ chế truy xuất vector thuần trên text units được dùng làm baseline \gls{NaiveRAG} trong thí nghiệm. Tham số \texttt{vector\_size: 2560} trong cấu hình phải khớp với dimension của mô hình embedding.
 
 \subsection{Hạn chế RAG truyền thống với văn bản pháp luật}
-\label{subsection:2.3.3}
+\label{subsection:rag_limitations}
+
+Khi áp dụng \gls{NaiveRAG} cho văn bản pháp luật lao động, các hạn chế sau xuất hiện:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Mất cấu trúc phân cấp khi chunk tùy ý
-    \item Không bảo toàn quan hệ logic giữa Điều luật
-    \item Khó multi-hop BLLĐ $\rightarrow$ Nghị định xử phạt
-    \item Không có cơ chế lọc hiệu lực văn bản
+    \item \textbf{Mất cấu trúc phân cấp:} chunk theo kích thước token cố định có thể cắt giữa Khoản, làm mất ngữ cảnh pháp lý và khó trích dẫn chính xác.
+    \item \textbf{Không bảo toàn quan hệ logic:} vector search tìm đoạn \emph{ngữ nghĩa gần} nhưng không nắm quan hệ \texttt{cites}, \texttt{penalizes}, \texttt{obligates} giữa các Điều/văn bản.
+    \item \textbf{Khó multi-hop:} câu hỏi ``vi phạm X bị phạt bao nhiêu?'' cần nối BLLĐ (quy phạm) $\rightarrow$ NĐ 12/2022 (chế tài) --- một lần retrieve vector thường không đủ.
+    \item \textbf{Không lọc hiệu lực:} có thể retrieve điều khoản đã bị sửa đổi hoặc bãi bỏ nếu corpus chứa nhiều phiên bản.
 \end{itemize}
 
-\subsection{Đánh giá chất lượng hệ thống RAG}
-\label{subsection:2.3.4}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Metrics: keyword match, citation accuracy (\texttt{evaluation\_suite.py})
-    \item RAGAS: Faithfulness, Answer Relevancy, Context Precision/Recall
-    \item Domain pháp luật: citation accuracy quan trọng hơn BLEU/ROUGE
-\end{itemize}
+Các hạn chế này là động lực chính để đồ án chuyển sang GraphRAG kết hợp ontology hai lớp, chunking theo Điều, multi-hop reasoning và temporal filter.
 
 \section{Kiến thức nền tảng về đồ thị tri thức và GraphRAG}
-\label{section:2.4}
+\label{section:kg_graphrag_foundation}
 
 \subsection{Đồ thị tri thức}
-\label{subsection:2.4.1}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Nodes (entities), edges (relationships)
-    \item Đồ thị dị thể trong domain pháp luật
-    \item Entity resolution, deduplication
-\end{itemize}
+\label{subsection:knowledge_graph}
+
+Đồ thị tri thức $G = (V, E)$ gồm tập đỉnh $V$ (entities) và tập cạnh $E$ (relationships). Mỗi entity có \texttt{id}, \texttt{title}, \texttt{description}; mỗi relationship nối hai entity với \texttt{type} (ví dụ: \texttt{entitles}, \texttt{cites}).
+
+Trong domain pháp luật lao động, đồ thị có tính \textbf{dị thể} (heterogeneous): nhiều loại entity (Văn bản, Điều, Chủ thể, Hành vi, Chế tài) và nhiều loại quan hệ. Entity resolution và deduplication là thách thức: ``Điều 35'', ``Điều thứ 35 BLLĐ'' có thể chỉ cùng một node -- vấn đề này được giải quyết qua Lớp canonicalization.
 
 \subsection{Truy xuất dựa trên đồ thị}
-\label{subsection:2.4.2}
+\label{subsection:graph_retrieval}
+
+Truy xuất đồ thị khác vector retrieval ở khả năng khai thác \textbf{cấu trúc quan hệ}:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Graph traversal, subgraph extraction
-    \item Bảo toàn quan hệ; hỗ trợ multi-hop
-    \item So sánh với vector retrieval
+    \item \textbf{Graph traversal:} từ entity khởi đầu, duyệt theo cạnh (BFS/DFS) đến depth $h$ (hops).
+    \item \textbf{Subgraph extraction:} trích subgraph liên quan câu hỏi, đưa vào LLM làm context.
+    \item \textbf{Multi-hop:} câu hỏi ``A vi phạm B thì bị phạt C'' $\rightarrow$ duyệt $A \xrightarrow{obligates} B \xrightarrow{penalizes} C$.
 \end{itemize}
 
+So sánh: vector retrieval mạnh về ngữ nghĩa mờ (synonym, paraphrase); graph retrieval mạnh về quan hệ logic và chuỗi suy luận. Đồ án kết hợp cả hai qua GraphRAG Local Search (entity + text units) và multi-hop engine.
+
 \subsection{GraphRAG --- Retrieval-Augmented Generation trên đồ thị}
-\label{subsection:2.4.3}
+\label{subsection:graphrag_pipeline}
+
+Pipeline indexing GraphRAG gồm các giai đoạn:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Extract graph:} LLM trích entity và relationship từ text units (chunks).
+    \item \textbf{Summarize descriptions:} gộp mô tả trùng lặp cho cùng entity.
+    \item \textbf{Community detection:} thuật toán Leiden phân cụm entity theo mật độ cạnh.
+    \item \textbf{Generate community reports:} LLM sinh báo cáo tóm tắt từng cộng đồng.
+    \item \textbf{Embed:} embedding cho text units, entity descriptions, community reports.
+\end{enumerate}
+
+Ba chế độ truy vấn:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Indexing: extract graph $\rightarrow$ summarize $\rightarrow$ Leiden communities $\rightarrow$ community reports $\rightarrow$ embeddings
-    \item Local Search: entity-centric, text units xung quanh
-    \item Global Search: map-reduce trên community reports
-    \item Basic Search: vector-only baseline
+    \item \textbf{Basic Search:} vector search trên text units, tương đương baseline Naive RAG.
+    \item \textbf{Local Search:} từ entity liên quan câu hỏi, lấy mô tả entity, quan hệ lân cận, text units phù hợp single-hop và câu hỏi cụ thể.
+    \item \textbf{Global Search:} map-reduce -- chia câu hỏi, query từng community report, tổng hợp; phù hợp câu hỏi khám phá (chẳng hạn ``Các quyền NLĐ khi nghỉ việc?'').
 \end{itemize}
 
 \subsection{Community detection và báo cáo cộng đồng}
-\label{subsection:2.4.4}
-\begin{itemize}[nosep, leftmargin=*]
-    \item Thuật toán Leiden phân cụm entity
-    \item Community report: tóm tắt chủ đề (Nghỉ phép, Kỷ luật lao động, \ldots)
-    \item Vai trò trong Global Search --- câu hỏi tổng hợp
-    \item Prompt tùy chỉnh: \texttt{community\_report\_labor.txt}
-\end{itemize}
+\label{subsection:2.3.4}
+
+Thuật toán \textbf{Leiden} phân cụm entity trong đồ thị dựa trên modularity --- các entity liên kết chặt được gom thành community. Với corpus luật lao động, các community tương ứng chủ đề: Nghỉ phép, Kỷ luật lao động, Hợp đồng lao động, BHXH, Tiền lương\ldots
+
+\textbf{Community report} là văn bản tóm tắt do LLM sinh, mô tả entity chính, quan hệ và insight của community. Report được embed và dùng trong Global Search --- khi câu hỏi mang tính tổng hợp, hệ thống query các report thay vì từng text unit riêng lẻ.
+
+Đồ án tùy chỉnh prompt sinh report, yêu cầu output tiếng Việt, nhấn mạnh quyền/nghĩa vụ/chế tài, trích dẫn Điều/Khoản khi có thể. Thiết lập tham số giới hạn độ dài mô tả entity tối đa là 500.
 
 \section{Mô hình ngôn ngữ lớn và embedding trong hệ thống}
-\label{section:2.5}
+\label{section:2.4}
 
 \subsection{LLM --- vai trò và cấu hình}
-\label{subsection:2.5.1}
+\label{subsection:2.4.1}
+
+Mô hình ngôn ngữ lớn (Large Language Model -- \gls{LLM}) đóng vai trò đa nhiệm trong pipeline. Cụ thể:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Completion model: \texttt{qwen/qwen3-235b-a22b-2507} qua OpenRouter/LiteLLM
-    \item Vai trò: entity extraction, summarize, community report, sinh câu trả lời
-    \item Tham số: \texttt{temperature=0}, \texttt{max\_tokens=4000}, cache JSON
-    \item Thách thức tiếng Việt pháp luật: phân biệt \texttt{CheTai} vs \texttt{XuLyKyLuat}, \texttt{TienLuong} vs \texttt{TraLuong}
+    \item \textbf{Indexing:} trích xuất entity/relationship, summarize descriptions, sinh community reports.
+    \item \textbf{Querying:} sinh câu trả lời từ ngữ cảnh retrieved (Local/Global Search).
+    \item \textbf{Contract analysis:} phân tích rủi ro điều khoản mơ hồ (rule L001) khi VR001--VR007 chưa phát hiện vi phạm rõ.
 \end{itemize}
 
-\subsection{Embedding và vector store}
-\label{subsection:2.5.2}
 \begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{qwen3-embedding:4b} local Ollama
-    \item \texttt{vector\_size: 2560} --- phải khớp dim
-    \item Embedding cho: text units, entity descriptions, community reports
+    \item \textbf{Provider:} LiteLLM qua OpenRouter.
+    \item \textbf{Model:} \texttt{qwen/qwen3-235b-a22b-2507} khi xây dựng đồ thị và \texttt{openai/gpt-4o-mini} khi chạy kiểm thử hậu nghiệm.
+    \item \textbf{Tham số:} \texttt{temperature=0} (deterministic), \texttt{max\_tokens=4000}, cache JSON cho quá trình build graph.
 \end{itemize}
+
+Thách thức tiếng Việt pháp luật trong prompt extraction: phân biệt entity gần nghĩa --- \texttt{CheTai} (chế tài pháp luật) vs \texttt{XuLyKyLuat} (xử lý kỷ luật nội bộ); \texttt{TienLuong} (khái niệm lương) vs \texttt{TraLuong} (hành vi trả lương). Prompt tự custom đã quy định rõ các phân biệt này.
+
+\subsection{Embedding và vector store}
+\label{subsection:2.4.2}
+
+Mô hình embedding có tác dụng chuyển văn bản thành vector số cho similarity search:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Model:} \texttt{qwen/qwen3-embedding-4b} (qua OpenRouter).
+    \item \textbf{Dimension:} 2560.
+    \item \textbf{Đối tượng embed:} text units (chunks theo Điều), entity descriptions, community reports.
+\end{itemize}
+
+Embedding chất lượng ảnh hưởng trực tiếp Basic Search và bước retrieve entity trong Local Search. Với thuật ngữ pháp luật tiếng Việt chuyên ngành, mô hình embedding đa ngôn ngữ (Qwen3) phù hợp hơn embedding chỉ huấn luyện trên tiếng Anh.
+
+\subsection{Tổng kết nền tảng lý thuyết}
+\label{subsection:2.4.3}
+
+Chương này đã trình bày: (1)~đặc thù bài toán hỏi đáp pháp luật lao động Việt Nam, (2)~các nghiên cứu RAG, Legal KG và GraphRAG, (3)~kiến thức nền RAG và hạn chế với văn bản pháp luật, (4)~đồ thị tri thức, GraphRAG indexing/query, community detection, (5)~vai trò LLM và embedding. Cơ sở lý thuyết này là điểm tựa cho Chương tiếp theo -- trình bày phương pháp đề xuất: ontology hai lớp, pipeline dữ liệu, chiến lược truy vấn và module phân tích HĐLĐ.
 
 \end{document}

@@ -53,6 +53,7 @@ export function ChatPanel({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [typing, setTyping] = useState(false);
+  const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [recording, setRecording] = useState(false);
   const [micSupported, setMicSupported] = useState(true);
@@ -130,10 +131,16 @@ export function ChatPanel({
     const fileToAnalyze = attachedFile;
     clearAttachment();
 
+    const onRetry = (attempt: number, delayMs: number, reason: string) => {
+      const msg = `Kết nối bị gián đoạn (${reason}), đang thử lại lần ${attempt}…`;
+      setRetryStatus(msg);
+      showToast(msg, true);
+    };
+
     try {
       if (fileToAnalyze) {
         // Có file đính kèm → gọi contract analysis pipeline
-        const data = await analyzeContract(fileToAnalyze);
+        const data = await analyzeContract(fileToAnalyze, "IV", false, { onRetry });
         const report = data.markdown_report || "Không có kết quả phân tích.";
         setMessages((prev) => [
           ...prev,
@@ -148,7 +155,10 @@ export function ChatPanel({
       } else {
         // Không có file → hỏi đáp luật lao động thông thường
         const mode = question.length > 120 ? "global" : "local";
-        const data = await sendChatMessage({ question, mode, domain: "lao_dong" });
+        const data = await sendChatMessage(
+          { question, mode, domain: "lao_dong" },
+          { onRetry },
+        );
         const answer = data.answer || "Không có câu trả lời.";
         setMessages((prev) => [
           ...prev,
@@ -176,6 +186,7 @@ export function ChatPanel({
     } finally {
       setTyping(false);
       setSending(false);
+      setRetryStatus(null);
     }
   };
 
@@ -269,11 +280,15 @@ export function ChatPanel({
           <div className="message bot">
             <div className="avatar bot-avatar">🤖</div>
             <div className="bubble bot-bubble">
-              <div className="typing-indicator">
-                <span />
-                <span />
-                <span />
-              </div>
+              {retryStatus ? (
+                <div className="retry-status">{retryStatus}</div>
+              ) : (
+                <div className="typing-indicator">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+              )}
             </div>
           </div>
         )}

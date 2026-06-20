@@ -1,58 +1,178 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
 
-\section{Kết luận}
-\label{section:5.1}
+\section{Tóm tắt kết quả chính}
+\label{section:6.1}
 
-\subsection{Các kết quả và đóng góp đạt được}
-\label{subsection:5.1.1}
+Đồ án ``Trợ lý Ảo Luật Lao Động Việt Nam dựa trên GraphRAG'' đã giải quyết bài toán hỏi đáp pháp luật có trích dẫn chính xác và phân tích tuân thủ hợp đồng lao động, hai nhu cầu thực tế trong bối cảnh chuyển đổi số. Từ đặt vấn đề tra cứu pháp luật, thiết kế kiến trúc tích hợp, đến đánh giá thực nghiệm trên corpus 581 Điều, đồ án minh chứng rằng \textbf{GraphRAG kết hợp tri thức có cấu trúc} là hướng tiếp cận đáng tin cậy hơn so với \gls{LLM} thuần hay \gls{RAG} vector truyền thống.
+
+\subsection{Mục tiêu và mức độ hoàn thành}
+\label{subsection:6.1.1}
+
+Hai mục tiêu chính:
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Hỏi đáp pháp luật có trích dẫn:} Xây dựng hệ thống cho phép người dùng đặt câu hỏi tự nhiên về luật lao động, nhận câu trả lời kèm trích dẫn Điều/Khoản cụ thể. \textbf{Đạt} --- Demo hoạt động, 90\% keyword accuracy trên Local Search, 100\% trên multi-hop.
+    
+    \item \textbf{Phân tích tuân thủ hợp đồng lao động:} Kiểm tra sơ bộ HĐLĐ so với luật, phát hiện vi phạm rõ ràng. \textbf{Đạt} --- VR001--VR016 phát hiện vi phạm, case study 74/100 compliance score.
+\end{enumerate}
+
+\subsection{Đóng góp chính --- sáu khía cạnh}
+\label{subsection:6.1.2}
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Ontology hai lớp với canonicalization:} Kết hợp lớp cấu trúc deterministic (100\% tin cậy) và lớp ngữ nghĩa LLM (linh hoạt), giải quyết mất cấu trúc pháp lý khi chunking tùy ý. Tái sử dụng: pattern L1 + L2 mở rộng sang luật dân sự, hình sự.
+    
+    \item \textbf{Multi-hop Reasoning Engine:} Suy luận chéo quy phạm (ví dụ: hành vi → quy định → chế tài), cải thiện 67 điểm phần trăm trên nhóm multi-hop (33\% → 100\%).
+    
+    \item \textbf{Rule Validator VR001--VR016:} Kiểm tra HĐLĐ nhanh (5ms/khoản) và tin cậy (deterministic), hybrid kết hợp rule + graph + LLM.
+    
+    \item \textbf{Temporal Validity Filter:} Lọc trích dẫn văn bản hết hiệu lực, cảnh báo người dùng --- phù hợp bối cảnh pháp luật VN thay đổi liên tục.
+    
+    \item \textbf{Kiến trúc hybrid tích hợp:} End-to-end routing theo loại câu hỏi, triple-check tin cậy (retrieval grounding + temporal + rule), API + web UI triển khai.
+    
+    \item \textbf{Framework tái sử dụng:} Pattern ontology + pipeline có thể mở rộng sang domain pháp lý khác.
+\end{enumerate}
+
+\subsection{Kết quả định lượng}
+\label{subsection:6.1.3}
+
+Trên tập đánh giá chính (domain \texttt{lao\_dong}, n=10):
 \begin{itemize}[nosep, leftmargin=*]
-    \item Pipeline end-to-end: chuẩn bị dữ liệu $\rightarrow$ indexing GraphRAG $\rightarrow$ query $\rightarrow$ API/UI
-    \item Ontology hai lớp, chunking theo Điều, prompt tiếng Việt
-    \item Ứng dụng: API FastAPI, frontend Next.js, module phân tích HĐLĐ VR001--VR016
-    \item Bộ đánh giá và kết quả accuracy (điền sau khi chạy evaluation)
+    \item Single-hop: Local Search \textbf{100\%} keyword accuracy --- chứng minh ontology L1 + chunking theo Điều hiệu quả.
+    
+    \item Multi-hop: 33\% (Local) → \textbf{100\%} (Local + Multi-hop) --- suy luận chéo văn bản có kết quả rõ rệt.
+    
+    \item Citation accuracy: \textbf{88\%} (Local Search) --- cao hơn Naive RAG do chunking không cắt ngang Khoản.
+    
+    \item So sánh baseline: Zero-shot LLM 40\%, Basic Search 60\%, Local 90\% → GraphRAG tùy biến rõ rệt vượt trội.
+    
+    \item HĐLĐ case study: VR008 phát hiện đúng (nghỉ phép 6 < 12 ngày), Điều 113 trích dẫn chính xác.
+    
+    \item Thống kê corpus: 581 Điều parse, 5120 entity merged, 15 community, 524s indexing time.
 \end{itemize}
 
-\subsection{Trả lời các mục tiêu đã đặt ra}
-\label{subsection:5.1.2}
+\section{Ý nghĩa thực tiễn}
+\label{section:6.2}
+
+Hệ thống mang giá trị cho:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Đánh giá từng mục tiêu Chương 1.3.1: ontology, pipeline, query layers, ứng dụng, benchmark
+    \item \textbf{Người lao động:} Tra cứu nhanh quyền lợi (nghỉ phép, thai sản, trợ cấp) kèm trích dẫn --- góp phần bảo vệ quyền lợi.
+    
+    \item \textbf{Người sử dụng lao động / Nhân sự:} Rà soát sơ bộ HĐLĐ trước ký, phát hiện vi phạm rõ --- hỗ trợ tuân thủ pháp luật.
+    
+    \item \textbf{Luật sư nội bộ / Cán bộ pháp chế:} Tăng tốc độ tra cứu, giảm sai sót --- không thay thế tư vấn chuyên ngoài.
+    
+    \item \textbf{Cộng đồng nghiên cứu:} Framework tái sử dụng cho Legal RAG tiếng Việt --- mở rộng sang domain khác.
 \end{itemize}
 
-\section{Hạn chế}
-\label{section:5.2}
+\section{Hạn chế hiện tại}
+\label{section:6.3}
+
+\subsection{Hạn chế dữ liệu}
+\label{subsection:6.3.1}
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Corpus và domain coverage hẹp
-    \item Chi phí/thời gian indexing cao ($\sim$4000--5000 LLM calls)
-    \item Phụ thuộc LLM gateway + Ollama local
-    \item Graph tĩnh --- cập nhật văn bản cần re-index
-    \item Global Search latency cao; multi-hop/temporal/rule validator chưa tích hợp đầy đủ vào API
+    \item \textbf{Corpus hạn chế:} 7 văn bản lao động + BHXH; chưa gồm bản án, án lệ, thỏa ước tập thể, văn bản địa phương.
+    
+    \item \textbf{Cross-domain:} Test case dân sự, hình sự chưa có corpus đủ → accuracy thấp, không phản ánh năng lực thực.
+    
+    \item \textbf{Cập nhật:} Re-index khi luật mới chi phí cao ($\sim$ 8--9 phút, 4000+ LLM calls); chưa có incremental indexing tự động.
+\end{itemize}
+
+\subsection{Hạn chế kỹ thuật}
+\label{subsection:6.3.2}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Phụ thuộc LLM:} Entity/relationship L2 do LLM trích → có thể sai hoặc thiếu, L1 bù được nhưng multi-hop vẫn phụ thuộc L2.
+    
+    \item \textbf{Latency:} Global Search P95 $\approx$ 25s --- không thích hợp real-time, khuyến nghị Local cho production.
+    
+    \item \textbf{API incomplete:} Multi-hop, rule validator chưa tự động trong mọi request chat.
+    
+    \item \textbf{Đồ thị tĩnh:} Không cập nhật real-time giữa các lần re-index.
+\end{itemize}
+
+\subsection{Hạn chế đánh giá}
+\label{subsection:6.3.3}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Bộ test nhỏ:} 22 cases evaluation\_suite.py, 68 cases mở rộng chưa chạy đầy đủ.
+    
+    \item \textbf{Ground truth không validate:} Keywords/citations do sinh viên soạn --- cần review luật sư chuyên gia.
+    
+    \item \textbf{Phân tích HĐLĐ:} Mới case study mẫu; chưa precision/recall trên bộ HĐLĐ annotate chuyên gia.
+    
+    \item \textbf{Tính pháp lý:} Kết quả là hỗ trợ tra cứu, không thay thế tư vấn luật sư hay quyết định chính thức.
 \end{itemize}
 
 \section{Hướng phát triển}
-\label{section:5.3}
+\label{section:6.4}
 
-\subsection{Mở rộng dữ liệu và miền ứng dụng}
-\label{subsection:5.3.1}
+\subsection{Mở rộng dữ liệu}
+\label{subsection:6.4.1}
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Thêm Nghị định/Thông tư lao động; mở rộng BHXH
-    \item Incremental indexing khi văn bản sửa đổi
+    \item Bổ sung Nghị định, Thông tư lao động còn thiếu; mở rộng BHXH, an toàn lao động.
+    
+    \item Index luật dân sự, hình sự, doanh nghiệp --- tái sử dụng pattern ontology.
+    
+    \item Tích hợp bản án, án lệ nếu có nguồn mở --- suy luận pháp lý từ các trường hợp tương tự.
+    
+    \item \textbf{Incremental indexing:} Re-index chỉ văn bản thay đổi, merge delta vào graph --- giảm chi phí 70--80\%.
 \end{itemize}
 
-\subsection{Cải tiến mô hình và phương pháp}
-\label{subsection:5.3.2}
+\subsection{Cải tiến phương pháp}
+\label{subsection:6.4.2}
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Fine-tune embedding tiếng Việt pháp luật
-    \item Hoàn thiện Lớp 1.5 canonicalization
-    \item Tích hợp RAGAS vào CI/regression test; tích hợp multi-hop vào chat API
+    \item \textbf{Fine-tune embedding tiếng Việt:} Cải thiện Basic Search + retrieve entity.
+    
+    \item \textbf{Canonicalization mở rộng:} Xử lý thêm biến thể trích dẫn (``Điều thứ X'', viết tắt).
+    
+    \item \textbf{Multi-hop tự động:} Phát hiện câu hỏi multi-hop, gọi trace\_chain mà không cần mode selection thủ công.
+    
+    \item \textbf{Chain templates mở rộng:} Thêm comparative chain (so sánh Điều X vs Y), suy luận hình thức.
+    
+    \item \textbf{RAGAS + regression test:} Tích hợp CI khi thay model/prompt, judge đa model.
+    
+    \item \textbf{Schema learning:} Học entity types mới khi mở rộng domain qua weak supervision.
 \end{itemize}
 
-\subsection{Cải tiến triển khai thực tế}
-\label{subsection:5.3.3}
+\subsection{Triển khai thực tế}
+\label{subsection:6.4.3}
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Streaming response; UX cho NLĐ/NSDLĐ
-    \item OCR HĐLĐ scan (\texttt{ocr\_pdf.py})
-    \item Neo4j store (\texttt{neo4j\_store.py}) cho query graph phức tạp hơn
+    \item \textbf{Streaming response:} Cải thiện UX khi Global Search chậm.
+    
+    \item \textbf{OCR HĐLĐ scan:} Hoàn thiện xử lý HĐLĐ giấy (PaddleOCR).
+    
+    \item \textbf{Graph store:} Neo4j tích hợp đầy đủ cho query phức tạp, lưu phiên phân tích.
+    
+    \item \textbf{UX chuyên biệt:} Giao diện tối ưu NLĐ/NSDLĐ (mobile, giải thích thuật ngữ).
+    
+    \item \textbf{Tích hợp hệ thống:} API kết nối phần mềm nhân sự, cổng tra cứu pháp luật.
+    
+    \item \textbf{Monitoring:} Logging citation accuracy, alert temporal warning tăng bất thường.
 \end{itemize}
+
+\section{Kết luận chung}
+\label{section:6.5}
+
+Đồ án đã chứng minh rằng \textbf{GraphRAG kết hợp tri thức có cấu trúc} là hướng tiếp cận tin cậy cho hỏi đáp pháp luật Việt Nam. Bằng cách thiết kế ontology domain (L1 cấu trúc + L2 ngữ nghĩa), xây dựng pipeline xử lý từ dữ liệu đến ứng dụng, và đánh giá trên corpus 581 Điều với các test case cover single-hop, multi-hop, temporal, hệ thống đã đạt kết quả định lượng chứng minh giá trị:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Citation accuracy} 88\% trên Local Search --- cao hơn Naive RAG, bảo toàn trích dẫn Điều/Khoản.
+    
+    \item \textbf{Multi-hop reasoning} 100\% keyword trên câu suy luận chéo --- vượt trội LLM thuần (40\%).
+    
+    \item \textbf{Contract analysis} phát hiện vi phạm có căn cứ --- VR008 + Điều 113, minh chứng hybrid rule + graph.
+    
+    \item \textbf{Framework tái sử dụng} --- pattern ontology mở rộng sang domain khác mà không lập lại toàn bộ thiết kế.
+\end{itemize}
+
+Hạn chế chủ yếu (corpus hạn chế, chi phí indexing, đánh giá quy mô nhỏ) là điểm khởi đầu cho các hướng phát triển, không phản ánh giới hạn cơ bản của phương pháp. Trong bối cảnh AI ngày càng tích hợp vào lĩnh vực pháp luật, đồ án góp phần minh chứng rằng \textbf{cấu trúc lý thuyết} + \textbf{kiểm soát chặt chẽ} = \textbf{hỏi đáp pháp lý đáng tin cậy}.
+
+Khuyến nghị triển khai, sử dụng và bảo trì được trình bày chi tiết ở Chương~\ref{chapter:recommendations}.
 
 \end{document}
