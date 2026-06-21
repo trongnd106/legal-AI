@@ -1,78 +1,297 @@
-@article{es2023ragas,
-  title={{RAGAS}: Automated Evaluation of Retrieval Augmented Generation},
-  author={Es, Shahul and James, Jithin and Espinosa-Anke, Luis and Schockaert, Steven},
-  journal={arXiv preprint arXiv:2309.15217},
-  year={2023}
+% ============================================================
+% Tài liệu tham khảo -- Trợ lý Ảo Luật Lao Động Việt Nam
+% ============================================================
+
+% --- RAG & LLM nền tảng ---
+
+@inproceedings{lewis2020rag,
+  title     = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio
+               and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich
+               and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and others},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {33},
+  pages     = {9459--9474},
+  year      = {2020}
 }
+
+@article{gao2024ragsurvey,
+  title   = {Retrieval-Augmented Generation for Large Language Models: A Survey},
+  author  = {Gao, Yunfan and Xiong, Yun and Gao, Xinyu and Jia, Kangxiang and
+             Pan, Jinliu and Bi, Yuxi and Dai, Yi and Sun, Jiawei and Wang, Meng
+             and Wang, Haofen},
+  journal = {arXiv preprint arXiv:2312.10997},
+  year    = {2024}
+}
+
+@article{ji2023hallucination,
+  title     = {Survey of Hallucination in Natural Language Generation},
+  author    = {Ji, Ziwei and Lee, Nayeon and Frieske, Rita and Yu, Tiezheng and
+               Su, Dan and Xu, Yan and Ishii, Etsuko and Bang, Yejin Bang and
+               Madotto, Andrea and Fung, Pascale},
+  journal   = {{ACM} Computing Surveys},
+  volume    = {55},
+  number    = {12},
+  pages     = {1--38},
+  year      = {2023},
+  publisher = {ACM}
+}
+
+% --- GraphRAG & biến thể ---
 
 @article{graphrag2024,
-  title={From Local to Global: A Graph {RAG} Approach to Query-Focused Summarization},
-  author={Edge, Darren and Trinh, Ha and Cheng, Newman and Bradley, Joshua and Chao, Alex and Mody, Apurva and Truong, Steven and Larson, Jonathan},
-  journal={arXiv preprint arXiv:2404.16130},
-  year={2024}
+  title   = {From Local to Global: A {Graph RAG} Approach to Query-Focused Summarization},
+  author  = {Edge, Darren and Trinh, Ha and Cheng, Newman and Bradley, Joshua and
+             Chao, Alex and Mody, Apurva and Truong, Steven and Larson, Jonathan},
+  journal = {arXiv preprint arXiv:2404.16130},
+  year    = {2024}
 }
 
-@article{lewis2020rag,
-  title={Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
-  author={Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and others},
-  journal={Advances in Neural Information Processing Systems},
-  volume={33},
-  pages={9459--9474},
-  year={2020}
+@inproceedings{guo2024lightrag,
+  title     = {{LightRAG}: Simple and Fast Retrieval-Augmented Generation},
+  author    = {Guo, Zirui and Xia, Lianghao and Yu, Yanhua and Ao, Tu and Huang, Chao},
+  booktitle = {Findings of the Association for Computational Linguistics: {EMNLP} 2025},
+  year      = {2024},
+  eprint    = {2410.05779},
+  archivePrefix = {arXiv}
 }
 
-@article{hovy1993automated,
-  title={Automated discourse generation using discourse structure relations},
-  author={Hovy, Eduard H},
-  journal={Artificial intelligence},
-  volume={63},
-  number={1-2},
-  pages={341--385},
-  year={1993},
-  publisher={Elsevier Science Publishers}
+@inproceedings{hipporag2024,
+  title     = {{HippoRAG}: Neurobiologically Inspired Long-Term Memory for Large Language Models},
+  author    = {Guti{\'e}rrez, Bernal Jim{\'e}nez and Shu, Yiheng and Gu, Yu and
+               Kamigaito, Hidetaka and Su, Yu},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2024},
+  eprint    = {2405.14831},
+  archivePrefix = {arXiv}
 }
 
-@book{peterson2007computer,
-  title={Computer networks: a systems approach},
-  author={Peterson, Larry L and Davie, Bruce S},
-  year={2007},
-  publisher={Elsevier}
+% --- Multi-hop Reasoning ---
+
+@inproceedings{trivedi2022ircot,
+  title     = {Interleaving Retrieval with Chain-of-Thought Reasoning for
+               Knowledge-Intensive Multi-Step Questions},
+  author    = {Trivedi, Harsh and Balasubramanian, Niranjan and
+               Khot, Tushar and Sabharwal, Ashish},
+  booktitle = {Proceedings of the 61st Annual Meeting of the Association for
+               Computational Linguistics ({ACL})},
+  pages     = {10014--10037},
+  year      = {2023}
 }
 
-@book{NguyenThucHai,
-  title={Mạng máy tính và các hệ thống mở},
-  author={Nguyễn Thúc Hải},
-  year={1999},
-  publisher={Nhà xuất bản giáo dục}
+% --- Community Detection ---
+
+@article{traag2019leiden,
+  title     = {From {Louvain} to {Leiden}: guaranteeing well-connected communities},
+  author    = {Traag, Vincent A. and Waltman, Ludo and van Eck, Nees Jan},
+  journal   = {Scientific Reports},
+  volume    = {9},
+  number    = {1},
+  pages     = {5233},
+  year      = {2019},
+  publisher = {Nature Publishing Group},
+  doi       = {10.1038/s41598-019-41695-z}
 }
 
-@inproceedings{poesio2001discourse,
-  title={Discourse structure and anaphoric accessibility},
-  author={Poesio, Massimo and Di Eugenio, Barbara},
-  booktitle={{ESSLLI} workshop on information structure, discourse structure and discourse semantics, Copenhagen, Denmark},
-  pages={129--143},
-  year={2001}
+% --- Legal AI & NLP ---
+
+@article{ji2022kgsurvey,
+  title     = {A Survey on Knowledge Graphs: Representation, Acquisition, and Applications},
+  author    = {Ji, Shaoxiong and Pan, Shirui and Cambria, Erik and
+               Marttinen, Pekka and Yu, Philip S.},
+  journal   = {{IEEE} Transactions on Neural Networks and Learning Systems},
+  volume    = {33},
+  number    = {2},
+  pages     = {494--514},
+  year      = {2022},
+  publisher = {IEEE}
 }
 
-@phdthesis{knott1996data,
-  author  = {Knott, Alistair},
-  title   = {A data-driven methodology for motivating a set of coherence relations},
-  school  = {The University of Edinburgh, {UK}},
-  year    = {1996}
+@inproceedings{zhong2020jecqa,
+  title     = {{JEC-QA}: A Legal-Domain Question Answering Dataset},
+  author    = {Zhong, Haoxi and Xiao, Chaojun and Tu, Cunchao and
+               Zhang, Tianyang and Liu, Zhiyuan and Sun, Maosong},
+  booktitle = {Proceedings of the {AAAI} Conference on Artificial Intelligence},
+  volume    = {34},
+  number    = {05},
+  pages     = {9701--9708},
+  year      = {2020}
 }
 
-@misc{BernersTim,
-  author = {Berners-Lee, Tim},
-  title = {Hypertext Transfer Protocol ({HTTP})},
-  url = {ftp:/info.cern.ch/pub/www/doc/http-spec.txt.Z},
-  urldate = {2010-09-30}
+@article{es2023ragas,
+  title   = {{RAGAS}: Automated Evaluation of Retrieval Augmented Generation},
+  author  = {Es, Shahul and James, Jithin and Espinosa-Anke, Luis and Schockaert, Steven},
+  journal = {arXiv preprint arXiv:2309.15217},
+  year    = {2023}
 }
 
-
-@misc{LectureA,
-  author = {{Princeton University}},
-  title = {WordNet},
-  urldate = {2010-09-30},
-   url = {http://www.cogsci.princeton.edu/~wn/index.shtml}
+@article{hendrycks2021cuad,
+  title   = {{CUAD}: An Expert-Annotated {NLP} Dataset for Legal Contract Review},
+  author  = {Hendrycks, Dan and Burns, Collin and Chen, Anya and Ball, Spencer},
+  journal = {arXiv preprint arXiv:2103.06268},
+  year    = {2021},
+  note    = {Presented at NeurIPS 2021 Datasets and Benchmarks Track}
 }
 
+@inproceedings{kim2022coliee,
+  title     = {Overview of the Competition on Legal Information Extraction/Entailment
+               ({COLIEE}) 2022},
+  author    = {Kim, Mi-Young and Goebel, Randy and Kano, Yoshinobu and
+               Rabelo, Juliano and Yoshioka, Masaharu},
+  booktitle = {New Frontiers in Artificial Intelligence: {JSAI-isAI} 2022 Workshops},
+  pages     = {11--24},
+  year      = {2022},
+  publisher = {Springer}
+}
+
+% --- Vietnamese NLP ---
+
+@inproceedings{nguyen2020phobert,
+  title     = {{PhoBERT}: Pre-trained Language Models for {Vietnamese}},
+  author    = {Nguyen, Dat Quoc and Nguyen, Anh Tuan},
+  booktitle = {Findings of the Association for Computational Linguistics: {EMNLP} 2020},
+  pages     = {1037--1042},
+  year      = {2020}
+}
+
+% --- Legal Ontology & Standards ---
+
+@inproceedings{hoekstra2007lkif,
+  title     = {The {LKIF} Core Ontology of Basic Legal Concepts},
+  author    = {Hoekstra, Rinke and Breuker, Joost and Di Bello, Marcello and Boer, Alexander},
+  booktitle = {Proceedings of the Workshop on Legal Ontologies and Artificial Intelligence
+               Techniques ({LOAIT} 2007)},
+  year      = {2007}
+}
+
+@misc{palmirani2018akomantoso,
+  title     = {{Akoma Ntoso} Version 1.0 Part 1: {XML} Vocabulary},
+  author    = {Palmirani, Monica and Sperberg, Roger and Vergottini, Grant and Vitali, Fabio},
+  year      = {2018},
+  howpublished = {{OASIS} Standard},
+  note      = {\url{https://docs.oasis-open.org/legaldocml/akn-core/v1.0/}}
+}
+
+% --- Information Retrieval ---
+
+@inproceedings{robertson1994bm25,
+  title     = {Okapi at {TREC}-3},
+  author    = {Robertson, Stephen E. and Walker, Steve and Jones, Susan and
+               Hancock-Beaulieu, Micheline and Gatford, Mike},
+  booktitle = {Proceedings of the Third Text {REtrieval} Conference ({TREC}-3)},
+  year      = {1994},
+  publisher = {NIST}
+}
+
+% --- Knowledge Graph ---
+
+@article{wang2017kgembedding,
+  title     = {Knowledge Graph Embedding: A Survey of Approaches and Applications},
+  author    = {Wang, Quan and Mao, Zhendong and Wang, Bin and Guo, Li},
+  journal   = {{IEEE} Transactions on Knowledge and Data Engineering},
+  volume    = {29},
+  number    = {12},
+  pages     = {2724--2743},
+  year      = {2017},
+  publisher = {IEEE}
+}
+
+% --- LLM nền tảng ---
+
+@inproceedings{devlin2019bert,
+  title     = {{BERT}: Pre-training of Deep Bidirectional Transformers for
+               Language Understanding},
+  author    = {Devlin, Jacob and Chang, Ming-Wei and Lee, Kenton and Toutanova, Kristina},
+  booktitle = {Proceedings of the 2019 Conference of the North {American} Chapter
+               of the Association for Computational Linguistics ({NAACL})},
+  pages     = {4171--4186},
+  year      = {2019}
+}
+
+@inproceedings{vaswani2017attention,
+  title     = {Attention Is All You Need},
+  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob
+               and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz
+               and Polosukhin, Illia},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {30},
+  year      = {2017}
+}
+
+% --- Legal Knowledge Graph thực nghiệm ---
+
+@article{filtz2021legal_kg,
+  title   = {Events in Legal {ECJ} Data: A Knowledge Graph Approach},
+  author  = {Filtz, Erwin and Waltl, Bernhard and Kirrane, Sabrina},
+  journal = {arXiv preprint arXiv:2108.01059},
+  year    = {2021}
+}
+
+@article{chalkidis2022lexglue,
+  title   = {{LexGLUE}: A Benchmark Dataset for Legal Language Understanding in {English}},
+  author  = {Chalkidis, Ilias and Jana, Abhik and Hartung, Dirk and
+             Bommarito, Michael and Androutsopoulos, Ion and Katz, Daniel Martin
+             and Aletras, Nikolaos},
+  journal = {arXiv preprint arXiv:2110.00976},
+  year    = {2022},
+  note    = {Published at ACL 2022}
+}
+
+@article{manor2019clause,
+  title   = {Plain English Summarization of Contracts},
+  author  = {Manor, Laura and Li, Junyi Jessy},
+  journal = {arXiv preprint arXiv:1906.00424},
+  year    = {2019},
+  note    = {Published at NLP4IF workshop, ACL 2019}
+}
+
+@article{zhang2025graphragsurvey,
+  title   = {A Survey of Graph Retrieval-Augmented Generation for Customized Large Language Models},
+  author  = {Zhang, Qinggang and Chen, Shengyuan and Bei, Yuanchen and Yuan, Zheng and
+             Zhou, Huachi and Hong, Zijin and Dong, Junnan and Chen, Hao and
+             Chang, Yi and Huang, Xiao},
+  journal = {arXiv preprint arXiv:2501.13958},
+  year    = {2025}
+}
+
+@inproceedings{zheng2025legalretrieval,
+  title     = {A Reasoning-Focused Legal Retrieval Benchmark},
+  author    = {Zheng, Lucia and Guha, Neel and Arifov, Javokhir and Zhang, Sarah and
+               Skreta, Michal and Manning, Christopher D. and Henderson, Peter and Ho, Daniel E.},
+  booktitle = {Proceedings of the 4th {ACM} Symposium on Computer Science and Law ({CS\&Law} '25)},
+  pages     = {169--193},
+  year      = {2025},
+  publisher = {ACM},
+  doi       = {10.1145/3709025.3712219}
+}
+
+@article{dong2025vietlegal,
+  title   = {Benchmarking {V}ietnamese Legal Knowledge of Large Language Models},
+  author  = {Dong, Nguyen Tien and Nguyen, Minh-Anh and Hoang, Thanh Dat and
+             Ngoc, Nguyen Tuan and Minh, Dao Xuan Quang and Hai, Phan Phi and
+             Anh, Nguyen Thi Ngoc and Vu, Binh},
+  journal = {arXiv preprint arXiv:2512.14554},
+  year    = {2025}
+}
+
+@inproceedings{nguyen2025minlegal,
+  title     = {{MinLegal} at {VLSP}2025-{LegalSLM}: A Two-Stage {LoRA}-to-Full Fine-tuning Approach for {V}ietnamese Legal Small Language Models},
+  author    = {Nguyen, Tan-Minh and Nguyen, Hoang-Trung and Dao, Trong Khoi and
+               Phan, Xuan-Hieu and Nguyen, Ha-Thanh and Vuong, Thi-Hai-Yen},
+  booktitle = {Proceedings of the 22nd {VLSP} 2025 Workshop on Natural Language Processing},
+  year      = {2025}
+}
+
+@article{butler2026legalragbench,
+  title   = {{Legal RAG Bench}: An End-to-End Benchmark for Legal {RAG}},
+  author  = {Butler, Abdur-Rahman and Butler, Umar},
+  journal = {arXiv preprint arXiv:2603.01710},
+  year    = {2026}
+}
+
+@article{das2026claimraglaw,
+  title   = {Fine-grained Claim-level {RAG} Benchmark for Law},
+  author  = {Das, Souvick and Abualhaija, Sallam and Bianculli, Domenico},
+  journal = {arXiv preprint arXiv:2605.21071},
+  year    = {2026}
+}

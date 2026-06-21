@@ -38,13 +38,13 @@ Lựa chọn thiết kế: \textbf{không extract Lớp 1 bằng LLM} --- vì LL
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.1.3}
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Legal KG tay-craft (LKIF, Akoma Ntoso):} Xây dựng thủ công từng ontology, độ chính xác cao nhưng tốn công bảo trì, khó mở rộng khi luật thay đổi.
-    
-    \item \textbf{Giải pháp của đồ án:} Kết hợp parser deterministic (L1) + LLM (L2), cho phép tự động cập nhật khi thêm văn bản mới. L1 đảm bảo nhất quán; L2 bổ sung ngữ cảnh ngữ nghĩa.
-    
-    \item \textbf{GraphRAG gốc:} Toàn bộ LLM → linh hoạt nhưng có rủi ro không nhất quán. Ontology của đồ án thêm lớp cấu trúc xác định, cải thiện tin cậy.
-\end{itemize}
+Thiết kế ontology pháp luật có thể so sánh theo trục \emph{độ chính xác - chi phí xây dựng - khả năng scale}:
+
+\textbf{Legal KG thủ công (LKIF~\cite{hoekstra2007lkif}, Akoma Ntoso~\cite{palmirani2018akomantoso}):} Độ chính xác cao nhất vì được chuyên gia pháp lý thiết kế từng quan hệ. Tuy nhiên, chi phí xây dựng cực kỳ cao và khả năng scale thấp: khi \gls{BLLD} được sửa đổi hay Nghị định mới ban hành, toàn bộ phần liên quan phải được chuyên gia review và cập nhật thủ công. Đây là rào cản thực tế khiến các hệ thống này khó duy trì trong môi trường pháp luật thay đổi liên tục.
+
+\textbf{GraphRAG gốc (toàn bộ LLM extraction):} Chi phí xây dựng thấp hơn và linh hoạt, nhưng không đảm bảo nhất quán: cùng một Điều 90 \gls{BLLD} có thể được trích xuất thành các entity khác nhau qua các lần indexing khác nhau, tùy vào ngữ cảnh xuất hiện và nhiễu trong output LLM. Vấn đề này đặc biệt nghiêm trọng cho citation accuracy --- một yêu cầu cốt lõi trong domain pháp luật.
+
+\textbf{Giải pháp của đồ án --- Ontology hai lớp:} Đạt cân bằng giữa ba trục trên bằng cách phân công trách nhiệm rõ ràng: L1 (parser xác định) chịu trách nhiệm cấu trúc pháp lý với độ tin cậy 100\%, L2 (LLM extraction) chịu trách nhiệm ngữ nghĩa domain với độ linh hoạt cao. Canonicalization đảm bảo hai lớp được hợp nhất nhất quán. Kết quả: khi thêm văn bản mới, chỉ cần chạy lại parser cho L1 và LLM extraction cho L2 của văn bản đó --- không cần review thủ công toàn bộ ontology. Đây là sự cải tiến thực chất về khả năng bảo trì so với cả hai hướng trên.
 
 \subsection{Minh chứng thực nghiệm}
 \label{subsection:5.1.4}
@@ -96,13 +96,13 @@ Thuật toán: DFS trên graph; độ sâu tối đa 4 hop để tránh explosio
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.2.3}
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Temporal GraphRAG:} Multi-hop trên timeline sự kiện tin tức → không phù hợp pháp luật (không có sự kiện, chỉ có quan hệ logic).
-    
-    \item \textbf{Retrieval-based multi-hop (HyDE, etc.):} Retrieve nhiều lần từng bước → chậm, cộng dồn lỗi mỗi bước.
-    
-    \item \textbf{Giải pháp của đồ án:} Duyệt trực tiếp trên graph --- nhanh ($\approx$ 200--500ms), logic rõ ràng (trace quan hệ), lỗi từ extraction LLM được hạn chế (chỉ ảnh hưởng L2, L1 không sai).
-\end{itemize}
+Bài toán multi-hop reasoning trong QA đã được nghiên cứu theo nhiều hướng khác nhau, và mỗi hướng có đặc thù phù hợp với loại corpus và loại quan hệ cần suy luận.
+
+\textbf{Iterative retrieval (multi-step RAG):} Các phương pháp như IRCoT~\cite{trivedi2022ircot} hay ReAct xen kẽ retrieval và reasoning: sau mỗi bước retrieve, LLM quyết định bước tiếp theo cần tìm gì. Ưu điểm là linh hoạt; nhược điểm là latency cộng dồn và lỗi từ bước trước lan truyền sang bước sau. Trong domain pháp luật, nơi cấu trúc suy luận (violation → penalizes → mức phạt) có thể định nghĩa trước, phương pháp duyệt graph theo chain template tránh được vấn đề này.
+
+\textbf{Temporal GraphRAG:} Hướng nghiên cứu này xây dựng đồ thị sự kiện theo trục thời gian (``sự kiện A xảy ra trước B, gây ra C''), phù hợp với corpus tin tức hay lịch sử. Với pháp luật, quan hệ không phải là chuỗi sự kiện thời gian mà là chuỗi logic quy phạm (``hành vi A vi phạm quy định B, do đó chịu chế tài C'') --- một quan hệ có tính \emph{normatif}, không phải \emph{factual}. Đây là lý do Temporal GraphRAG không phù hợp trực tiếp cho đồ án.
+
+\textbf{Giải pháp của đồ án --- VNLegalReasoningEngine:} Duyệt trực tiếp trên merged graph theo chain templates được định nghĩa từ ontology pháp luật (violation, entitlement, procedure). Ưu điểm chính so với iterative retrieval: (a) latency ổn định ($\approx$200--500ms cho graph traversal, không phụ thuộc số hop); (b) path suy luận minh bạch, có thể trace toàn bộ chuỗi Điều--quan hệ--Điều; (c) lỗi LLM chỉ ảnh hưởng Lớp 2 (semantic entities) mà không làm sai cấu trúc pháp lý Lớp 1. Hạn chế: engine phụ thuộc vào chất lượng extraction entity L2 --- nếu một entity ``trả lương'' bị extract sai loại, chain violation có thể không kích hoạt.
 
 \subsection{Minh chứng thực nghiệm}
 \label{subsection:5.2.4}
@@ -147,13 +147,13 @@ Thiết kế layer stack:
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.3.3}
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{LLM-only contract analysis:} GPT-4 detect violations --- chậm, bỏ qua chi tiết, không giải thích đủ.
-    
-    \item \textbf{Rule-only:} Kiểm tra deterministic --- nhanh nhưng không nắm rủi ro ngữ nghĩa (``cách trả lương bất lợi NLĐ'').
-    
-    \item \textbf{Giải pháp của đồ án:} Hybrid --- rule xử lý 95\% khoản ($<$ 5ms), LLM xử lý 5\% khoản phức tạp. Kết hợp graph grounding (L2) để cung cấp context mà không phụ thuộc 100\% vào LLM.
-\end{itemize}
+Bài toán phân tích hợp đồng tự động đã được tiếp cận theo nhiều cách, mỗi cách có điểm mạnh và điểm yếu rõ ràng trong bối cảnh pháp luật lao động Việt Nam.
+
+\textbf{LLM-only:} Các nghiên cứu sử dụng GPT-4 hay Claude để phân tích toàn bộ hợp đồng~\cite{hendrycks2021cuad,manor2019clause} cho thấy khả năng phát hiện rủi ro ngữ nghĩa tốt (điều khoản mơ hồ, thiên vị một chiều), nhưng có hai vấn đề căn bản: (1) với hợp đồng dài, chi phí token cao và latency lớn; (2) với các vi phạm có ngưỡng số rõ ràng (lương $<$ tối thiểu, thử việc $>$ 60 ngày), LLM vẫn có xác suất sai do hallucination~\cite{ji2023hallucination}, trong khi rule xác định cho kết quả 100\% chính xác.
+
+\textbf{Rule-only:} Hệ thống kiểm tra hợp đồng dựa hoàn toàn trên rule là nhanh và deterministic, nhưng bị giới hạn bởi bộ rule đã định nghĩa trước. Các điều khoản diễn đạt không chuẩn, ngôn ngữ mơ hồ hay rủi ro tiềm ẩn (``lương tháng 13 theo quyết định của công ty'' --- điều khoản tùy tiện có thể bất lợi NLĐ) không thể phát hiện bằng regex hay ngưỡng số.
+
+\textbf{Giải pháp hybrid của đồ án:} Kiến trúc ba tầng (rule → graph grounding → LLM bổ sung) khai thác ưu điểm của cả hai hướng. Quan trọng hơn, \textbf{tầng graph grounding là yếu tố phân biệt} so với hybrid đơn giản: khi LLM được gọi để phân tích khoản phức tạp, nó nhận được context từ merged graph (các Điều liên quan, quan hệ logic) thay vì chỉ nội dung khoản hợp đồng thuần túy. Điều này giảm đáng kể khả năng LLM hallucinate về căn cứ pháp lý và tăng chất lượng giải thích trong báo cáo tuân thủ.
 
 \subsection{Minh chứng thực nghiệm}
 \label{subsection:5.3.4}

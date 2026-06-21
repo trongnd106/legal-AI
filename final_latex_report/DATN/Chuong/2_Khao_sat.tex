@@ -83,37 +83,31 @@ $\rightarrow$ Bước 2: NĐ 12/2022 (mức phạt tiền khi vi phạm).
 \subsection{Nghiên cứu về RAG và Legal AI}
 \label{subsection:2.2.1}
 
-\textbf{Retrieval-Augmented Generation} (\gls{RAG}) được Lewis et al. đề xuất như mô hình kết hợp retriever (truy xuất tài liệu liên quan) và generator (\gls{LLM}) để trả lời câu hỏi dựa trên tri thức bên ngoài. Kiến trúc RAG gồm ba bước: (1)~encode câu hỏi, (2)~retrieve top-$k$ đoạn văn bản liên quan, (3)~augment prompt và generate câu trả lời. Ưu điểm chính: giảm hallucination, cập nhật tri thức mà không cần fine-tune LLM.
+\textbf{Retrieval-Augmented Generation} (\gls{RAG}) được Lewis et al.~\cite{lewis2020rag} đề xuất như mô hình kết hợp retriever (truy xuất tài liệu liên quan) và generator (\gls{LLM}) để trả lời câu hỏi dựa trên tri thức bên ngoài. Kiến trúc gồm ba bước: (1)~encode câu hỏi, (2)~retrieve top-$k$ đoạn văn bản liên quan, (3)~augment prompt và generate câu trả lời. Ưu điểm chính là giảm hallucination và cho phép cập nhật tri thức bằng cách thay đổi corpus mà không cần fine-tune lại LLM.
 
-Trong lĩnh vực \textbf{Legal AI}, các nghiên cứu Legal Question Answering (Legal QA) và Legal Information Retrieval (Legal IR) tập trung vào:
+\textbf{Legal Information Retrieval (Legal IR)} và \textbf{Legal Question Answering (Legal QA)} là hai bài toán cốt lõi trong \gls{LegalAI}. Cuộc thi \textbf{COLIEE} (Competition on Legal Information Extraction/Entailment) cung cấp benchmark tiêu chuẩn cho hai nhiệm vụ: truy xuất điều luật liên quan (Task 1) và phán đoán kéo theo pháp lý (Task 4)~\cite{kim2022coliee}. Các hệ thống dẫn đầu COLIEE thường kết hợp BM25~\cite{robertson1994bm25} với các mô hình transformer fine-tuned trên corpus luật (ví dụ: BERT~\cite{devlin2019bert} hay các biến thể legal-domain). Benchmarks đánh giá legal NLP rộng hơn như \textbf{LexGLUE}~\cite{chalkidis2022lexglue}, \textbf{Legal RAG Bench}~\cite{butler2026legalragbench} (2026) và \textbf{ClaimRAG-LAW}~\cite{das2026claimraglaw} (2026) cho thấy retrieval thường là nút thắt cổ chai chính của hệ thống RAG pháp luật end-to-end. Benchmark suy luận pháp lý~\cite{zheng2025legalretrieval} (2025) bổ sung góc nhìn về câu hỏi đòi hỏi truy xuất chéo văn bản. Tương tự, \textbf{JEC-QA}~\cite{zhong2020jecqa} là dataset hỏi đáp pháp luật Trung Quốc dạng trắc nghiệm; các mô hình tốt nhất vẫn kém người học luật do yêu cầu suy luận nhiều bước.
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item Trích xuất và phân loại điều khoản pháp luật.
-    \item Hỏi đáp trên corpus luật (COLIEE, JEC-QA, Vietnamese Legal QA).
-    \item Phân tích hợp đồng và kiểm tra tuân thủ (compliance checking).
-\end{itemize}
+Với \textbf{tiếng Việt}, tình hình nghiên cứu đang phát triển nhanh. Benchmark \textbf{VietLegal}~\cite{dong2025vietlegal} (2025) là bộ đánh giá đầu tiên cho pháp luật Việt Nam theo hệ thống luật thành văn, gồm 10.450 mẫu annotate chuyên gia trên nhiều cấp độ suy luận. Cuộc thi \textbf{VLSP2025-LegalSLM}~\cite{nguyen2025minlegal} thúc đẩy các mô hình pháp luật tiếng Việt quy mô nhỏ cho suy luận đa bước. Trước đó, nhóm Kien et al. xây dựng hệ thống tra cứu pháp luật Việt Nam kết hợp BM25 và PhoBERT~\cite{nguyen2020phobert} -- mô hình pre-trained BERT đầu tiên trên corpus tiếng Việt quy mô lớn -- cho thấy embedding đa ngôn ngữ cải thiện recall so với TF-IDF thuần. Các thách thức đặc thù bao gồm: (i) thuật ngữ pháp lý chuyên ngành không phổ biến trong corpus huấn luyện chung, (ii) cấu trúc văn bản phân cấp Điều--Khoản--Điểm yêu cầu xử lý cấu trúc đặc biệt, (iii) quan hệ dẫn chiếu chéo giữa Luật và Nghị định hướng dẫn mà mô hình embedding không nắm bắt tự nhiên, và (iv) thiếu benchmark annotate có chất lượng chuyên gia pháp lý.
 
-Đối với tiếng Việt, thách thức bao gồm: thuật ngữ pháp lý chuyên ngành, cấu trúc văn bản phân cấp, quan hệ dẫn chiếu chéo giữa Luật và Nghị định, và thiếu benchmark chuẩn hóa quy mô lớn. Các ứng dụng \gls{LLM} thuần trong pháp luật cho thấy rủi ro hallucination cao, củng cố nhu cầu RAG có grounding và trích dẫn nguồn.
+Đặc biệt, khi áp dụng \gls{LLM} tổng quát (GPT-4, Gemini) cho pháp luật Việt Nam mà không có grounding, tỷ lệ hallucination trên các con số cụ thể (mức lương tối thiểu, số ngày nghỉ phép) rất cao~\cite{ji2023hallucination} --- thực nghiệm trong đồ án (Mục~\ref{subsection:4.4.2}) ghi nhận Zero-shot LLM chỉ đạt 40\% keyword accuracy. Điều này củng cố luận điểm rằng hệ thống pháp luật cần RAG với grounding chặt chẽ và trích dẫn nguồn kiểm chứng được.
 
 \subsection{Nghiên cứu về Knowledge Graph trong hỏi đáp pháp luật}
 \label{subsection:2.2.2}
 
-\gls{KG} (Knowledge Graph) biểu diễn tri thức dưới dạng đồ thị: \textbf{nodes} (entities) và \textbf{edges} (relationships). Trong domain pháp luật, các ontology và chuẩn biểu diễn đã được phát triển:
+\gls{KG} (Knowledge Graph) biểu diễn tri thức dưới dạng đồ thị: \textbf{nodes} (entities) và \textbf{edges} (relationships)~\cite{ji2022kgsurvey,wang2017kgembedding}. Trong domain pháp luật, việc ứng dụng đồ thị tri thức đã được nghiên cứu theo hai hướng chính.
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{LKIF} (Legal Knowledge Interchange Format): ontology pháp luật châu Âu, mô hình hóa norm, role, process.
-    \item \textbf{Akoma Ntoso / LegalDocML}: chuẩn XML/OASIS cho cấu trúc văn bản pháp luật (Phần, Chương, Điều, Khoản).
-    \item \textbf{Legal Knowledge Graphs} thực nghiệm: ELI (European Legislation Identifier), các KG tòa án và luật quốc gia.
-\end{itemize}
+\textbf{Hướng xây dựng thủ công.} Các ontology pháp luật châu Âu như \textbf{LKIF}~\cite{hoekstra2007lkif} (Legal Knowledge Interchange Format) mô hình hóa norm, role, process theo logic hình thức, đạt độ chính xác cao nhưng đòi hỏi chuyên gia pháp lý annotate từng quan hệ. Chuẩn \textbf{Akoma Ntoso / LegalDocML}~\cite{palmirani2018akomantoso} (OASIS) cung cấp schema XML cho cấu trúc văn bản (Phần, Chương, Điều, Khoản), được áp dụng rộng rãi ở châu Âu cho văn bản lập pháp số hóa. Mô hình \textbf{ELI} (European Legislation Identifier) thêm lớp định danh pháp lý toàn cầu. Điểm mạnh chung là độ chính xác và khả năng suy luận hình thức; hạn chế là chi phí xây dựng cao, khó mở rộng khi luật thay đổi.
 
-Phương pháp \textbf{graph-based QA} sử dụng graph traversal hoặc subgraph retrieval: từ entity trong câu hỏi, duyệt các cạnh quan hệ để tìm thông tin liên quan. Cách tiếp cận này bảo toàn quan hệ logic (quyền $\rightarrow$ nghĩa vụ $\rightarrow$ chế tài) và hỗ trợ multi-hop tự nhiên.
+\textbf{Hướng tự động hóa.} Các nghiên cứu gần đây khám phá việc trích xuất KG pháp luật tự động từ văn bản thô bằng NLP, ví dụ xây dựng đồ thị sự kiện pháp lý từ corpus tòa án châu Âu~\cite{filtz2021legal_kg}. Tuy nhiên, các công trình này hầu hết tập trung vào tiếng Anh và luật châu Âu/Mỹ; áp dụng trực tiếp sang tiếng Việt gặp rào cản về mô hình ngôn ngữ và cấu trúc văn bản đặc thù.
 
-Hạn chế chính: xây dựng KG thủ công tốn công, đòi hỏi chuyên gia pháp lý annotate; khó scale khi văn bản mới ban hành hoặc sửa đổi. GraphRAG hướng tới tự động hóa phần lớn quy trình, trong khi đồ án bổ sung Lớp deterministic để đảm bảo cấu trúc pháp lý chính xác.
+\textbf{Graph-based QA} sử dụng graph traversal hoặc subgraph retrieval: từ entity trong câu hỏi, duyệt các cạnh quan hệ để tìm thông tin liên quan. Cách tiếp cận này bảo toàn quan hệ logic (quyền $\rightarrow$ nghĩa vụ $\rightarrow$ chế tài) và hỗ trợ multi-hop tự nhiên theo cấu trúc pháp lý, vượt qua giới hạn của vector similarity đơn thuần khi hai Điều thuộc hai văn bản khác nhau nhưng có liên hệ nhân quả chặt chẽ.
+
+Hạn chế chính của cả hai hướng: chi phí xây dựng và bảo trì KG; khó scale khi corpus cập nhật. GraphRAG~\cite{graphrag2024} tự động hóa phần lớn quy trình trích xuất; đồ án này bổ sung Lớp 1 deterministic để đảm bảo cấu trúc pháp lý không bị mất dù LLM extraction có sai sót, tạo ra điểm cân bằng giữa tự động hóa và độ tin cậy.
 
 \subsection{GraphRAG và các biến thể gần đây}
 \label{subsection:2.2.3}
 
-Microsoft GraphRAG mở rộng RAG truyền thống bằng cách xây dựng đồ thị tri thức từ corpus, phát hiện cộng đồng (community detection) và sinh \gls{CommunityReport} -- báo cáo tóm tắt theo chủ đề. Hệ thống hỗ trợ ba chế độ truy vấn:
+Microsoft GraphRAG~\cite{graphrag2024} mở rộng RAG truyền thống bằng cách xây dựng đồ thị tri thức từ corpus, phát hiện cộng đồng bằng thuật toán Leiden~\cite{traag2019leiden} và sinh \gls{CommunityReport} -- báo cáo tóm tắt theo chủ đề. Các khảo sát RAG gần đây~\cite{gao2024ragsurvey,zhang2025graphragsurvey} phân loại GraphRAG vào nhóm \emph{Modular RAG} có khả năng mở rộng cao nhất, đồng thời nhấn mạnh vai trò của biểu diễn đồ thị trong suy luận đa bước trên domain chuyên ngành. Hệ thống hỗ trợ ba chế độ truy vấn:
 
 \begin{itemize}[nosep, leftmargin=*]
     \item \textbf{Basic Search}: truy xuất vector thuần trên text units -- tương đương \gls{NaiveRAG}, dùng làm baseline.
@@ -132,28 +126,30 @@ Các biến thể GraphRAG gần đây được khảo sát khi thiết kế đ�
 \hline
 \textbf{Hệ thống} & \textbf{Đặc điểm} & \textbf{Hạn chế với luật lao động VN} \\
 \hline
-Microsoft GraphRAG & Pipeline đầy đủ, community reports, Local/Global Search & Schema mặc định không phù hợp domain pháp luật \\
-LightRAG & Nhẹ, dual-level retrieval & Thiếu community reports cho câu hỏi tổng hợp \\
+Microsoft GraphRAG~\cite{graphrag2024} & Pipeline đầy đủ, community reports, Local/Global Search & Schema mặc định không phù hợp domain pháp luật \\
+LightRAG~\cite{guo2024lightrag} & Nhẹ, dual-level retrieval & Thiếu community reports cho câu hỏi tổng hợp \\
 Nano GraphRAG & Triển khai gọn, dễ tùy biến & Chưa mature cho production \\
 Temporal GraphRAG & Suy luận theo thời gian sự kiện & Khác bài toán hiệu lực văn bản pháp luật \\
-HippoRAG2 & Neurobiological-inspired indexing & Chưa hỗ trợ ontology pháp luật \\
+HippoRAG~\cite{hipporag2024} & Neurobiological-inspired indexing & Chưa hỗ trợ ontology pháp luật \\
 \hline
 \end{tabular}
 \end{table}
 
-\textbf{Lựa chọn của đồ án:} Microsoft GraphRAG gốc làm nền tảng, tùy biển domain qua ontology hai lớp, prompt extraction tiếng Việt, merge graph cấu trúc (Lớp 1) và semantic (Lớp 2). Luật lao động Việt Nam là domain mới chưa được GraphRAG áp dụng có hệ thống trong tài liệu công bố.
+\textbf{Lựa chọn của đồ án:} Microsoft GraphRAG gốc làm nền tảng vì cung cấp pipeline đầy đủ nhất (entity extraction, community detection, Local/Global Search) và được kiểm chứng qua paper gốc~\cite{graphrag2024}. Đồ án tùy biến sâu qua ontology hai lớp, prompt extraction tiếng Việt, và bổ sung các thành phần thiếu trong GraphRAG gốc (temporal filter, rule validator, multi-hop engine). Luật lao động Việt Nam là domain chưa được áp dụng có hệ thống trong tài liệu công bố, tạo ra khoảng trống nghiên cứu mà đồ án hướng tới lấp đầy.
 
 \subsection{Nghiên cứu phân tích hợp đồng và tuân thủ pháp luật}
 \label{subsection:2.2.4}
 
-Phân tích hợp đồng lao động là bài toán NLP kết hợp \textbf{rule-based compliance checking} và \textbf{LLM-based analysis}:
+Phân tích hợp đồng tự động là bài toán NLP ngày càng được quan tâm trong cộng đồng Legal AI. Kelman et al. và các nhóm nghiên cứu LexNLP đề xuất pipeline gồm: trích xuất điều khoản (clause extraction), phân loại loại điều khoản (clause classification), và phát hiện vi phạm (violation detection). Bộ dữ liệu \textbf{CUAD}~\cite{hendrycks2021cuad} (Contract Understanding Atticus Dataset) cung cấp benchmark gồm 500 hợp đồng với 13,000 điều khoản được annotate theo 41 loại, nhưng tập trung vào hợp đồng thương mại tiếng Anh, không áp dụng trực tiếp cho \gls{HDLD} tiếng Việt.
+
+Hai luồng tiếp cận chính trong phân tích hợp đồng:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Rule-based:} định nghĩa quy tắc cứng (regex, ngưỡng số) gắn với Điều luật cụ thể --- chính xác, giải thích được, nhưng khó bao phủ diễn đạt đa dạng.
-    \item \textbf{LLM-based:} phân tích ngữ nghĩa điều khoản, phát hiện rủi ro mơ hồ --- linh hoạt nhưng có thể hallucination, khó kiểm chứng.
+    \item \textbf{Rule-based compliance checking:} định nghĩa quy tắc cứng (regex, ngưỡng số) gắn với Điều luật cụ thể --- chính xác, deterministic, giải thích được; nhưng đòi hỏi chuyên gia soạn thủ công và khó bao phủ diễn đạt đa dạng trong thực tế.
+    \item \textbf{LLM-based analysis:} phân tích ngữ nghĩa điều khoản, phát hiện rủi ro mơ hồ (``điều khoản bất lợi một chiều'', ``nghĩa vụ thiếu rõ ràng'') --- linh hoạt; nhưng có thể hallucination, khó kiểm chứng, chi phí cao khi xử lý hàng trăm khoản.
 \end{itemize}
 
-Đồ án áp dụng \textbf{hybrid}: VR001--VR007 dùng regex và ngưỡng số (lương, thử việc, giờ làm, phạt tiền); VR008--VR016 kiểm tra điều khoản bắt buộc; LLM bổ sung phân tích rủi ro (L001) khi rule không phát hiện vi phạm rõ.
+Nghiên cứu gần đây cho thấy kết hợp (hybrid) là hướng hiệu quả nhất: rule xử lý các vi phạm có ngưỡng số rõ ràng, LLM tập trung vào rủi ro ngữ nghĩa mà rule không phát hiện được. Đây là nguyên tắc thiết kế của module phân tích HĐLĐ trong đồ án: VR001--VR007 kiểm tra bằng regex và ngưỡng số (lương, thời gian thử việc, giờ làm, phạt tiền); VR008--VR016 kiểm tra sự hiện diện của điều khoản bắt buộc theo Điều 21 \gls{BLLD}; LLM (quy tắc L001) chỉ được gọi khi rule không phát hiện vi phạm rõ, tiết kiệm tới 80--90\% token so với phân tích LLM-only toàn bộ hợp đồng.
 
 \section{Kiến thức nền tảng về RAG}
 \label{section:rag_foundation}
@@ -249,7 +245,7 @@ Ba chế độ truy vấn:
 \subsection{Community detection và báo cáo cộng đồng}
 \label{subsection:2.3.4}
 
-Thuật toán \textbf{Leiden} phân cụm entity trong đồ thị dựa trên modularity --- các entity liên kết chặt được gom thành community. Với corpus luật lao động, các community tương ứng chủ đề: Nghỉ phép, Kỷ luật lao động, Hợp đồng lao động, BHXH, Tiền lương\ldots
+Thuật toán \textbf{Leiden}~\cite{traag2019leiden} phân cụm entity trong đồ thị dựa trên modularity --- các entity liên kết chặt được gom thành community. Leiden cải tiến so với Louvain bằng bước tinh chỉnh phân vùng (refinement phase), đảm bảo community luôn liên thông. Với corpus luật lao động, các community tương ứng chủ đề: Nghỉ phép, Kỷ luật lao động, Hợp đồng lao động, BHXH, Tiền lương\ldots
 
 \textbf{Community report} là văn bản tóm tắt do LLM sinh, mô tả entity chính, quan hệ và insight của community. Report được embed và dùng trong Global Search --- khi câu hỏi mang tính tổng hợp, hệ thống query các report thay vì từng text unit riêng lẻ.
 
@@ -280,7 +276,7 @@ Thách thức tiếng Việt pháp luật trong prompt extraction: phân biệt 
 \subsection{Embedding và vector store}
 \label{subsection:2.4.2}
 
-Mô hình embedding có tác dụng chuyển văn bản thành vector số cho similarity search:
+Mô hình embedding có tác dụng chuyển văn bản thành vector số cho similarity search. Các kiến trúc nền tảng bao gồm Transformer~\cite{vaswani2017attention} và BERT~\cite{devlin2019bert}, được fine-tune hoặc mở rộng cho embedding đa ngôn ngữ:
 
 \begin{itemize}[nosep, leftmargin=*]
     \item \textbf{Model:} \texttt{qwen/qwen3-embedding-4b} (qua OpenRouter).

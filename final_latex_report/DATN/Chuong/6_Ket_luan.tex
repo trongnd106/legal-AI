@@ -159,20 +159,14 @@ Hệ thống mang giá trị cho:
 \section{Kết luận chung}
 \label{section:6.5}
 
-Đồ án đã chứng minh rằng \textbf{GraphRAG kết hợp tri thức có cấu trúc} là hướng tiếp cận tin cậy cho hỏi đáp pháp luật Việt Nam. Bằng cách thiết kế ontology domain (L1 cấu trúc + L2 ngữ nghĩa), xây dựng pipeline xử lý từ dữ liệu đến ứng dụng, và đánh giá trên corpus 581 Điều với các test case cover single-hop, multi-hop, temporal, hệ thống đã đạt kết quả định lượng chứng minh giá trị:
+Đồ án xuất phát từ một bài toán thực tiễn rõ ràng: các công cụ tra cứu pháp luật lao động hiện tại --- từ cổng thông tin từ khóa~\cite{robertson1994bm25} đến chatbot LLM tổng quát dễ hallucinate~\cite{ji2023hallucination} --- đều chưa đáp ứng được ba yêu cầu đồng thời: hỏi đáp tự nhiên, suy luận chéo văn bản, và trích dẫn có căn cứ kiểm chứng được. Đây không phải là khoảng trống mang tính học thuật trừu tượng mà là nhu cầu thực tế của hàng triệu người lao động, người sử dụng lao động và cán bộ pháp chế cần tra cứu và tuân thủ \gls{BLLD} hàng ngày.
 
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Citation accuracy} 88\% trên Local Search --- cao hơn Naive RAG, bảo toàn trích dẫn Điều/Khoản.
-    
-    \item \textbf{Multi-hop reasoning} 100\% keyword trên câu suy luận chéo --- vượt trội LLM thuần (40\%).
-    
-    \item \textbf{Contract analysis} phát hiện vi phạm có căn cứ --- VR008 + Điều 113, minh chứng hybrid rule + graph.
-    
-    \item \textbf{Framework tái sử dụng} --- pattern ontology mở rộng sang domain khác mà không lập lại toàn bộ thiết kế.
-\end{itemize}
+\textbf{Luận điểm trung tâm} của đồ án là: đối với domain pháp luật, sự phân biệt giữa \emph{cấu trúc pháp lý} (Điều, Khoản, quan hệ dẫn chiếu chính thức) và \emph{ngữ nghĩa pháp luật} (quyền, nghĩa vụ, chế tài, chủ thể) không chỉ là chi tiết thiết kế mà là yêu cầu bắt buộc của hệ thống. Cấu trúc pháp lý phải được xây dựng deterministic --- không thể ủy thác cho LLM vì LLM không đảm bảo nhất quán, và sự không nhất quán trong định danh Điều/Khoản phá vỡ toàn bộ chuỗi trích dẫn. Ngữ nghĩa pháp luật có thể khai thác sức mạnh của LLM để tự động hóa và linh hoạt. Sự tách biệt này, được hiện thực hóa qua \textbf{ontology hai lớp với canonicalization}, là đóng góp có tính nguyên tắc nhất của đồ án.
 
-Hạn chế chủ yếu (corpus hạn chế, chi phí indexing, đánh giá quy mô nhỏ) là điểm khởi đầu cho các hướng phát triển, không phản ánh giới hạn cơ bản của phương pháp. Trong bối cảnh AI ngày càng tích hợp vào lĩnh vực pháp luật, đồ án góp phần minh chứng rằng \textbf{cấu trúc lý thuyết} + \textbf{kiểm soát chặt chẽ} = \textbf{hỏi đáp pháp lý đáng tin cậy}.
+Từ nguyên tắc thiết kế đó, hệ thống mở rộng một cách tự nhiên sang hai hướng: \textbf{suy luận đa bước}~\cite{trivedi2022ircot} (duyệt quan hệ pháp lý thay vì tìm kiếm vector đơn thuần) và \textbf{kiểm tra tuân thủ}~\cite{hendrycks2021cuad} (kết hợp quy tắc xác định với graph grounding). Kết quả thực nghiệm --- 100\% keyword accuracy trên câu hỏi multi-hop, 88\% citation accuracy tổng thể, phát hiện vi phạm HĐLĐ deterministic dưới 5ms/khoản --- không phải là con số tuyệt đối mà là \emph{bằng chứng về hướng đúng}: mỗi thành phần bổ sung (multi-hop engine, temporal filter, rule validator) đều tạo ra cải thiện đo lường được, không phải trang trí kiến trúc.
 
-Khuyến nghị triển khai, sử dụng và bảo trì được trình bày chi tiết ở Chương~\ref{chapter:recommendations}.
+Giới hạn của đồ án --- corpus hẹp, bộ test nhỏ, một số thành phần chưa tích hợp production --- là giới hạn về phạm vi triển khai, không phải giới hạn về tính đúng đắn của phương pháp. Trong bối cảnh các benchmark pháp luật tiếng Việt mới xuất hiện~\cite{dong2025vietlegal} và xu hướng đánh giá RAG end-to-end ngày càng chặt chẽ~\cite{butler2026legalragbench,das2026claimraglaw}, pattern \textbf{L1 (deterministic) + L2 (LLM) + canonicalization} có thể mở rộng sang luật dân sự, luật doanh nghiệp hay bất kỳ corpus pháp lý có cấu trúc phân cấp rõ ràng, chỉ cần thay đổi parser và khai báo entity types phù hợp.
+
+Trong bối cảnh AI ngày càng thâm nhập vào lĩnh vực pháp luật, đồ án góp phần xây dựng luận điểm rằng \textbf{độ tin cậy trong Legal AI đến từ thiết kế có cấu trúc, không chỉ từ sức mạnh mô hình}. Một hệ thống pháp luật tốt không chỉ trả lời đúng mà còn phải giải thích được \emph{vì sao} đúng, truy vết được đến Điều/Khoản cụ thể, và cảnh báo người dùng khi câu trả lời có giới hạn. Đây là hướng phát triển có giá trị lâu dài, vượt ra ngoài phạm vi ứng dụng cụ thể của đồ án này.
 
 \end{document}

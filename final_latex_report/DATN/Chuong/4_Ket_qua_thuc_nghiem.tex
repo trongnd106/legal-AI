@@ -9,7 +9,7 @@ Chương này trình bày phương pháp đánh giá thực nghiệm và phân t
 \subsection{Tiêu chí đánh giá chất lượng câu trả lời}
 \label{subsection:4.1.1}
 
-Trong lĩnh vực hỏi đáp pháp luật, độ chính xác không đơn thuần là tính đúng về nội dung mà còn đòi hỏi \emph{truy xuất nguồn gốc pháp lý có kiểm chứng}. Các chỉ số phổ biến như BLEU~\cite{lewis2020rag} hay ROUGE không phù hợp vì câu trả lời có thể diễn đạt khác nhau mà vẫn đúng nếu trích dẫn đúng Điều/Khoản và con số pháp lý. Do đó, đồ án xây dựng bộ chỉ số chuyên biệt cho domain pháp luật gồm ba thành phần chính.
+Trong lĩnh vực hỏi đáp pháp luật, độ chính xác không đơn thuần là tính đúng về nội dung mà còn đòi hỏi \emph{truy xuất nguồn gốc pháp lý có kiểm chứng}. Các chỉ số phổ biến như BLEU hay ROUGE không phù hợp vì câu trả lời có thể diễn đạt khác nhau mà vẫn đúng nếu trích dẫn đúng Điều/Khoản và con số pháp lý~\cite{es2023ragas,das2026claimraglaw}. Do đó, đồ án xây dựng bộ chỉ số chuyên biệt cho domain pháp luật gồm ba thành phần chính.
 
 \textbf{Keyword Accuracy (KwAcc)} đo tỷ lệ câu trả lời chứa \emph{tất cả} từ khoá pháp lý cần thiết — số ngày nghỉ, mức lương, điều khoản cụ thể — được định nghĩa trong tập \texttt{expected\_keywords} của mỗi test case:
 \[
@@ -25,7 +25,7 @@ trong đó $\mathrm{cited}(tc)$ là tập các điều luật được trích d�
 
 \textbf{Reasoning Chain Hit (ChainHit)} là chỉ số bổ sung dành riêng cho nhóm câu hỏi multi-hop. Mỗi test case multi-hop có kèm \texttt{reasoning\_chain} — danh sách các Điều phải được đề cập trong một chuỗi suy luận liên tục. ChainHit đo phần trăm câu trả lời đề cập đủ tất cả Điều trong chuỗi đó. Chỉ số này bổ sung cho KwAcc vì một câu trả lời đúng về mặt từ khoá nhưng không thể hiện được logic suy luận (ví dụ: chỉ nêu Điều 35 mà không liên hệ đến Điều 46) vẫn bị xem là không đạt về lý luận pháp lý.
 
-Ngoài ra, framework RAGAS~\cite{es2023ragas} với các chỉ số Faithfulness, Answer Relevancy, Context Precision/Recall được triển khai như một lớp đánh giá bổ sung. Faithfulness đánh giá mức độ câu trả lời được \emph{grounded} trong ngữ cảnh đã truy xuất, qua đó phát hiện hiện tượng hallucination ngay cả khi KwAcc đạt cao.
+Ngoài ra, framework RAGAS~\cite{es2023ragas} với các chỉ số Faithfulness, Answer Relevancy, Context Precision/Recall được triển khai như một lớp đánh giá bổ sung. Các benchmark pháp luật mới như Legal RAG Bench~\cite{butler2026legalragbench} nhấn mạnh rằng nhiều lỗi được gán nhãn ``hallucination'' thực chất bắt nguồn từ retrieval thất bại --- phù hợp với thiết kế ưu tiên chất lượng truy xuất của đồ án. Faithfulness đánh giá mức độ câu trả lời được \emph{grounded} trong ngữ cảnh đã truy xuất, qua đó phát hiện hiện tượng hallucination ngay cả khi KwAcc đạt cao.
 
 \subsection{Tiêu chí đánh giá chất lượng truy xuất ngữ cảnh}
 \label{subsection:4.1.2}
@@ -145,7 +145,7 @@ Năm phương pháp được so sánh, được chọn lọc để đại diện
 
     \item \textbf{Global Search:} chế độ map-reduce trên community reports~\cite{graphrag2024}, phù hợp cho câu hỏi tổng hợp (summarization-style). Mỗi community report được LLM đánh giá độc lập (map), sau đó kết quả được tổng hợp lại (reduce). Phương pháp này tốn nhiều LLM calls hơn Local Search nhưng có ưu điểm trong việc trả lời câu hỏi toàn cục về domain.
 
-    \item \textbf{Local + Multi-hop:} Local Search kết hợp với \texttt{VNLegalReasoningEngine} — engine suy luận đa bước trên merged Knowledge Graph. Engine này duyệt theo các chain template (violation, entitlement, procedure) để kết nối các Điều từ nhiều văn bản khác nhau, bổ sung ngữ cảnh mà Local Search đơn thuần không thể truy xuất trong một hop.
+    \item \textbf{Local + Multi-hop:} Local Search kết hợp với \texttt{VNLegalReasoningEngine} --- engine suy luận đa bước trên merged Knowledge Graph, có cách tiếp cận tương tự IRCoT~\cite{trivedi2022ircot} nhưng duyệt theo quan hệ pháp lý xác định thay vì chain-of-thought tự do. Engine này duyệt theo các chain template (violation, entitlement, procedure) để kết nối các Điều từ nhiều văn bản khác nhau, bổ sung ngữ cảnh mà Local Search đơn thuần không thể truy xuất trong một hop.
 \end{enumerate}
 
 \subsection{Kịch bản thí nghiệm}

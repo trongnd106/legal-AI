@@ -4,14 +4,12 @@
 \section{Đặt vấn đề}
 \label{section:1.1}
 
-Trong bối cảnh chuyển đổi số và sự phát triển nhanh của trí tuệ nhân tạo, nhu cầu tra cứu, hiểu và áp dụng pháp luật lao động Việt Nam ngày càng lớn. \gls{NLD} cần biết quyền lợi, khiếu nại và nghĩa vụ của bản thân của bản thân khi tham gia vào tổ chức lao động; \gls{NSDLD} và bộ phận nhân sự phải soạn thảo, rà soát \gls{HDLD} cho đúng quy định; luật sư nội bộ và cán bộ pháp chế doanh nghiệp cần phản hồi nhanh các câu hỏi tuân thủ pháp luật. Các cổng thông tin điện tử và thư viện pháp luật truyền thống hỗ trợ tra cứu theo từ khóa, nhưng không đáp ứng được kỳ vọng về \emph{hỏi đáp tự nhiên}, \emph{tổng hợp nhiều điều luật} và \emph{trích dẫn có căn cứ} -- những yêu cầu then chốt trong bối cảnh ứng dụng trí tuệ nhân tạo vào lĩnh vực pháp luật.
+Trong bối cảnh chuyển đổi số và sự phát triển nhanh của trí tuệ nhân tạo, nhu cầu tra cứu, hiểu và áp dụng pháp luật lao động Việt Nam ngày càng lớn. \gls{NLD} cần biết quyền lợi, khiếu nại và nghĩa vụ của bản thân khi tham gia vào quan hệ lao động; \gls{NSDLD} và bộ phận nhân sự phải soạn thảo, rà soát \gls{HDLD} cho đúng quy định; luật sư nội bộ và cán bộ pháp chế doanh nghiệp cần phản hồi nhanh các câu hỏi tuân thủ pháp luật. Các cổng thông tin điện tử và thư viện pháp luật truyền thống hỗ trợ tra cứu theo từ khóa, nhưng không đáp ứng được kỳ vọng về \emph{hỏi đáp tự nhiên}, \emph{tổng hợp nhiều điều luật} và \emph{trích dẫn có căn cứ} -- những yêu cầu then chốt trong bối cảnh ứng dụng trí tuệ nhân tạo vào lĩnh vực pháp luật~\cite{ji2023hallucination}.
 
 \subsection{Đặc thù văn bản pháp luật lao động Việt Nam}
 \label{subsection:1.1.1}
 
-Văn bản pháp luật lao động Việt Nam có cấu trúc phân cấp chặt chẽ: Phần $\rightarrow$ Chương $\rightarrow$ Mục $\rightarrow$ Điều $\rightarrow$ Khoản $\rightarrow$ Điểm. Một quy phạm thường không đứng độc lập mà liên kết chéo giữa nhiều văn bản ở các cấp: \gls{BLLD} 2019 là luật gốc, được hướng dẫn bởi các Nghị định (NĐ 145/2020, NĐ 12/2022, NĐ 74/2024, NĐ 70/2023) và Thông tư (TT 10/2020). Các quan hệ dẫn chiếu, sửa đổi và bãi bỏ tạo thành mạng lưới quy phạm mà hệ thống tra cứu đơn giản khó nắm bắt.
-
-Ngoài cấu trúc hình thức, mỗi điều khoản mang tính chất quy phạm khác nhau: quyền, nghĩa vụ, cấm đoán, thủ tục hay chế tài. Việc phân loại này (metadata) ảnh hưởng trực tiếp đến cách trả lời câu hỏi pháp lý --- ví dụ câu hỏi về ``quyền đơn phương chấm dứt'' khác hẳn câu hỏi về ``mức phạt khi vi phạm''.
+Văn bản pháp luật lao động Việt Nam có cấu trúc phân cấp chặt chẽ, từ luật gốc (\gls{BLLD} 2019) đến các Nghị định hướng dẫn chi tiết (NĐ 145/2020, NĐ 12/2022, NĐ 74/2024\ldots) và Thông tư. Một quy phạm thường không đứng độc lập mà liên kết chéo với nhiều văn bản: quan hệ dẫn chiếu, sửa đổi, hướng dẫn và bãi bỏ tạo thành mạng lưới mà hệ thống tra cứu từ khóa đơn giản khó nắm bắt. Các đặc điểm hình thức và ngữ nghĩa của corpus pháp luật lao động được phân tích chi tiết ở Mục~\ref{subsection:2.1.1}.
 
 \subsection{Quy mô corpus và độ phức tạp bài toán}
 \label{subsection:1.1.2}
@@ -48,7 +46,7 @@ Trong lĩnh vực pháp luật, sai sót không chỉ là vấn đề kỹ thu�
 
 Phương pháp tra cứu pháp luật truyền thống dựa trên tìm kiếm từ khóa trên các cổng thông tin điện tử (Cổng thông tin điện tử Chính phủ, thuvienphapluat.vn, luatvietnam.vn\ldots) hoặc tra cứu thủ công trong sách, tài liệu in.
 
-Các công cụ tìm kiếm văn bản thường sử dụng thuật toán BM25, TF-IDF hoặc Elasticsearch. Phương pháp này mạnh khi người dùng biết chính xác từ khóa cần tìm (``Điều 113'', ``nghỉ phép năm''), nhưng yếu ở các khía cạnh sau:
+Các công cụ tìm kiếm văn bản thường sử dụng thuật toán BM25~\cite{robertson1994bm25}, TF-IDF hoặc Elasticsearch. Phương pháp này mạnh khi người dùng biết chính xác từ khóa cần tìm (``Điều 113'', ``nghỉ phép năm''), nhưng yếu ở các khía cạnh sau:
 
 \begin{itemize}[nosep, leftmargin=*]
     \item \textbf{Thiếu hiểu ngữ nghĩa:} truy vấn ``NLĐ được nghỉ bao lâu khi vợ sinh con?'' có thể không khớp văn bản dùng từ ``thai sản'' hoặc ``nghỉ việc riêng''.
@@ -59,7 +57,7 @@ Các công cụ tìm kiếm văn bản thường sử dụng thuật toán BM25,
 \subsection{Phương pháp dựa trên LLM và RAG truyền thống}
 \label{subsection:1.2.2}
 
-\gls{RAG} kết hợp retriever và generator bằng \gls{LLM}, cho phép hệ thống truy xuất ngữ cảnh liên quan rồi sinh câu trả lời dựa trên ngữ cảnh đó. Đây là hướng tiếp cận phổ biến để giảm ảo giác (hallucination) so với LLM thuần.
+\gls{RAG} kết hợp retriever và generator bằng \gls{LLM}, cho phép hệ thống truy xuất ngữ cảnh liên quan rồi sinh câu trả lời dựa trên ngữ cảnh đó~\cite{lewis2020rag}. Đây là hướng tiếp cận phổ biến để giảm ảo giác (hallucination) so với LLM thuần~\cite{ji2023hallucination}.
 
 Tuy nhiên, \gls{NaiveRAG} -- chunk văn bản theo kích thước cố định, embedding và tìm kiếm theo vector search gặp một số hạn chế đặc thù khi áp dụng cho văn bản pháp luật:
 
@@ -75,7 +73,7 @@ Tuy nhiên, \gls{NaiveRAG} -- chunk văn bản theo kích thước cố định,
 
 \gls{KG} biểu diễn tri thức dưới dạng thực thể (entity) và quan hệ (relationship), phù hợp với cấu trúc phân cấp và dẫn chiếu của văn bản pháp luật. Các hệ thống Legal KG xây dựng thủ công (LKIF, Akoma Ntoso) đạt độ chính xác cao nhưng tốn công bảo trì và khó mở rộng khi văn bản sửa đổi.
 
-Microsoft \gls{GraphRAG} tự động hóa quy trình: trích xuất entity/relationship bằng LLM, phát hiện cộng đồng (community detection), sinh các bản tóm tắt cộng đồng (\gls{CommunityReport}), và hỗ trợ hai chế độ truy vấn \gls{LocalSearch} (entity + text units cục bộ) và \gls{GlobalSearch} (tổng hợp qua community reports). Đây là nền tảng được lựa chọn trong đồ án.
+Microsoft \gls{GraphRAG}~\cite{graphrag2024} tự động hóa quy trình: trích xuất entity/relationship bằng LLM, phát hiện cộng đồng (community detection)~\cite{traag2019leiden}, sinh các bản tóm tắt cộng đồng (\gls{CommunityReport}), và hỗ trợ hai chế độ truy vấn \gls{LocalSearch} (entity + text units cục bộ) và \gls{GlobalSearch} (tổng hợp qua community reports). Đây là nền tảng được lựa chọn trong đồ án.
 
 Tuy nhiên, GraphRAG gốc chưa được thiết kế cho domain luật lao động Việt Nam. Các hạn chế khi áp dụng trực tiếp gồm:
 

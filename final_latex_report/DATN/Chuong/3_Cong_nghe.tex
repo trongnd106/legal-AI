@@ -9,7 +9,7 @@ Chương này trình bày phương pháp đề xuất xây dựng Trợ lý Ảo
 \subsection{Định hướng tiếp cận tổng thể}
 \label{subsection:3.1.1}
 
-Giải pháp lấy Microsoft \gls{GraphRAG} và \gls{RAG} làm nền tảng, tùy biến sâu cho miền pháp luật lao động Việt Nam. Ba trụ cột thiết kế gồm:
+Giải pháp lấy Microsoft \gls{GraphRAG}~\cite{graphrag2024} và \gls{RAG}~\cite{lewis2020rag} làm nền tảng, tùy biến sâu cho miền pháp luật lao động Việt Nam. Ba trụ cột thiết kế gồm:
 
 \begin{enumerate}[nosep, leftmargin=*]
     \item \textbf{Đồ thị tri thức hai lớp với canonicalization:} Lớp cấu trúc xác định biểu diễn phân cấp hình thức và siêu dữ liệu từ phân tích pháp lý (Phần, Chương, Mục, Điều, Khoản, Điểm); Lớp ngữ nghĩa trích xuất bằng LLM để biểu diễn các khái niệm miền (quyền, nghĩa vụ, hành vi, chế tài). Hai lớp được hợp nhất thông qua lớp canonicalization, giải quyết xung đột và trùng lặp giữa biểu diễn tự do (từ LLM) và định danh chuẩn (từ cấu trúc), tạo thành đồ thị thống nhất phục vụ suy luận và trích dẫn chính xác.
@@ -135,7 +135,7 @@ Pipeline chuẩn bị dữ liệu là bước quan trọng để tạo input ch�
 \subsection{Chiến lược chunking phục vụ tính nguyên vẹn đơn vị pháp lý}
 \label{subsection:3.2.4}
 
-Chunking là bước quan trọng trong RAG, ảnh hưởng trực tiếp tới chất lượng retrieval. Chiến lược ở đây khác so với Naive RAG:
+Chunking là bước quan trọng trong RAG~\cite{gao2024ragsurvey}, ảnh hưởng trực tiếp tới chất lượng retrieval. Chiến lược ở đây khác so với Naive RAG:
 
 \begin{itemize}[nosep, leftmargin=*]
     \item \textbf{Đơn vị chunk = 1 Điều:} Thay vì chunk theo kích thước token cố định (ví dụ: 512 token, overlap 50), mỗi Điều --- với nội dung trung bình 2000 ký tự --- được xem như một đơn vị chunk. Cách tiếp cận này \textbf{tránh cắt ngang Khoản} hoặc mất ngữ cảnh pháp lý.
@@ -181,7 +181,7 @@ Quá trình hợp nhất (merge) là bước quan trọng để kết hợp lớ
     \item \textbf{Ghi output:} Viết \texttt{merged\_entities.parquet}, \texttt{merged\_relationships.parquet}, \texttt{text\_units.parquet}, \texttt{community\_reports.parquet}.
 \end{enumerate}
 
-Sau merge, GraphRAG tiếp tục phát hiện cộng đồng (thuật toán Leiden, mục tiêu minimize modularity), sinh báo cáo cộng đồng với prompt tiếng Việt nhấn mạnh các khía cạnh quyền, nghĩa vụ, chế tài. Tham số \texttt{summarize\_descriptions.max\_length: 500} giới hạn độ dài mô tả mỗi entity.
+Sau merge, GraphRAG tiếp tục phát hiện cộng đồng bằng thuật toán Leiden~\cite{traag2019leiden} (minimize modularity), sinh báo cáo cộng đồng với prompt tiếng Việt nhấn mạnh các khía cạnh quyền, nghĩa vụ, chế tài. Tham số \texttt{summarize\_descriptions.max\_length: 500} giới hạn độ dài mô tả mỗi entity.
 
 Đồ thị merged kết quả chứa: hàng ngàn thực thể (cấu trúc + ngữ nghĩa), hàng ngàn quan hệ (phân cấp, tham chiếu, logic), khoảng 15 cộng đồng chủ đề (``Nghỉ phép'', ``Kỷ luật lao động'', ``BHXH'', v.v.). Thống kê chi tiết ở Chương~\ref{chapter:Experiment}.
 
@@ -233,7 +233,19 @@ Tích hợp API: field \texttt{temporal\_warnings} trong response --- cảnh bá
 \subsection{Xác thực quy tắc}
 \label{subsection:3.3.4}
 
-Module xác thực (rule validator) kiểm tra câu trả lời LLM với quy tắc cứng: bắt buộc một số Điều có mặt, xác thực ngưỡng số (lương tối thiểu, hạn thử việc, số ngày nghỉ tối thiểu). Hiện tích hợp ở tầng script/benchmark; dự kiến mở rộng vào pipeline query production.
+Module xác thực quy tắc (rule validator) hoạt động như một lớp kiểm soát đầu ra bổ sung, độc lập với LLM. Thay vì kiểm tra \emph{ý định} của câu trả lời, module này kiểm tra các \textbf{điều kiện cần thiết mang tính xác định} mà mọi câu trả lời pháp lý đúng đắn phải thỏa mãn.
+
+\textbf{Hai loại quy tắc được áp dụng:}
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Quy tắc hiện diện (presence rules):} Đối với một số loại câu hỏi, câu trả lời \emph{bắt buộc} phải đề cập đến Điều/văn bản cụ thể. Ví dụ: câu hỏi về mức lương tối thiểu vùng phải trích dẫn NĐ 74/2024; câu hỏi về thử việc phải đề cập Điều 27 \gls{BLLD}. Nếu thiếu, hệ thống ghi nhận ``citation miss'' và có thể yêu cầu retrieval bổ sung.
+
+    \item \textbf{Quy tắc ngưỡng số (threshold rules):} Xác thực các con số pháp lý trong câu trả lời so với giá trị chuẩn trong corpus. Ví dụ: nếu câu trả lời đề cập ``14 ngày nghỉ phép'', validator kiểm tra con số này có nằm trong khoảng hợp lệ (12--16 ngày tùy đối tượng, theo Điều 113 \gls{BLLD}) hay không. Quy tắc này bảo vệ khỏi hallucination số liệu --- loại lỗi phổ biến nhất khi LLM trả lời về pháp luật mà không có grounding chặt.
+\end{enumerate}
+
+\textbf{Cơ chế tích hợp:} Module validator nhận đầu vào là \texttt{(query\_type, answer\_text, cited\_articles)} từ pipeline query, thực thi kiểm tra trong $<$1ms (không gọi LLM), và trả về \texttt{ValidationResult} gồm \texttt{passed: bool}, \texttt{missing\_citations: List}, \texttt{value\_mismatches: Dict}. Kết quả này được đính kèm vào API response dưới trường \texttt{validation\_warnings} để người dùng nhận biết độ tin cậy.
+
+\textbf{Phạm vi hiện tại và hướng mở rộng:} Module validator hiện được tích hợp tại tầng script/benchmark, xác thực câu trả lời sau khi sinh trong luồng đánh giá test cases. Việc tích hợp vào pipeline chat production (gọi validator tự động cho mọi request) là bước tiếp theo hợp lý, đặc biệt cho câu hỏi về các ngưỡng số học quan trọng như lương tối thiểu, thời gian báo trước khi chấm dứt hợp đồng, hay số ngày nghỉ phép.
 
 \section{Tích hợp LLM và sinh câu trả lời}
 \label{section:3.4}
