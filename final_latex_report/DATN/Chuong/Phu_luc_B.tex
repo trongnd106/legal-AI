@@ -1,8 +1,257 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
+
+Phụ lục này trình bày các prompt template được sử dụng xuyên suốt pipeline: trích xuất đồ thị (indexing), sinh community report, truy vấn hỏi đáp, và phân tích hợp đồng lao động. Mọi prompt indexing đều tùy biến cho domain pháp luật lao động Việt Nam; prompt truy vấn kế thừa template GraphRAG gốc với \texttt{response\_type} được API điều chỉnh.
+
+\section{Tổng quan luồng prompt}
+\label{appendix:b-overview}
+
+\begin{table}[H]
+\centering
+\caption{Ánh xạ giai đoạn pipeline và file prompt}
+\label{table:prompt-map}
+\small
+\begin{tabular}{|l|l|p{6cm}|}
+\hline
+\textbf{Giai đoạn} & \textbf{File / nguồn} & \textbf{Mục đích} \\
+\hline
+Extract graph (L2) & \texttt{prompts/extract\_graph\_simple.txt} & Trích entity/relationship ngữ nghĩa \\
+(Bản mở rộng) & \texttt{prompts/entity\_extraction\_labor.txt} & Prompt chi tiết hơn, có relationship types \\
+Community report & \texttt{prompts/community\_report\_labor.txt} & Tóm tắt cộng đồng entity \\
+Local/Global Search & GraphRAG \texttt{local\_search\_system\_prompt} & Sinh câu trả lời từ context retrieved \\
+Phân tích HĐLĐ & \texttt{contract\_analysis/prompts.py} & Segmentation + violation review \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Prompt trích xuất đồ thị (Lớp 2)}
+\label{appendix:b-extract}
+
+File \texttt{data/labor-law/prompts/extract\_graph\_simple.txt} là prompt mặc định trong \texttt{settings.yaml}. Thiết kế theo format tuple GraphRAG (\texttt{entity<|>...<|>...}) thay vì JSON --- giảm lỗi parse và tương thích pipeline gốc.
+
+\subsection{Quy tắc phân loại entity}
+
+Prompt quy định rõ ranh giới giữa các loại entity dễ nhầm lẫn:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{prompts/extract\_graph\_simple.txt} --- trích đoạn prompt extraction Lớp 2
-    \item \texttt{community\_report\_labor.txt} --- trích đoạn prompt community report
-    \item \texttt{contract\_analysis/prompts.py} --- prompt phân tích HĐLĐ
+    \item \texttt{HanhVi}: hành vi vi phạm/pháp lý (không trả lương, không ký HĐLĐ)
+    \item \texttt{CheTai}: chế tài hành chính (phạt tiền theo NĐ 12/2022) $\neq$ \texttt{XuLyKyLuat}
+    \item \texttt{XuLyKyLuat}: kỷ luật nội bộ (sa thải, khiển trách) $\neq$ \texttt{CheTai}
+    \item \texttt{TienLuong}: khái niệm/mức lương $\neq$ \texttt{TraLuong} (hành vi trả lương)
+    \item \texttt{CoQuan}: cơ quan NN (Bộ LĐTBXH, Thanh tra) $\neq$ \texttt{ChuThe} (NLĐ/NSDLĐ)
 \end{itemize}
+
+\textbf{Instruction bắt buộc:} Không trích xuất \texttt{VanBan}, \texttt{Chuong}, \texttt{Dieu}, \texttt{Khoan}, \texttt{Diem} --- đã có trong Lớp~1.
+
+Listing~\ref{lst:extract-graph-prompt} trình bày toàn văn prompt.
+
+\begin{lstlisting}[caption={Prompt \texttt{extract\_graph\_simple.txt}},label={lst:extract-graph-prompt},basicstyle=\ttfamily\small,breaklines=true,frame=single]
+-Goal-
+Extract semantic entities and relationships from Vietnamese labor law text.
+
+-Entity Types-
+{entity_types}
+
+-Classification Rules (MUST follow)-
+HanhVi         = Legal actions/violations: not paying salary, ...
+CheTai         = Administrative penalties: fines, warnings (Decree 12/2022)
+XuLyKyLuat     = Internal disciplinary measures: termination, reprimand
+CoQuan         = State agencies: Ministry of Labor, Inspection, Court
+ChuThe         = Parties: worker, employer, trainee
+HopDongLaoDong = Labor contract: employment agreement, terms
+TienLuong      = Salary level, structure, minimum wage
+TraLuong       = Salary payment schedule, late payment
+ThoiGioLamViec = Working hours, overtime, schedule
+NghiPhep       = Annual leave, sick leave, maternity leave
+CheDoBaoHiem   = Social/health/unemployment insurance
+TroCapThoiViec = Severance, termination compensation
+AnToanVeSinhLaoDong = Occupational health and safety
+
+-Output Format-
+("entity"<|>entity_name<|>entity_type<|>entity_description)
+("relationship"<|>source<|>target<|>description<|>strength_1_to_10)
+Use ## as delimiter between records.
+
+-Important Instructions-
+1. Do NOT extract: VanBan, Chuong, Dieu, Khoan, Diem
+2. entity_type MUST be one of {entity_types}
+3. relationship_strength: integer 1-10
+4. Return plain text with delimiters, NO JSON
+
+-Input Text-
+{input_text}
+\end{lstlisting}
+
+\subsection{Prompt mở rộng (\texttt{entity\_extraction\_labor.txt})}
+
+Bản prompt chi tiết hơn (không dùng mặc định trong \texttt{settings.yaml} hiện tại) bổ sung:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item Metadata chunk: \texttt{chunk\_id}, \texttt{van\_ban}, \texttt{so\_dieu}
+    \item Quy tắc dùng \texttt{\{id\}} làm source khi relationship xuất phát từ Điều hiện tại
+    \item \textbf{Relationship types} có cấu trúc: \texttt{regulates}, \texttt{obligates}, \texttt{entitles}, \texttt{prohibits}, \texttt{penalizes}, \texttt{disciplines}, \texttt{enforced\_by}, \texttt{cites}
+    \item Few-shot example đầy đủ (Điều 35 BLLĐ --- quyền đơn phương chấm dứt HĐLĐ)
+\end{itemize}
+
+Prompt này phù hợp khi cần extraction chính xác hơn về quan hệ pháp lý; đổi sang bản này bằng cách sửa \texttt{extract\_graph.prompt} trong \texttt{settings.yaml} và re-index.
+
+\section{Prompt community report}
+\label{appendix:b-community}
+
+File \texttt{prompts/community\_report\_labor.txt} yêu cầu LLM sinh báo cáo JSON tiếng Việt cho mỗi cộng đồng entity (sau thuật toán Leiden). Cấu trúc output:
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{title}: tên nhóm quy phạm (VD: ``Quyền đơn phương chấm dứt HĐLĐ'')
+    \item \texttt{summary}: 2--4 câu tóm tắt chủ đề, chủ thể, quan hệ chính
+    \item \texttt{rating} (0--10): mức quan trọng thực tiễn
+    \item \texttt{findings[]}: 4--7 insight, mỗi insight gồm \texttt{summary} + \texttt{explanation}
+\end{itemize}
+
+\textbf{Thang rating:} 8--10 (quyền cốt lõi: lương, BHXH, chấm dứt HĐLĐ); 5--7 (nghỉ phép, AT-VSLĐ); 2--4 (thủ tục hành chính).
+
+\textbf{Grounding rule:} Mọi phát biểu cụ thể phải dẫn chiếu dữ liệu từ input text; giới hạn \texttt{\{max\_report\_length\}} từ.
+
+Listing~\ref{lst:community-prompt} trình bày prompt đầy đủ.
+
+\begin{lstlisting}[caption={Prompt \texttt{community\_report\_labor.txt} (rút gọn)},label={lst:community-prompt},basicstyle=\ttfamily\small,breaklines=true,frame=single]
+Ban la chuyen gia phan tich phap luat lao dong Viet Nam.
+Tong hop nhom entity phap ly thanh bao cao cong dong.
+
+Tra ve JSON:
+{
+  "title": "<ten nhom quy pham, bao gom entity tieu bieu>",
+  "summary": "<2-4 cau: quy dinh gi, ai la chu the>",
+  "rating": <float 0-10>,
+  "rating_explanation": "<1 cau>",
+  "findings": [
+    {"summary": "<tieu de insight>", "explanation": "<2-4 cau, TV, co dan chieu data>"}
+  ]
+}
+
+Rating: 8-10 quyen cot loi; 5-7 quan trong; 2-4 thu tuc.
+Findings: 4-7 insight (chu the, thu tuc, hau qua vi pham, lien he entity khac).
+Grounding: moi phat bieu phai dan chieu input text.
+Gioi han: {max_report_length} tu.
+
+Input: {input_text}
+\end{lstlisting}
+
+\textit{Ghi chú:} File gốc \texttt{community\_report\_labor.txt} viết đầy đủ bằng tiếng Việt có dấu; listing trên rút gọn để tránh lỗi font monospace khi biên dịch.
+
+\section{Prompt truy vấn hỏi đáp (Local/Global Search)}
+\label{appendix:b-query}
+
+GraphRAG sử dụng system prompt mặc định (\texttt{LOCAL\_SEARCH\_SYSTEM\_PROMPT}) yêu cầu LLM:
+\begin{enumerate}[nosep, leftmargin=*]
+    \item Trả lời dựa trên bảng dữ liệu retrieved (\texttt{\{context\_data\}})
+    \item Không bịa thông tin --- ``If you don't know the answer, just say so''
+    \item Trích dẫn nguồn theo format \texttt{[Data: Sources (id); Entities (id); ...]}
+    \item Tuân theo \texttt{\{response\_type\}} --- API đặt \texttt{"multiple paragraphs"}
+\end{enumerate}
+
+\textbf{Tùy biến đồ án:} Post-processing ở tầng \texttt{query/citation\_resolver.py} và \texttt{query/temporal\_filter.py} bổ sung trích dẫn Điều/Khoản (\texttt{article\_citations}) và cảnh báo văn bản hết hiệu lực --- không nằm trong prompt GraphRAG gốc mà xử lý sau khi LLM sinh câu trả lời.
+
+\section{Prompt phân tích hợp đồng lao động}
+\label{appendix:b-contract}
+
+Module \texttt{unified-search-app/app/contract\_analysis/prompts.py} định nghĩa ba nhóm prompt cho pipeline HĐLĐ (hybrid rule + LLM).
+
+\subsection{Prompt phân đoạn điều khoản (Clause Segmentation)}
+
+\textbf{System:} ``Bạn là chuyên gia phân tích hợp đồng lao động Việt Nam. Luôn trả về JSON hợp lệ.''
+
+\textbf{Output schema} mỗi điều khoản:
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{clause\_id}, \texttt{title}, \texttt{category}, \texttt{categories[]} (đa nhãn)
+    \item \texttt{original\_text}: nguyên văn, không cắt giữa chừng
+    \item \texttt{summary}, \texttt{article\_number}
+\end{itemize}
+
+\textbf{Quy tắc đặc biệt:}
+\begin{itemize}[nosep, leftmargin=*]
+    \item Một Điều gộp nhiều nội dung (công việc + địa điểm + lương + BHXH) $\rightarrow$ liệt kê đủ trong \texttt{categories[]}
+    \item \texttt{PARTY\_INFO}: gộp đầy đủ thông tin Bên A (NSDLĐ) \emph{và} Bên B (NLĐ)
+    \item Không bỏ sót bất kỳ Điều/khoản nào
+\end{itemize}
+
+\subsection{Prompt kiểm tra vi phạm (Violation Batch --- L001)}
+
+Chỉ gọi LLM \textbf{sau} khi rule VR001--VR016 đã chạy. Input gồm:
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{clauses\_json}: danh sách điều khoản đã segment
+    \item \texttt{rule\_issues\_summary}: vi phạm rule đã phát hiện (LLM không lặp lại)
+    \item \texttt{legal\_context}: ngữ cảnh từ GraphRAG (merged graph grounding)
+    \item Ngưỡng tham chiếu: giờ làm 48h/tuần, lương tối thiểu vùng I--IV, thử việc tối đa, HĐLĐ xác định thời hạn $\leq$ 36 tháng
+\end{itemize}
+
+\textbf{Output schema} mỗi clause:
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{severity}: \texttt{VIOLATION|HIGH\_RISK|MEDIUM\_RISK|COMPLIANT|NOT\_COVERED}
+    \item \texttt{issues[]}: \texttt{issue\_id=L001}, mô tả, \texttt{legal\_basis}, \texttt{affected\_party}, \texttt{recommendation}
+    \item \texttt{positive\_aspects[]}, \texttt{confidence} (0.0--1.0)
+\end{itemize}
+
+\textbf{Nguyên tắc:} Tập trung vấn đề \emph{ngữ nghĩa} mà regex không phát hiện; nếu rule đã bắt vi phạm rõ $\rightarrow$ \texttt{issues=[]}.
+
+Listing~\ref{lst:violation-prompt} trình bày khung prompt violation batch.
+
+\begin{lstlisting}[caption={Khung prompt \texttt{VIOLATION\_BATCH\_INSTRUCTION}},label={lst:violation-prompt},basicstyle=\ttfamily\small,breaklines=true,frame=single]
+System: Ban la luat su lao dong Viet Nam. Chi tra ve JSON.
+
+Ban da co ket qua rule-based (VR001-VR016) ben duoi.
+Nhiem vu: Chi kiem tra van de ma rule CHUA phat hien
+         hoac can dien giai sau hon. KHONG lap lai RULE_ISSUES.
+
+Output moi clause:
+{
+  "clause_id": "...",
+  "severity": "VIOLATION|HIGH_RISK|...|COMPLIANT|NOT_COVERED",
+  "issues": [{
+    "issue_id": "L001",
+    "description": "...",
+    "legal_basis": "...",
+    "affected_party": "NLD|NSDLD|ca hai",
+    "recommendation": "..."
+  }],
+  "positive_aspects": ["..."],
+  "confidence": 0.0-1.0
+}
+
+Input:
+  DIEU KHOAN: {clauses_json}
+  RULE ISSUES: {rule_issues_summary}
+  NGUY CANH PHAP LUAT (GraphRAG): {legal_context}
+  NGUONG: luong toi thieu vung, thu viec, gio lam...
+  VUNG: {region}
+\end{lstlisting}
+
+\subsection{Prompt hỏi đáp trên hợp đồng (Contract QA)}
+
+\textbf{System:} Trợ lý pháp lý chuyên luật lao động; trả lời theo HĐLĐ và ngữ cảnh pháp luật; khuyến nghị luật sư khi phức tạp.
+
+\textbf{User template} ghép: \texttt{contract\_excerpt}, \texttt{relevant\_clauses}, \texttt{legal\_context} (GraphRAG), \texttt{analysis\_summary}, \texttt{question}.
+
+\section{Ma trận prompt theo use case}
+\label{appendix:b-matrix}
+
+\begin{table}[H]
+\centering
+\caption{Prompt và use case tương ứng}
+\label{table:prompt-usecase}
+\small
+\begin{tabular}{|p{3.2cm}|p{4.5cm}|p{4.5cm}|}
+\hline
+\textbf{Use case} & \textbf{Prompt} & \textbf{Output mong đợi} \\
+\hline
+Index L2 & \texttt{extract\_graph\_simple.txt} & Entity/relationship tuple \\
+Global QA & Community report + map-reduce & Tổng hợp chủ đề domain \\
+Local QA & Local search system prompt & Câu trả lời + Data refs \\
+Multi-hop & Graph traversal (không prompt riêng) & Chuỗi Điều qua quan hệ \\
+HĐLĐ segment & \texttt{CLAUSE\_SEGMENTATION} & JSON array clauses \\
+HĐLĐ review & \texttt{VIOLATION\_BATCH} & JSON severity + L001 \\
+HĐLĐ chat & \texttt{QA\_USER\_TEMPLATE} & Câu trả lời tự nhiên \\
+\hline
+\end{tabular}
+\end{table}
+
 \end{document}

@@ -1,11 +1,295 @@
 \documentclass[../DoAn.tex]{subfiles}
 \begin{document}
+
+Phụ lục này trình bày cấu hình triển khai của hệ thống, tập trung vào file \texttt{data/labor-law/settings.yaml} --- điểm cấu hình trung tâm cho pipeline indexing và truy vấn GraphRAG. Các tham số được chọn nhằm: (i)~bảo toàn đơn vị pháp lý khi chunking, (ii)~giảm chi phí LLM khi indexing, (iii)~cân bằng chất lượng retrieval và latency khi truy vấn.
+
+\section{Tổng quan cấu hình}
+\label{appendix:a-overview}
+
+File \texttt{settings.yaml} điều khiển toàn bộ pipeline GraphRAG: mô hình LLM/embedding, định dạng đầu vào, chunking, trích xuất đồ thị (Lớp~2), sinh community report, và tham số Local/Global Search. Lớp~1 (cấu trúc pháp lý xác định) \textbf{không} nằm trong file này mà được xây dựng bởi \texttt{scripts/01\_prepare\_data.py} và hợp nhất qua \texttt{scripts/02\_merge\_structural\_graph.py}.
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các khối cấu hình chính trong \texttt{settings.yaml}}
+\label{table:settings-overview}
+\small
+\begin{tabular}{|l|p{9cm}|}
+\hline
+\textbf{Khối cấu hình} & \textbf{Chức năng} \\
+\hline
+\texttt{completion\_models} & LLM sinh text (extraction, community report, truy vấn) \\
+\texttt{embedding\_models} & Mô hình embedding cho vector search \\
+\texttt{vector\_store} & Kích thước vector (phải khớp embedding) \\
+\texttt{input} / \texttt{input\_storage} & Đọc JSONL từ thư mục \texttt{chunks/} \\
+\texttt{output\_storage} / \texttt{cache} & Lưu artifacts và cache LLM \\
+\texttt{chunking} & Chiến lược cắt văn bản (theo Điều) \\
+\texttt{extract\_graph} & Prompt và entity types Lớp~2 \\
+\texttt{summarize\_descriptions} & Gộp mô tả entity trùng lặp \\
+\texttt{community\_reports} & Prompt và giới hạn báo cáo cộng đồng \\
+\texttt{local\_search} / \texttt{global\_search} & Tham số truy vấn \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Cấu hình mô hình ngôn ngữ (LLM)}
+\label{appendix:a-llm}
+
+Hệ thống gọi LLM qua LiteLLM với provider OpenRouter. Tham số \texttt{temperature=0} đảm bảo kết quả deterministic --- quan trọng cho extraction và trích dẫn pháp lý.
+
+\begin{table}[H]
+\centering
+\caption{Tham số LLM (\texttt{completion\_models.default\_completion\_model})}
+\label{table:llm-config}
+\small
+\begin{tabular}{|l|l|p{6.5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Giá trị} & \textbf{Ghi chú} \\
+\hline
+Provider & \texttt{openrouter} & API gateway thống nhất \\
+Model (indexing) & \texttt{qwen/qwen3-235b-a22b-2507} & Dùng khi build graph (Ch.~4) \\
+Model (runtime) & \texttt{openai/gpt-4o-mini} & Cấu hình hiện tại trong \texttt{settings.yaml} \\
+\texttt{max\_tokens} & 4000 & Giới hạn output mỗi lần gọi \\
+\texttt{temperature} & 0 & Không sampling ngẫu nhiên \\
+\texttt{concurrent\_requests} & 1 & Tránh rate limit khi indexing \\
+\texttt{request\_timeout} & 60.0\,s & Timeout mỗi request \\
+Retry & exponential\_backoff, max 2 & Tự động thử lại khi lỗi mạng \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Lưu ý triển khai:} Trong thực nghiệm đồ án, indexing dùng Qwen3-235B (chất lượng extraction cao); API chat production có thể dùng GPT-4o-mini (nhanh, rẻ hơn). Đổi model yêu cầu re-index nếu muốn tái tạo toàn bộ Lớp~2; cache JSON (\texttt{data/labor-law/cache/}) giúp giảm chi phí khi chạy lại.
+
+\section{Cấu hình embedding và vector store}
+\label{appendix:a-embedding}
+
+\begin{table}[H]
+\centering
+\caption{Tham số embedding và vector store}
+\label{table:embed-config}
+\small
+\begin{tabular}{|l|l|p{6.5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Giá trị} & \textbf{Ghi chú} \\
+\hline
+Model & \texttt{qwen/qwen3-embedding-4b} & Qua OpenRouter \\
+Dimension & 2560 & \texttt{vector\_store.vector\_size} phải khớp \\
+\texttt{concurrent\_requests} & 4 & Song song hóa embedding \\
+Đối tượng embed & text units, entity descriptions, community reports & Sau indexing \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Đầu vào, đầu ra và cache}
+\label{appendix:a-io}
+
+\textbf{Định dạng đầu vào:} GraphRAG đọc file JSONL từ \texttt{data/labor-law/chunks/}. Mỗi dòng là một Điều luật với các trường:
+
 \begin{itemize}[nosep, leftmargin=*]
-    \item Toàn văn \texttt{data/labor-law/settings.yaml} (rút gọn nếu dài)
-    \item Cấu hình LLM: \texttt{qwen/qwen3-235b-a22b-2507}, \texttt{temperature=0}, \texttt{max\_tokens=4000}
-    \item Cấu hình embedding: \texttt{qwen3-embedding:4b}, \texttt{vector\_size: 2560}
-    \item Cấu hình chunking: \texttt{size: 4000}, \texttt{overlap: 0}
-    \item Biến môi trường: \texttt{OPENROUTER\_API\_KEY}
-    \item Lệnh triển khai: \texttt{graphrag index --root data/labor-law}
+    \item \texttt{id}: định danh chuẩn (VD: \texttt{BLLĐ\_2019\_Điều\_35})
+    \item \texttt{van\_ban}, \texttt{so\_dieu}, \texttt{tieu\_de}, \texttt{chuong\_so}, \texttt{norm\_type}
+    \item \texttt{noi\_dung}: toàn văn Điều (gửi vào LLM extraction)
+    \item \texttt{khoans[]}: danh sách Khoản (metadata Lớp~1)
 \end{itemize}
+
+\textbf{Cache:} Kiểu \texttt{json}, lưu tại \texttt{data/labor-law/cache/}. Mỗi lần gọi LLM được cache theo hash input --- khi re-index sau khi sửa prompt, cần xóa cache tương ứng hoặc toàn bộ thư mục cache.
+
+\textbf{Output:} Artifacts Parquet trong \texttt{data/labor-law/output/} (\texttt{entities.parquet}, \texttt{relationships.parquet}, \texttt{text\_units.parquet}, \texttt{community\_reports.parquet}\ldots). Sau merge L1+L2: \texttt{merged\_entities.parquet}, \texttt{merged\_relationships.parquet}.
+
+\section{Chunking}
+\label{appendix:a-chunking}
+
+\begin{table}[H]
+\centering
+\caption{Chiến lược chunking}
+\label{table:chunking-config}
+\small
+\begin{tabular}{|l|l|p{6.5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Giá trị} & \textbf{Lý do thiết kế} \\
+\hline
+\texttt{size} & 2000 tokens & Đủ chứa hầu hết một Điều (~800 tokens TB) \\
+\texttt{overlap} & 0 & Mỗi Điều là đơn vị pháp lý độc lập, không cắt giữa Khoản \\
+\hline
+\end{tabular}
+\end{table}
+
+Do mỗi record JSONL đã tương ứng một Điều, chunking thực tế gần như 1:1 --- khác biệt cốt lõi so với Naive RAG (cắt cố định theo token, mất ngữ cảnh pháp lý).
+
+\section{Trích xuất đồ thị (Lớp 2)}
+\label{appendix:a-extract}
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình \texttt{extract\_graph}}
+\label{table:extract-config}
+\small
+\begin{tabular}{|l|p{9.5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Giá trị / mô tả} \\
+\hline
+\texttt{prompt} & \texttt{prompts/extract\_graph\_simple.txt} \\
+\texttt{max\_gleanings} & 1 (tối đa 2 lần gọi LLM/chunk; tiết kiệm $\sim$30\% request) \\
+Entity types & 14 loại domain (xem Bảng~\ref{table:entity-types}) \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Danh sách \texttt{entity\_types} trong \texttt{settings.yaml}}
+\label{table:entity-types}
+\small
+\begin{tabular}{|l|p{8.5cm}|}
+\hline
+\textbf{Loại entity} & \textbf{Ý nghĩa} \\
+\hline
+\texttt{ChuThe} & NLĐ, NSDLĐ, người học nghề \\
+\texttt{HanhVi} & Hành vi/sự kiện pháp lý được điều chỉnh \\
+\texttt{CoQuan} & Cơ quan nhà nước thực thi, giám sát \\
+\texttt{HopDongLaoDong} & Hợp đồng lao động \\
+\texttt{TienLuong} / \texttt{TraLuong} & Khái niệm lương / hành vi trả lương \\
+\texttt{ThoiGioLamViec} & Thời giờ làm việc, làm thêm \\
+\texttt{NghiPhep} & Nghỉ phép, nghỉ ốm, thai sản \\
+\texttt{XuLyKyLuat} & Kỷ luật lao động nội bộ \\
+\texttt{CheDoBaoHiem} & BHXH, BHYT, BHTN \\
+\texttt{TroCapThoiViec} & Trợ cấp/bồi thường khi chấm dứt HĐLĐ \\
+\texttt{CheTai} & Chế tài hành chính (NĐ 12/2022) \\
+\texttt{AnToanVeSinhLaoDong} & AT-VSLĐ \\
+\hline
+\end{tabular}
+\end{table}
+
+\textbf{Quan trọng:} Các loại \texttt{VanBan}, \texttt{Dieu}, \texttt{Khoan}, \texttt{Diem} \textbf{không} nằm trong \texttt{entity\_types} --- chúng thuộc Lớp~1, build deterministic, tránh trùng lặp và sai lệch định danh khi LLM extraction.
+
+\section{Community reports và summarize}
+\label{appendix:a-community}
+
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{summarize\_descriptions.max\_length}: 500 token --- gộp mô tả entity trùng tên từ nhiều chunk.
+    \item \texttt{community\_reports.graph\_prompt}: \texttt{prompts/community\_report\_labor.txt} (tiếng Việt, xem Phụ lục~B).
+    \item \texttt{community\_reports.max\_length}: 2000 token.
+    \item \texttt{community\_reports.max\_input\_length}: 8000 token --- giới hạn context đầu vào khi sinh report.
+\end{itemize}
+
+\section{Cấu hình truy vấn}
+\label{appendix:a-query}
+
+\begin{table}[H]
+\centering
+\caption{Tham số Local Search và Global Search}
+\label{table:search-config}
+\small
+\begin{tabular}{|l|c|c|p{5cm}|}
+\hline
+\textbf{Tham số} & \textbf{Local} & \textbf{Global} & \textbf{Mô tả} \\
+\hline
+\texttt{text\_unit\_prop} & 0.4 & --- & Tỷ lệ context dành cho text units \\
+\texttt{community\_prop} & 0.1 & --- & Tỷ lệ context cho community reports \\
+\texttt{top\_k\_entities} & 10 & --- & Số entity retrieve \\
+\texttt{top\_k\_relationships} & 10 & --- & Số relationship retrieve \\
+\texttt{max\_context\_tokens} & 6000 & 6000 & Giảm từ 12000 mặc định \\
+\texttt{map\_max\_length} & --- & 1000 & Map phase Global Search \\
+\texttt{reduce\_max\_length} & --- & 2000 & Reduce phase Global Search \\
+\hline
+\end{tabular}
+\end{table}
+
+API chat (\texttt{api/routes/chat.py}) mặc định \texttt{mode=local}, \texttt{response\_type="multiple paragraphs"}, timeout 90\,s. Global Search dùng cho câu hỏi tổng hợp; Local Search cho tra cứu entity/Điều cụ thể.
+
+\section{Biến môi trường và lệnh triển khai}
+\label{appendix:a-deploy}
+
+\textbf{Biến môi trường bắt buộc} (file \texttt{.env}, không commit):
+\begin{itemize}[nosep, leftmargin=*]
+    \item \texttt{OPENROUTER\_API\_KEY} --- LLM và embedding
+    \item \texttt{NEO4J\_URI}, \texttt{NEO4J\_USERNAME}, \texttt{NEO4J\_PASSWORD} --- tuỳ chọn, nếu bật Neo4j
+\end{itemize}
+
+\textbf{Quy trình indexing đầy đủ:}
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \texttt{python scripts/01\_prepare\_data.py --verify}
+    \item \texttt{graphrag index --root data/labor-law}
+    \item \texttt{python scripts/02\_merge\_structural\_graph.py --root data/labor-law}
+    \item \texttt{uvicorn api.main:app --host 0.0.0.0 --port 8000}
+\end{enumerate}
+
+\section{Trích đoạn \texttt{settings.yaml}}
+\label{appendix:a-yaml}
+
+Listing~\ref{lst:settings-yaml} trình bày các khối cấu hình chính (rút gọn comment, giữ nguyên tham số).
+
+\begin{lstlisting}[caption={Cấu hình chính \texttt{data/labor-law/settings.yaml}},label={lst:settings-yaml},basicstyle=\ttfamily\small,breaklines=true,frame=single]
+completion_models:
+  default_completion_model:
+    type: litellm
+    model_provider: openrouter
+    model: openai/gpt-4o-mini
+    api_key: ${OPENROUTER_API_KEY}
+    api_base: https://openrouter.ai/api/v1
+    max_tokens: 4000
+    temperature: 0
+    concurrent_requests: 1
+
+embedding_models:
+  default_embedding_model:
+    type: litellm
+    model_provider: openrouter
+    model: qwen/qwen3-embedding-4b
+    api_key: ${OPENROUTER_API_KEY}
+    concurrent_requests: 4
+
+vector_store:
+  vector_size: 2560
+
+input:
+  type: jsonl
+  file_pattern: ".*\\.jsonl$$"
+  id_column: id
+  title_column: tieu_de
+  text_column: noi_dung
+
+input_storage:
+  base_dir: "chunks"
+
+output_storage:
+  base_dir: "output"
+
+cache:
+  type: json
+  storage:
+    base_dir: "cache"
+
+chunking:
+  size: 2000
+  overlap: 0
+
+extract_graph:
+  prompt: "prompts/extract_graph_simple.txt"
+  entity_types: [ChuThe, HanhVi, CoQuan, HopDongLaoDong,
+    TienLuong, TraLuong, ThoiGioLamViec, NghiPhep,
+    XuLyKyLuat, CheDoBaoHiem, TroCapThoiViec, CheTai,
+    AnToanVeSinhLaoDong]
+  max_gleanings: 1
+
+summarize_descriptions:
+  max_length: 500
+
+community_reports:
+  graph_prompt: "prompts/community_report_labor.txt"
+  max_length: 2000
+  max_input_length: 8000
+
+local_search:
+  text_unit_prop: 0.4
+  community_prop: 0.1
+  top_k_entities: 10
+  top_k_relationships: 10
+  max_context_tokens: 6000
+
+global_search:
+  max_context_tokens: 6000
+  map_max_length: 1000
+  reduce_max_length: 2000
+\end{lstlisting}
+
 \end{document}
