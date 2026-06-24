@@ -154,49 +154,7 @@ Nghiên cứu gần đây cho thấy kết hợp (hybrid) là hướng hiệu qu
 \section{Kiến thức nền tảng về RAG}
 \label{section:rag_foundation}
 
-\subsection{Khái niệm và kiến trúc RAG}
-\label{subsection:rag_architecture}
-
-Kiến trúc RAG gồm hai thành phần chính:
-
-\begin{enumerate}[nosep, leftmargin=*]
-    \item \textbf{Retriever:} nhận câu hỏi, tìm $k$ đoạn văn bản (passages) hoặc tài liệu liên quan nhất từ corpus đã index.
-    \item \textbf{Generator (LLM):} nhận câu hỏi kèm ngữ cảnh retrieved, sinh câu trả lời tự nhiên.
-\end{enumerate}
-
-Luồng xử lý:
-\[
-\text{Query} \xrightarrow{\text{encode}} \mathbf{q} \xrightarrow{\text{retrieve}} \{d_1, \ldots, d_k\} \xrightarrow{\text{augment}} \text{Prompt}(q, d_1, \ldots, d_k) \xrightarrow{\text{LLM}} \text{Answer}
-\]
-
-Lợi ích so với LLM thuần: (1)~giảm hallucination nhờ grounding trong tài liệu thực, (2)~cập nhật tri thức bằng cách thay đổi corpus/index mà không fine-tune model, (3)~truy vết nguồn qua các passage retrieved.
-
-\subsection{Truy xuất dựa trên vector}
-\label{subsection:vector_retrieval}
-
-Truy xuất vector là phương pháp phổ biến nhất trong RAG hiện đại:
-
-\begin{enumerate}[nosep, leftmargin=*]
-    \item \textbf{Embedding:} mỗi đoạn văn bản và câu hỏi được chuyển thành vector $\mathbf{v} \in \mathbb{R}^d$ bởi mô hình embedding. Đồ án sử dụng mô hình \texttt{qwen/qwen3-embedding-4b} (dim 2560) qua OpenRouter bởi tính tương thích tốt của nó với ngôn ngữ tiếng Việt.
-    \item \textbf{Vector store:} lưu trữ embedding của toàn bộ text units, entity descriptions, community reports.
-    \item \textbf{Similarity search:} tính cosine similarity $\text{sim}(\mathbf{q}, \mathbf{d}) = \frac{\mathbf{q} \cdot \mathbf{d}}{\|\mathbf{q}\| \|\mathbf{d}\|}$, trả về top-$k$ đoạn có similarity cao nhất.
-\end{enumerate}
-
-GraphRAG \textbf{Basic Search} sử dụng cơ chế truy xuất vector thuần trên text units được dùng làm baseline \gls{NaiveRAG} trong thí nghiệm. Tham số \texttt{vector\_size: 2560} trong cấu hình phải khớp với dimension của mô hình embedding.
-
-\subsection{Hạn chế RAG truyền thống với văn bản pháp luật}
-\label{subsection:rag_limitations}
-
-Khi áp dụng \gls{NaiveRAG} cho văn bản pháp luật lao động, các hạn chế sau xuất hiện:
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Mất cấu trúc phân cấp:} chunk theo kích thước token cố định có thể cắt giữa Khoản, làm mất ngữ cảnh pháp lý và khó trích dẫn chính xác.
-    \item \textbf{Không bảo toàn quan hệ logic:} vector search tìm đoạn \emph{ngữ nghĩa gần} nhưng không nắm quan hệ \texttt{cites}, \texttt{penalizes}, \texttt{obligates} giữa các Điều/văn bản.
-    \item \textbf{Khó multi-hop:} câu hỏi ``vi phạm X bị phạt bao nhiêu?'' cần nối BLLĐ (quy phạm) $\rightarrow$ NĐ 12/2022 (chế tài) --- một lần retrieve vector thường không đủ.
-    \item \textbf{Không lọc hiệu lực:} có thể retrieve điều khoản đã bị sửa đổi hoặc bãi bỏ nếu corpus chứa nhiều phiên bản.
-\end{itemize}
-
-Các hạn chế này là động lực chính để đồ án chuyển sang GraphRAG kết hợp ontology hai lớp, chunking theo Điều, multi-hop reasoning và temporal filter.
+\gls{RAG} kết hợp retriever và \gls{LLM}: encode câu hỏi, retrieve top-$k$ đoạn liên quan, augment prompt rồi sinh câu trả lời~\cite{lewis2020rag}. Truy xuất vector (embedding + cosine similarity) là baseline \gls{NaiveRAG} trong thí nghiệm. Với văn bản pháp luật, Naive RAG gặp hạn chế: chunk cố định cắt giữa Khoản, vector không nắm quan hệ \texttt{cites}/\texttt{penalizes}, khó multi-hop và không lọc hiệu lực --- các vấn đề đã nêu ở Mục~\ref{subsection:1.2.2} và~\ref{subsection:1.2.3}. Đây là động lực chuyển sang GraphRAG hai lớp (Mục~\ref{subsection:graphrag_pipeline}).
 
 \section{Kiến thức nền tảng về đồ thị tri thức và GraphRAG}
 \label{section:kg_graphrag_foundation}
@@ -254,50 +212,11 @@ Hình~\ref{fig:pipeline-indexing} minh họa trực quan toàn bộ pipeline ind
 \subsection{Community detection và báo cáo cộng đồng}
 \label{subsection:2.3.4}
 
-Thuật toán \textbf{Leiden}~\cite{traag2019leiden} phân cụm entity trong đồ thị dựa trên modularity --- các entity liên kết chặt được gom thành community. Leiden cải tiến so với Louvain bằng bước tinh chỉnh phân vùng (refinement phase), đảm bảo community luôn liên thông. Với corpus luật lao động, các community tương ứng chủ đề: Nghỉ phép, Kỷ luật lao động, Hợp đồng lao động, BHXH, Tiền lương\ldots
+Thuật toán \textbf{Leiden}~\cite{traag2019leiden} phân cụm entity theo modularity; mỗi community được LLM tóm tắt thành báo cáo (community report) phục vụ Global Search. Đồ án tùy chỉnh prompt tiếng Việt, nhấn mạnh quyền/nghĩa vụ/chế tài (chi tiết Phụ lục~B).
 
-\textbf{Community report} là văn bản tóm tắt do LLM sinh, mô tả entity chính, quan hệ và insight của community. Report được embed và dùng trong Global Search --- khi câu hỏi mang tính tổng hợp, hệ thống query các report thay vì từng text unit riêng lẻ.
-
-Đồ án tùy chỉnh prompt sinh report, yêu cầu output tiếng Việt, nhấn mạnh quyền/nghĩa vụ/chế tài, trích dẫn Điều/Khoản khi có thể. Thiết lập tham số giới hạn độ dài mô tả entity tối đa là 500.
-
-\section{Mô hình ngôn ngữ lớn và embedding trong hệ thống}
+\section{Mô hình ngôn ngữ lớn và embedding}
 \label{section:2.4}
 
-\subsection{LLM --- vai trò và cấu hình}
-\label{subsection:2.4.1}
-
-Mô hình ngôn ngữ lớn (Large Language Model -- \gls{LLM}) đóng vai trò đa nhiệm trong pipeline. Cụ thể:
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Indexing:} trích xuất entity/relationship, summarize descriptions, sinh community reports.
-    \item \textbf{Querying:} sinh câu trả lời từ ngữ cảnh retrieved (Local/Global Search).
-    \item \textbf{Contract analysis:} phân tích rủi ro điều khoản mơ hồ (rule L001) khi VR001--VR007 chưa phát hiện vi phạm rõ.
-\end{itemize}
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Provider:} LiteLLM qua OpenRouter.
-    \item \textbf{Model:} \texttt{qwen/qwen3-235b-a22b-2507} khi xây dựng đồ thị và \texttt{openai/gpt-4o-mini} khi chạy kiểm thử hậu nghiệm.
-    \item \textbf{Tham số:} \texttt{temperature=0} (deterministic), \texttt{max\_tokens=4000}, cache JSON cho quá trình build graph.
-\end{itemize}
-
-Thách thức tiếng Việt pháp luật trong prompt extraction: phân biệt entity gần nghĩa --- \texttt{CheTai} (chế tài pháp luật) vs \texttt{XuLyKyLuat} (xử lý kỷ luật nội bộ); \texttt{TienLuong} (khái niệm lương) vs \texttt{TraLuong} (hành vi trả lương). Prompt tự custom đã quy định rõ các phân biệt này.
-
-\subsection{Embedding và vector store}
-\label{subsection:2.4.2}
-
-Mô hình embedding có tác dụng chuyển văn bản thành vector số cho similarity search. Các kiến trúc nền tảng bao gồm Transformer~\cite{vaswani2017attention} và BERT~\cite{devlin2019bert}, được fine-tune hoặc mở rộng cho embedding đa ngôn ngữ:
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Model:} \texttt{qwen/qwen3-embedding-4b} (qua OpenRouter).
-    \item \textbf{Dimension:} 2560.
-    \item \textbf{Đối tượng embed:} text units (chunks theo Điều), entity descriptions, community reports.
-\end{itemize}
-
-Embedding chất lượng ảnh hưởng trực tiếp Basic Search và bước retrieve entity trong Local Search. Với thuật ngữ pháp luật tiếng Việt chuyên ngành, mô hình embedding đa ngôn ngữ (Qwen3) phù hợp hơn embedding chỉ huấn luyện trên tiếng Anh.
-
-\subsection{Tổng kết nền tảng lý thuyết}
-\label{subsection:2.4.3}
-
-Chương này đã trình bày: (1)~đặc thù bài toán hỏi đáp pháp luật lao động Việt Nam, (2)~các nghiên cứu RAG, Legal KG và GraphRAG, (3)~kiến thức nền RAG và hạn chế với văn bản pháp luật, (4)~đồ thị tri thức, GraphRAG indexing/query, community detection, (5)~vai trò LLM và embedding. Cơ sở lý thuyết này là điểm tựa cho Chương tiếp theo -- trình bày phương pháp đề xuất: ontology hai lớp, pipeline dữ liệu, chiến lược truy vấn và module phân tích HĐLĐ.
+\gls{LLM} qua OpenRouter phục vụ indexing (extraction, community report), truy vấn và phân tích HĐLĐ; embedding \texttt{qwen/qwen3-embedding-4b} (dim 2560) phục vụ Basic/Local Search. Cấu hình: \texttt{temperature=0}, cache JSON khi build graph (Phụ lục~A). Prompt extraction phân biệt các entity dễ nhầm (\texttt{CheTai} vs \texttt{XuLyKyLuat}, \texttt{TienLuong} vs \texttt{TraLuong}).
 
 \end{document}

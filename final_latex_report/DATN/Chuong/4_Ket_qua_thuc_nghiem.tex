@@ -217,11 +217,7 @@ Cache hit rate (tái index) & $>$ 85\% \\
 \end{tabular}
 \end{table}
 
-\textbf{Phân tích cấu trúc đồ thị.} Lớp 1 deterministic đảm bảo 581 node \texttt{Dieu} với ID chuẩn hoá theo định dạng \texttt{BLLĐ\_2019\_Điều\_XX} — đây là nền tảng không thể thiếu cho citation accuracy vì mọi trích dẫn pháp lý đều phải tham chiếu được đến một node xác định. Lớp 2 bổ sung 14 loại entity ngữ nghĩa đặc thù domain lao động (\texttt{ChuThe}, \texttt{HanhVi}, \texttt{CheTai}, \texttt{NghiPhep}, \texttt{TienLuong}, \texttt{TrocapThoiViec}, \ldots) cùng các relationship ngữ nghĩa (\textit{penalizes}, \textit{entitles}, \textit{obligates}) — đây là nền tảng cho multi-hop reasoning. Việc hợp nhất hai lớp tạo ra một biểu diễn tri thức lai (hybrid knowledge representation): cấu trúc pháp lý xác định kết hợp với ngữ nghĩa ngữ cảnh linh hoạt.
-
-\textbf{Phân tích cộng đồng Leiden.} Thuật toán phát hiện cộng đồng Leiden tạo ra 15 cụm chủ đề, tương ứng gần sát với các chủ đề pháp lý chính: Nghỉ phép -- Thời giờ làm việc, Kỷ luật lao động, Hợp đồng lao động, Bảo hiểm xã hội, Tiền lương -- Phụ cấp, An toàn lao động, \ldots Sự phân chia tự nhiên này cho thấy cấu trúc đồ thị phản ánh tốt cấu trúc nội dung của corpus pháp luật.
-
-\textbf{Phân tích chi phí.} Bước trích xuất đồ thị (L2) chiếm $\approx$30\% thời gian tổng và $\approx$70\% số lần gọi LLM. Khi tái index với cache, 85\% LLM calls được tái sử dụng kết quả trung gian, giảm chi phí tái index đáng kể. Điều này có ý nghĩa thực tiễn: corpus pháp luật ổn định và chỉ cần cập nhật khi có Nghị định mới, nên overhead tái index là chấp nhận được.
+\textbf{Phân tích cấu trúc đồ thị.} Lớp~1 cung cấp 581 node \texttt{Dieu} có ID chuẩn --- nền tảng citation accuracy; Lớp~2 bổ sung entity/relationship ngữ nghĩa phục vụ multi-hop. Leiden tạo 15 community chủ đề (Nghỉ phép, Kỷ luật, BHXH\ldots). Trích xuất L2 chiếm $\approx$30\% thời gian indexing; cache giúp tái index giảm $\approx$85\% LLM calls.
 
 \subsection{So sánh hiệu quả tổng thể}
 \label{subsection:4.4.2}
@@ -249,13 +245,7 @@ Local + Multi-hop    & 100\% (10/10) & 92\% (11/12$^*$) & Cải thiện rõ rệ
 
 $^*$CiteAcc được tính trên tập con có \texttt{expected\_citations}: 8 test case cho Local/Global, 12 cho Local+Multi-hop (do có thêm test case phân tích HĐLĐ).
 
-\textbf{Phân tích kết quả.} Ba kết luận chính được rút ra từ Bảng~\ref{table:overall_comparison}:
-
-\emph{(i) Graph-based retrieval tạo ra cải thiện định lượng rõ ràng so với Naive RAG.} Local Search vượt trội Basic Search (+30\% KwAcc, +18\% CiteAcc). Sự cải thiện này xuất phát từ hai yếu tố: (a) chunking theo Điều bảo toàn ngữ nghĩa pháp lý đầy đủ của mỗi đơn vị luật, tránh tình trạng một Điều bị cắt giữa chừng làm mất ngữ cảnh; (b) entity-centric retrieval của Local Search tìm đúng node \texttt{Dieu} có ID chuẩn hoá, giải quyết vấn đề entity disambiguation mà vector similarity không thể xử lý (ví dụ: ``Điều 90'' có thể xuất hiện trong nhiều bộ luật khác nhau).
-
-\emph{(ii) Zero-shot LLM có kiến thức về luật nhưng không thể sử dụng được cho sản xuất.} KwAcc 40\% cho thấy LLM có kiến thức pháp luật tổng quát (4/10 câu hỏi đơn giản được trả lời đúng), nhưng hallucination trên các con số cụ thể (mức lương vùng, số ngày nghỉ) và thiếu khả năng trích dẫn chính xác khiến phương pháp này không thể dùng trong hệ thống tư vấn pháp luật.
-
-\emph{(iii) Global Search có trade-off rõ ràng với Local Search.} Global Search đạt KwAcc thấp hơn (80\% vs.\ 90\%) nhưng xử lý tốt hơn các câu hỏi tổng hợp (E3). Điều này phù hợp với thiết kế của GraphRAG~\cite{graphrag2024}: Global Search phù hợp cho ``sensemaking queries'' (hiểu toàn cảnh domain) còn Local Search phù hợp cho ``specific entity queries'' (tra cứu điều khoản cụ thể).
+\textbf{Phân tích kết quả.} Local Search vượt Basic Search (+30\% KwAcc) nhờ chunking theo Điều và entity-centric retrieval. Zero-shot LLM (40\% KwAcc) không đủ tin cậy do hallucination số liệu. Global Search phù hợp câu hỏi tổng hợp nhưng latency cao hơn Local.
 
 \subsection{Phân tích theo loại câu hỏi và độ khó}
 \label{subsection:4.4.3}
@@ -281,60 +271,20 @@ Bảng~\ref{table:by_category} phân rã KwAcc theo loại câu hỏi, làm rõ 
 }
 \end{table}
 
-\textbf{Phân tích theo độ khó.}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \texttt{easy} (LD001--LD003, LD013): Local Search đạt 100\% --- câu hỏi tra cứu đơn giản về một điều khoản cụ thể, không yêu cầu kết nối chéo văn bản.
-    \item \texttt{medium} (LD004, LD010, TMP001--TMP002): Local Search đạt $\approx$83\% --- bắt đầu xuất hiện yêu cầu ngữ cảnh rộng hơn một Điều.
-    \item \texttt{hard} (LD011, LD012): Local Search đạt 0\%, Local+Multi-hop đạt 100\% --- khoảng cách lớn nhất, minh chứng rõ ràng nhất cho tầm quan trọng của engine suy luận đa bước.
-\end{itemize}
+Nhóm \texttt{hard} (LD011, LD012) là điểm chênh lệch lớn nhất: Local 0\% vs.\ Local+Multi-hop 100\%. Failure case điển hình: Local Search retrieve đúng Điều 90 BLLĐ nhưng không mở rộng sang NĐ~12/2022 (chế tài) --- cần graph traversal cross-document.
 
-\textbf{Phân tích failure cases.}
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{LD012 (Local Search):} Local Search truy xuất đúng Điều 90 BLLĐ (nghĩa vụ trả lương đúng mức tối thiểu) nhưng không thể tự động mở rộng sang Nghị định 12/2022 (chế tài xử phạt) --- hai văn bản khác nhau trong corpus. Entity graph chỉ có quan hệ nội bộ một văn bản ở bước retrieval đầu tiên; cần thêm một hop để vượt ranh giới văn bản.
-    \item \textbf{LD011 (Local Search):} Câu hỏi đòi hỏi đồng thời Điều 35 (quyền đơn phương chấm dứt) và Điều 46 (trợ cấp thôi việc). Local Search trả về Điều 35 dựa trên semantic similarity với ``đơn phương chấm dứt'', nhưng bỏ sót Điều 46 vì từ khoá ``trợ cấp thôi việc'' không nằm trong top-k entity của query embedding ban đầu.
-    \item \textbf{Extraction noise (L2):} Một số entity L2 có tên trùng nhau giữa các văn bản (ví dụ: ``người sử dụng lao động'' xuất hiện ở nhiều Điều). Sau deduplication, một số entity bị hợp nhất quá mức, làm hẹp neighborhood của chúng và ảnh hưởng nhẹ đến quality của Local Search.
-    \item \textbf{TMP002 (Temporal):} Không có temporal filter, Local Search có thể trả lời dựa trên Nghị định 90/2019 đã hết hiệu lực. Với temporal filter bật, hệ thống chỉ trích dẫn Nghị định 74/2024 đang còn hiệu lực --- kết quả đúng hoàn toàn.
-\end{itemize}
-
-\subsection{Case study chi tiết}
+\subsection{Case study}
 \label{subsection:4.4.4}
 
-\begin{example}[LD003 --- Single-hop, thử việc 60 ngày]
-\textbf{Câu hỏi:} Thời gian thử việc tối đa đối với công việc đòi hỏi trình độ chuyên môn kỹ thuật là bao lâu?
+\begin{example}[LD012 --- Multi-hop]
+\textbf{Câu hỏi:} Trả lương dưới mức tối thiểu vùng IV thì bị phạt bao nhiêu?
 
-\textbf{Ground truth:} 60 ngày; Điều 27 BLLĐ 2019.
+\textbf{Local Search:} Nêu vi phạm Điều~90 BLLĐ nhưng không nêu mức phạt NĐ~12/2022 --- chain\_hit: \texttimes.
 
-\textbf{Local Search:} ``Thời gian thử việc tối đa là \textbf{60 ngày} đối với công việc cần trình độ chuyên môn, kỹ thuật từ cao đẳng trở lên (\textbf{Điều 27} Bộ luật Lao động 2019).'' --- kw\_hit: \checkmark; cite\_hit: \checkmark.
-
-\textbf{Basic Search:} Trả lời đúng nội dung ``60 ngày'' nhưng không trích rõ ``Điều 27'' --- kw\_hit: \checkmark; cite\_hit: \texttimes.
-
-\textbf{Phân tích:} Basic Search truy xuất đúng text unit chứa thông tin nhưng không biết tên điều luật vì text unit không được gắn nhãn tường minh với node \texttt{Dieu}. Local Search nhận diện entity ``Điều 27'' và sử dụng nó như một neo trích dẫn xác định, minh chứng cho vai trò của Lớp 1 deterministic trong citation accuracy.
+\textbf{Local+Multi-hop:} Engine duyệt chuỗi \textit{violation} $\rightarrow$ trích mức phạt --- kw\_hit: \checkmark; chain\_hit: \checkmark.
 \end{example}
 
-\begin{example}[LD012 --- Multi-hop, lương tối thiểu và mức phạt]
-\textbf{Câu hỏi:} Công ty trả lương dưới mức tối thiểu vùng IV thì bị phạt bao nhiêu?
-
-\textbf{Chuỗi suy luận:} Điều 90 BLLĐ (nghĩa vụ trả lương tối thiểu) $\to$ Nghị định 12/2022 (mức phạt vi phạm).
-
-\textbf{Local Search:} Nêu vi phạm theo Điều 90 BLLĐ nhưng \emph{không} nêu được mức phạt cụ thể từ Nghị định 12/2022 --- chain\_hit: \texttimes.
-
-\textbf{Local+Multi-hop:} Engine \texttt{VNLegalReasoningEngine} kích hoạt chain template \textit{violation}, xuất phát từ entity ``trả lương dưới mức tối thiểu'' (type \texttt{HANHVI}), duyệt cạnh \textit{penalizes} đến entity \texttt{CHETAI} trong Nghị định 12/2022. Kết quả: trích xuất mức phạt tiền theo quy định --- kw\_hit: \checkmark; chain\_hit: \checkmark.
-
-\textbf{Phân tích:} Đây là minh chứng tiêu biểu cho khoảng cách giữa single-document retrieval và cross-document reasoning. Thông tin về mức phạt chỉ tồn tại trong một văn bản khác (Nghị định) so với văn bản định nghĩa nghĩa vụ (BLLĐ). Vector similarity không tự nhiên kết nối hai tài liệu này; graph traversal theo quan hệ ngữ nghĩa là cần thiết.
-\end{example}
-
-\begin{example}[LD011 --- Multi-hop, đơn phương chấm dứt và trợ cấp]
-\textbf{Câu hỏi:} Người lao động đơn phương chấm dứt hợp đồng đúng pháp luật có được trợ cấp thôi việc không và cần điều kiện gì?
-
-\textbf{Chuỗi suy luận:} Điều 35 (quyền đơn phương chấm dứt + điều kiện báo trước) $\to$ Điều 46 (quyền hưởng trợ cấp thôi việc).
-
-\textbf{Local+Multi-hop:} Chain template \textit{entitlement} xuất phát từ entity ``đơn phương chấm dứt hợp đồng'' (type \texttt{HANHVI}), theo cạnh \textit{entitles} và \textit{requires\_condition} lần lượt đến Điều 35 và Điều 46. Câu trả lời: điều kiện báo trước theo Khoản 1 Điều 35 được đáp ứng thì phát sinh quyền hưởng trợ cấp theo Điều 46 --- kw\_hit: \checkmark; cite: Điều 35, Điều 46.
-
-\textbf{Phân tích:} Trường hợp này thể hiện loại suy luận ``conditional entitlement'': quyền lợi (trợ cấp) phụ thuộc vào việc thực hiện đúng điều kiện (báo trước). Mô hình ontology L2 với các relationship có ngữ nghĩa phong phú (\textit{entitles}, \textit{requires\_condition}) là yếu tố quyết định cho khả năng suy luận này.
-\end{example}
-
-\begin{example}[E6 --- Phân tích hợp đồng lao động mẫu]
-Thí nghiệm E6 kiểm tra module phân tích HĐLĐ trên file hợp đồng mẫu gồm 7 điều khoản (định dạng DOCX, không qua OCR). Bảng~\ref{table:contract_case} tổng hợp kết quả.
+Case study HĐLĐ (E6): VR008 phát hiện nghỉ phép 6 ngày $<$ 12 (Điều~113), điểm tuân thủ 74/100, xử lý $\approx$25--40\,s.
 
 \begin{table}[H]
 \centering
@@ -345,19 +295,12 @@ Thí nghiệm E6 kiểm tra module phân tích HĐLĐ trên file hợp đồng m
 \hline
 \textbf{Chỉ số} & \textbf{Giá trị} \\
 \hline
-Điểm tuân thủ & 74,0 / 100 \\
-Số điều khoản phân tích & 7 \\
-Vi phạm xác định (\texttt{VIOLATION}) & 1 --- VR008: nghỉ phép 6 ngày $<$ 12 ngày tối thiểu \\
-Rủi ro cao & 1 --- L001: lương không ghi rõ phụ cấp \\
-Rủi ro trung bình & 1 --- VR015: thiếu địa điểm làm việc \\
-Điều khoản bắt buộc bị thiếu & 0 \\
-Thời gian xử lý & $\approx$ 25--40\,s \\
+Điểm tuân thủ & 74/100 \\
+Vi phạm (VR008) & Nghỉ phép 6 ngày $<$ 12 \\
+Thời gian xử lý & $\approx$25--40\,s \\
 \hline
 \end{tabular}
 \end{table}
-
-\textbf{Phân tích:} Rule VR008 phát hiện vi phạm Khoản 1 Điều 113 BLLĐ (tối thiểu 12 ngày phép/năm) hoàn toàn bằng logic xác định (regex + threshold), không gọi LLM, thực thi dưới 5\,ms/điều khoản. Điều này minh chứng cho tính ưu việt của \emph{kiến trúc hybrid}: lớp rule-based xử lý nhanh các vi phạm có ngưỡng rõ ràng, LLM chỉ được gọi cho các vấn đề đòi hỏi diễn giải ngữ cảnh phức tạp (L001). Sự phân tầng này không chỉ giảm chi phí mà còn tăng tính giải thích được (explainability) --- yêu cầu quan trọng trong ứng dụng pháp luật.
-\end{example}
 
 \subsection{Phân tích hiệu năng và chi phí}
 \label{subsection:4.4.5}
@@ -382,58 +325,16 @@ Contract pipeline & 25\,000 & 45\,000 & 3--8  & N/A \\
 }
 \end{table}
 
-\textbf{Phân tích trade-off.} Từ Bảng~\ref{table:latency}, mối quan hệ giữa chất lượng và chi phí thời gian có thể được mô tả như sau:
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Local Search} (P95 = 8\,s) là điểm cân bằng tốt nhất cho production: KwAcc 90\% với 1--2 LLM calls. P95 < timeout 90\,s, đảm bảo SLA của API.
-    \item \textbf{Global Search} (P95 = 25\,s) chi phí cao gấp $\sim$3 lần Local vì phải map trên 15 community reports rồi reduce. Sử dụng chỉ nên giới hạn cho câu hỏi tổng hợp toàn domain, không dùng cho tra cứu thông thường.
-    \item \textbf{Local+Multi-hop} (P95 = 12\,s) chỉ cao hơn Local 50\% về latency nhưng tăng KwAcc từ 90\% lên 100\% trên toàn domain. Tỷ lệ chất lượng/chi phí cao nhất trong tất cả phương pháp.
-    \item \textbf{Global Search} thỉnh thoảng timeout (>90\,s) với các câu hỏi dài do số lần gọi LLM lên đến 15 --- cần giảm \texttt{community\_level} hoặc áp dụng query routing để tự động chuyển sang Local trong trường hợp này.
-\end{itemize}
+\textbf{Phân tích trade-off.} Local Search (P95 = 8\,s) cân bằng tốt nhất cho production (KwAcc 90\%). Global Search (P95 = 25\,s) chỉ dùng cho câu hỏi tổng hợp. Local+Multi-hop tăng KwAcc lên 100\% với latency chỉ cao hơn $\approx$50\%.
 
 \section{Thảo luận}
 \label{section:4.5}
 
-\subsection{Ý nghĩa khoa học của kết quả}
-\label{subsection:4.5.1}
+Kết quả xác nhận năm luận điểm chính: (1)~ontology L1 + chunking theo Điều là then chốt cho citation; (2)~multi-hop giải quyết cross-document (33\% $\rightarrow$ 100\%); (3)~community reports hỗ trợ câu hỏi tổng hợp; (4)~temporal filter ngăn trích dẫn lỗi thời; (5)~rule hybrid phát hiện vi phạm HĐLĐ deterministic.
 
-Kết quả thực nghiệm cung cấp bằng chứng định lượng cho năm luận điểm khoa học chính của đồ án:
+\textbf{Hạn chế đánh giá:} Bộ test 10 câu nhỏ; ground truth chưa qua luật sư review; RAGAS chưa chạy đầy đủ; corpus chỉ domain \texttt{lao\_dong}.
 
-\begin{enumerate}[nosep, leftmargin=*]
-    \item \textbf{Ontology hai lớp với chunking theo Điều là yếu tố then chốt cho citation accuracy.} Local Search đạt 100\% KwAcc trên single-hop nhờ Lớp 1 deterministic đảm bảo mỗi Điều là một đơn vị có địa chỉ xác định trong Knowledge Graph. Đây là điểm khác biệt căn bản so với vanilla RAG: khi chunking theo kích thước cố định, một Điều có thể bị chia ra nhiều chunks hoặc nhiều Điều bị gộp vào một chunk, phá vỡ tính toàn vẹn của đơn vị pháp lý.
-
-    \item \textbf{Multi-hop reasoning engine giải quyết bài toán cross-document retrieval trong luật.} Sự cải thiện từ 33\% lên 100\% trên nhóm multi-hop chứng minh rằng vector retrieval đơn thuần không đủ cho bài toán pháp luật khi câu trả lời đòi hỏi kết nối thông tin từ các văn bản khác nhau. Engine suy luận với chain templates (violation, entitlement, procedure) mã hoá tri thức pháp lý đặc thù domain dưới dạng cấu trúc duyệt đồ thị.
-
-    \item \textbf{Community detection cung cấp ngữ cảnh tổng quát cho câu hỏi toàn domain.} 15 community reports phản ánh cấu trúc chủ đề của luật lao động, cho phép Global Search trả lời các câu hỏi ``tổng hợp'' mà Local Search không thể xử lý vì chúng không có entity đích cụ thể.
-
-    \item \textbf{Temporal filter ngăn chặn trích dẫn văn bản hết hiệu lực.} Kết quả E5 (TMP002) cho thấy không có filter, hệ thống vẫn có thể trích dẫn Nghị định 90/2019 đã bị thay thế --- sai lầm nghiêm trọng trong tư vấn pháp luật. Temporal filter dựa trên metadata hiệu lực là biện pháp bảo vệ đơn giản nhưng hiệu quả.
-
-    \item \textbf{Module phân tích HĐLĐ với kiến trúc rule+graph+LLM đạt kết quả có thể giải thích được.} Rule VR008 phát hiện vi phạm Điều 113 với độ chính xác 100\% và thời gian thực thi dưới 5\,ms --- không thể đạt được nếu chỉ dựa vào LLM vốn có xác suất sai.
-\end{enumerate}
-
-\subsection{Hạn chế và phân tích độ tin cậy kết quả}
-\label{subsection:4.5.2}
-
-Kết quả thực nghiệm cần được diễn giải trong bối cảnh các hạn chế sau:
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Quy mô bộ test nhỏ:} 10 test cases domain \texttt{lao\_dong} là bộ đánh giá chính. Mặc dù được thiết kế có chiều sâu, kết quả không thể được xem như bằng chứng thống kê đủ mạnh (khoảng tin cậy rộng). Bộ 68 câu chưa được đánh giá đầy đủ.
-
-    \item \textbf{Ground truth chưa qua xác thực chuyên gia pháp lý:} \texttt{expected\_keywords} và \texttt{expected\_citations} do tác giả soạn dựa trên đọc văn bản pháp luật trực tiếp, nhưng chưa được luật sư chuyên nghiệp review. Một số câu trả lời ``đúng'' theo chỉ số tự động có thể vẫn thiếu chính xác về mặt diễn giải pháp lý.
-
-    \item \textbf{Giới hạn của Keyword/Citation Accuracy:} Các chỉ số này có thể bỏ sót các câu trả lời đúng mà dùng cách diễn đạt khác (paraphrase). Ngược lại, chúng cũng có thể chấp nhận câu trả lời chứa từ khoá nhưng đặt sai ngữ cảnh. Một chỉ số \emph{legal correctness} do chuyên gia đánh giá sẽ bổ sung cho cả hai hướng thiếu sót này.
-
-    \item \textbf{RAGAS chưa chạy đầy đủ:} Chỉ số Faithfulness và Answer Relevancy phụ thuộc LLM judge; chưa được cross-validate bằng mô hình độc lập.
-
-    \item \textbf{Phụ thuộc chất lượng LLM extraction (L2):} Lỗi trích xuất entity L2 (nhầm loại, nhầm tên) lan truyền vào multi-hop chain. Hiện tại hệ thống không có cơ chế phát hiện và sửa lỗi trích xuất sau indexing.
-
-    \item \textbf{Corpus hẹp:} Chỉ có domain \texttt{lao\_dong} được index. Các test case domain \texttt{dan\_su}, \texttt{hinh\_su} (không có corpus) cho accuracy $<$20\% --- dự kiến và không tính vào kết luận chính, nhưng cần lưu ý khi mở rộng hệ thống.
-\end{itemize}
-
-\subsection{So sánh với GraphRAG gốc trên bài toán tổng hợp văn bản}
-\label{subsection:4.5.3}
-
-Bảng~\ref{table:vs_graphrag} đối chiếu hệ thống đề xuất với GraphRAG gốc của Microsoft~\cite{graphrag2024}, được thiết kế cho bài toán tổng hợp và phân tích corpus văn bản tổng quát.
+So với GraphRAG gốc~\cite{graphrag2024}, đồ án bổ sung L1 deterministic, temporal filter, multi-hop engine và rule validator (Bảng~\ref{table:vs_graphrag}). Lớp 1 là đóng góp then chốt: GraphRAG gốc hoàn toàn dựa LLM extraction nên citation không ổn định; ontology hai lớp đảm bảo mọi node \texttt{Dieu} có ID chuẩn hoá. Temporal filter trong pháp luật VN khác Temporal GraphRAG --- yếu tố quan trọng là văn bản \emph{còn hiệu lực}, không phải timestamp sự kiện.
 
 \begin{table}[H]
 \centering
@@ -454,13 +355,5 @@ Benchmark         & Comprehensiveness/Diversity & Keyword + Citation & Phù hợ
 \hline
 \end{tabular}
 \end{table}
-
-\textbf{Điểm tương đồng:} Cả hai hệ thống đều sử dụng pipeline indexing chuẩn của GraphRAG (entity extraction $\to$ relationship extraction $\to$ community detection $\to$ report generation) và hai chế độ truy vấn Local/Global. Điều này đảm bảo khả năng kế thừa các cải tiến upstream từ cộng đồng GraphRAG.
-
-\textbf{Điểm khác biệt then chốt:} Lớp 1 deterministic là đóng góp không có trong GraphRAG gốc. GraphRAG gốc hoàn toàn dựa vào LLM để trích xuất entity, dẫn đến không ổn định trong citation (cùng một Điều có thể được biểu diễn thành các entity khác nhau tùy lần indexing). Lớp 1 deterministic của đồ án giải quyết vấn đề này bằng cách đảm bảo mọi node \texttt{Dieu} đều có ID chuẩn hoá, tạo ra ``điểm neo'' (anchor point) bền vững cho citation accuracy.
-
-Bên cạnh đó, temporal filter theo hiệu lực pháp luật trong đồ án khác về bản chất so với Temporal GraphRAG (hướng nghiên cứu đánh dấu sự kiện theo thời gian trên corpus tin tức): trong pháp luật, yếu tố quan trọng không phải là \emph{khi nào} văn bản được viết mà là \emph{văn bản nào đang còn hiệu lực}, đây là đặc thù của domain pháp luật Việt Nam.
-
-Tổng hợp lại, kết quả thực nghiệm cho thấy các tùy biến domain-specific được đề xuất trong đồ án là cần thiết: GraphRAG gốc áp dụng trực tiếp vào corpus luật lao động mà không có các tùy biến này sẽ không đáp ứng được yêu cầu citation accuracy và multi-hop reasoning chéo văn bản. Các đóng góp kỹ thuật được phân tích chi tiết trong Chương~\ref{chapter:Contributions}; kết luận và hướng phát triển được trình bày trong Chương~\ref{chapter:conclusion}.
 
 \end{document}
