@@ -1,0 +1,60 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-4-1" name="Quy trinh danh gia">
+    <mxGraphModel dx="1100" dy="650" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="650" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 4.1 — Quy trình đánh giá năm baseline" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="250" y="15" width="600" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="dataset" value="Bộ câu hỏi đánh giá&#xa;(50 câu: single-hop + multi-hop + temporal)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="440" y="60" width="220" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="b1" value="BM25&#xa;(Keyword)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="60" y="180" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b2" value="Naive RAG&#xa;(Vector)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="210" y="180" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b3" value="GraphRAG&#xa;Local" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="360" y="180" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b4" value="GraphRAG&#xa;Global" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="510" y="180" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="b5" value="GraphRAG&#xa;Multi-hop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="660" y="180" width="120" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="run" value="Chạy đồng bộ trên cùng LLM (GPT-4o-mini) + cùng corpus" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="270" width="700" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="m1" value="Citation Accuracy&#xa;(Điều/Khoản đúng?)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="120" y="350" width="180" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="m2" value="Answer Relevance&#xa;(LLM-as-judge)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="340" y="350" width="180" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="m3" value="Temporal Correctness&#xa;(văn bản còn hiệu lực?)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="560" y="350" width="180" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="m4" value="Latency&#xa;(ms/query)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="780" y="350" width="140" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="agg" value="Bảng so sánh + phân tích theo loại câu hỏi (single/multi/temporal)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="450" width="700" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="dataset" target="b1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="dataset" target="b2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;" edge="1" parent="1" source="dataset" target="b3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=block;html=1;" edge="1" parent="1" source="dataset" target="b4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;" edge="1" parent="1" source="dataset" target="b5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="b3" target="run"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="run" target="m1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;" edge="1" parent="1" source="run" target="m2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="endArrow=block;html=1;" edge="1" parent="1" source="run" target="m3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" style="endArrow=block;html=1;" edge="1" parent="1" source="run" target="m4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e11" style="endArrow=block;html=1;" edge="1" parent="1" source="m2" target="agg"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

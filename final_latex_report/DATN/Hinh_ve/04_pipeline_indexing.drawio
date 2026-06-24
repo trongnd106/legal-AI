@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-2-1" name="Pipeline GraphRAG indexing">
+    <mxGraphModel dx="1400" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 2.1 — Pipeline GraphRAG Indexing (Microsoft)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="400" y="15" width="500" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="s1" value="1. Input Documents&#xa;(7 văn bản .txt)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2" value="2. Chunking&#xa;(size=2000, overlap=0)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="210" y="80" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3" value="3. Entity/Relation&#xa;Extraction (LLM L2)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="380" y="80" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4" value="4. Graph&#xa;Construction" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="550" y="80" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s5" value="5. Community&#xa;Detection (Leiden)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="700" y="80" width="140" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s6" value="6. Community&#xa;Reports (LLM)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="870" y="80" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s7" value="7. Embedding&#xa;(dim=2560)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1030" y="80" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s8" value="8. Parquet&#xa;Artifacts" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="75" width="120" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="l1" value="L1 Structural Graph (01_prepare_data.py)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="merge" value="02_merge_structural_graph.py → Merged Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="200" width="400" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=block;html=1;" edge="1" parent="1" source="s4" target="s5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;" edge="1" parent="1" source="s5" target="s6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="s6" target="s7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="s7" target="s8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="endArrow=block;dashed=1;html=1;" edge="1" parent="1" source="l1" target="merge"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="endArrow=block;dashed=1;html=1;" edge="1" parent="1" source="s4" target="merge"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,79 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-1-1" name="So sanh 3 huong tiep can">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 1.1 — So sánh ba hướng tiếp cận tra cứu pháp luật" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="760" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="q" value="Câu hỏi người dùng&#xa;(VD: Không trả lương bị phạt bao nhiêu?)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="434" y="70" width="300" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="col1h" value="A. Tra cứu từ khóa (BM25)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="160" width="320" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="col1a" value="Tìm đoạn chứa từ khóa&#xa;('lương', 'phạt'...)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="220" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col1b" value="Trả về danh sách Điều rời rạc" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="60" y="290" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col1c" value="✗ Không suy luận chéo văn bản&#xa;✗ Không nối BLLĐ → NĐ 12/2022" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="60" y="360" width="280" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="col2h" value="B. Naive RAG (Vector Search)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="424" y="160" width="320" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="col2a" value="Chunk theo token → Embedding&#xa;→ Cosine similarity top-k" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="444" y="220" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col2b" value="LLM sinh câu trả lời từ context" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="444" y="290" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col2c" value="✗ Có thể cắt giữa Khoản&#xa;✗ Vector ≠ quan hệ pháp lý&#xa;✗ Multi-hop yếu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="444" y="360" width="280" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="col3h" value="C. GraphRAG hai lớp (Đồ án)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="808" y="160" width="320" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="col3a" value="L1 deterministic + L2 LLM&#xa;→ Merged Knowledge Graph" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="828" y="220" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col3b" value="Local/Global/Multi-hop Search&#xa;+ Temporal filter + Citation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="828" y="290" width="280" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="col3c" value="✓ Trích dẫn Điều/Khoản chuẩn&#xa;✓ Suy luận chéo văn bản&#xa;✓ Kiểm soát hiệu lực" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="828" y="360" width="280" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="q" target="col1h">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="q" target="col2h">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="q" target="col3h">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col1a" target="col1b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col1b" target="col1c">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col2a" target="col2b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col2b" target="col2c">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col3a" target="col3b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;" edge="1" parent="1" source="col3b" target="col3c">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,49 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-3-7" name="Phan tich HDLD">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="700" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 3.7 — Pipeline phân tích Hợp đồng lao động" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="200" y="15" width="600" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="upload" value="Upload file HĐLĐ&#xa;(.pdf / .docx / .txt)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="350" y="60" width="300" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="extract" value="Trích xuất văn bản&#xa;(PyMuPDF / python-docx)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="140" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="seg" value="Segmentation (LLM)&#xa;Chia thành các điều khoản" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="350" y="220" width="300" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="vr" value="Rule Validator (Deterministic)&#xa;L001–L015: regex + logic cứng" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="80" y="310" width="280" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="llm" value="LLM Batch Analysis&#xa;(L001 + GraphRAG context)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="360" y="310" width="280" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="graph" value="GraphRAG Local Search&#xa;(tra cứu Điều/Khoản liên quan)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="640" y="310" width="280" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="merge" value="Hợp nhất kết quả VR + LLM&#xa;(dedup, ưu tiên VR cho rule cứng)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="280" y="410" width="440" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="report" value="Báo cáo vi phạm&#xa;• clause_text • violation_type • legal_basis • severity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="280" y="500" width="440" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui" value="Hiển thị trên Frontend&#xa;(highlight điều khoản + trích dẫn pháp luật)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="590" width="440" height="55" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="upload" target="extract"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="extract" target="seg"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="endArrow=block;html=1;" edge="1" parent="1" source="seg" target="vr"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=block;html=1;" edge="1" parent="1" source="seg" target="llm"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=block;dashed=1;html=1;" edge="1" parent="1" source="graph" target="llm"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="vr" target="merge"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="llm" target="merge"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;" edge="1" parent="1" source="merge" target="report"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="endArrow=block;html=1;" edge="1" parent="1" source="report" target="ui"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

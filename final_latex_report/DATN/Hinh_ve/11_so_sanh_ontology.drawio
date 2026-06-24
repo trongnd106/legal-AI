@@ -1,0 +1,88 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-5-1" name="So sanh ontology">
+    <mxGraphModel dx="1000" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1000" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 5.1 — So sánh ba hướng thiết kế ontology pháp luật" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="150" y="15" width="700" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="h1" value="Tiêu chí" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="70" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="h2" value="Chỉ L1 (Deterministic)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="220" y="70" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="h3" value="Chỉ L2 (LLM-only)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="460" y="70" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="h4" value="Hai lớp (Đồ án)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="700" y="70" width="220" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r1c1" value="Độ tin cậy cấu trúc" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r1c2" value="Cao (100%)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="220" y="120" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r1c3" value="Thấp (hallucination)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="460" y="120" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r1c4" value="Cao (L1 bảo vệ)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="700" y="120" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2c1" value="Ngữ nghĩa pháp lý" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="175" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2c2" value="Không có" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="220" y="175" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2c3" value="Phong phú" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="460" y="175" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2c4" value="Phong phú + có kiểm soát" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="700" y="175" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r3c1" value="Chi phí indexing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="230" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r3c2" value="Thấp" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="220" y="230" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r3c3" value="Cao (LLM mọi chunk)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="460" y="230" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r3c4" value="Trung bình" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="230" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r4c1" value="Multi-hop reasoning" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="285" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r4c2" value="Chỉ cites/amends" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="220" y="285" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r4c3" value="Không ổn định" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="460" y="285" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r4c4" value="Tốt (L1+L2 edges)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="700" y="285" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r5c1" value="Citation chính xác" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="160" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r5c2" value="Cao" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;" vertex="1" parent="1">
+          <mxGeometry x="220" y="340" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r5c3" value="Thấp–TB" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="460" y="340" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="r5c4" value="Cao (canonicalization)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="700" y="340" width="220" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="note" value="Kết luận: Ontology hai lớp cân bằng độ tin cậy cấu trúc (L1) và khả năng suy luận ngữ nghĩa (L2)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=2;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="40" y="410" width="880" height="30" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

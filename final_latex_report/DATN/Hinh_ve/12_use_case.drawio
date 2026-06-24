@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" modified="2026-06-21T00:00:00.000Z" agent="Cursor" version="22.1.0">
+  <diagram id="fig-2-2" name="Use case tong quan">
+    <mxGraphModel dx="900" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="Hình 2.2 — Sơ đồ use case hệ thống" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontStyle=1;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="200" y="15" width="500" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor1" value="Người lao động / HR" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="30" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="actor2" value="Luật sư / Chuyên viên PL" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="380" width="30" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="sys" value="Hệ thống GraphRAG&#xa;Pháp luật Lao động VN" style="swimlane;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;startSize=30;" vertex="1" parent="1">
+          <mxGeometry x="200" y="80" width="620" height="460" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc1" value="UC1: Hỏi đáp pháp luật&#xa;(Chat QA)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sys">
+          <mxGeometry x="40" y="60" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc2" value="UC2: Tra cứu theo Điều/Khoản&#xa;(Local Search)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sys">
+          <mxGeometry x="240" y="60" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc3" value="UC3: Câu hỏi tổng quát&#xa;(Global Search)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="sys">
+          <mxGeometry x="460" y="60" width="140" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc4" value="UC4: Suy luận chéo văn bản&#xa;(Multi-hop)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="sys">
+          <mxGeometry x="40" y="180" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc5" value="UC5: Phân tích HĐLĐ&#xa;(Upload + vi phạm)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="sys">
+          <mxGeometry x="280" y="180" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc6" value="UC6: Kiểm tra hiệu lực&#xa;(Temporal Filter)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="sys">
+          <mxGeometry x="520" y="180" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc7" value="UC7: Trích dẫn nguồn&#xa;(Citation Resolver)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="sys">
+          <mxGeometry x="160" y="300" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="uc8" value="UC8: Xác thực quy tắc&#xa;(Rule Validator L001–L015)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="sys">
+          <mxGeometry x="380" y="300" width="200" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=none;html=1;" edge="1" parent="1" source="actor1" target="uc1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=none;html=1;" edge="1" parent="1" source="actor1" target="uc5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" style="endArrow=none;html=1;" edge="1" parent="1" source="actor2" target="uc2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" style="endArrow=none;html=1;" edge="1" parent="1" source="actor2" target="uc4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=none;dashed=1;html=1;" edge="1" parent="1" source="uc1" target="uc7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=none;dashed=1;html=1;" edge="1" parent="1" source="uc5" target="uc8"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
