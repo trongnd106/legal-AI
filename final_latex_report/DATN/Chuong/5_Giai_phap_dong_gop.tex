@@ -33,7 +33,14 @@ Vấn đề cốt lõi khi áp dụng \gls{RAG} cho pháp luật là \textbf{m�
 
 \textbf{Lớp 1.5 --- Canonicalization:} Ánh xạ các biểu diễn khác nhau (``Điều 35'', ``khoản 1 Điều 35 BLLĐ 2019'', ``mục 1 Điều 35'') về cùng một định danh chuẩn. Giải quyết xung đột giữa output LLM (chuỗi tự do) và ID cấu trúc (ID cố định) khi hợp nhất, tránh trùng lặp node (cùng Điều 35 nhưng hai ID khác nhau).
 
-Lựa chọn thiết kế: \textbf{không extract Lớp 1 bằng LLM} --- vì LLM không đảm bảo nhất quán giữa các lần chạy, dẫn tới duplicate node hay ngộ nhận giữa Điều khác nhau. Điều này là điểm khác biệt quan trọng so với GraphRAG gốc, nơi toàn bộ extraction dùng LLM.
+Lựa chọn thiết kế: \textbf{không extract Lớp 1 bằng LLM} --- vì LLM không đảm bảo nhất quán giữa các lần chạy, dẫn tới duplicate node hay ngộ nhận giữa Điều khác nhau. Điều này là điểm khác biệt quan trọng so với GraphRAG gốc, nơi toàn bộ extraction dùng LLM. Hình~\ref{fig:so-sanh-ontology} so sánh ba hướng thiết kế ontology pháp luật.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img51.drawio.png}
+  \caption{So sánh ba hướng thiết kế ontology pháp luật: chỉ L1, chỉ L2 và ontology hai lớp}
+  \label{fig:so-sanh-ontology}
+\end{figure}
 
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.1.3}

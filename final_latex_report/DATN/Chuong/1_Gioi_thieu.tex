@@ -71,7 +71,16 @@ Tuy nhiên, \gls{NaiveRAG} -- chunk văn bản theo kích thước cố định,
 \subsection{Phương pháp dựa trên đồ thị tri thức và GraphRAG}
 \label{subsection:1.2.3}
 
-\gls{KG} biểu diễn tri thức dưới dạng thực thể (entity) và quan hệ (relationship), phù hợp với cấu trúc phân cấp và dẫn chiếu của văn bản pháp luật. Các hệ thống Legal KG xây dựng thủ công (LKIF, Akoma Ntoso) đạt độ chính xác cao nhưng tốn công bảo trì và khó mở rộng khi văn bản sửa đổi.
+\gls{KG} biểu diễn tri thức dưới dạng thực thể (entity) và quan hệ (relationship), phù hợp với cấu trúc phân cấp và dẫn chiếu của văn bản pháp luật. Hình~\ref{fig:kg-minh-hoa} minh họa khái niệm: các đỉnh (node) biểu diễn thực thể, các cạnh (edge) biểu diễn quan hệ giữa chúng --- nền tảng để suy luận đa bước trên corpus pháp luật.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.55\textwidth]{graph.png}
+  \caption{Minh họa đồ thị tri thức (Knowledge Graph)}
+  \label{fig:kg-minh-hoa}
+\end{figure}
+
+Các hệ thống Legal KG xây dựng thủ công (LKIF, Akoma Ntoso) đạt độ chính xác cao nhưng tốn công bảo trì và khó mở rộng khi văn bản sửa đổi.
 
 Microsoft \gls{GraphRAG}~\cite{graphrag2024} tự động hóa quy trình: trích xuất entity/relationship bằng LLM, phát hiện cộng đồng (community detection)~\cite{traag2019leiden}, sinh các bản tóm tắt cộng đồng (\gls{CommunityReport}), và hỗ trợ hai chế độ truy vấn \gls{LocalSearch} (entity + text units cục bộ) và \gls{GlobalSearch} (tổng hợp qua community reports). Đây là nền tảng được lựa chọn trong đồ án.
 
@@ -84,7 +93,14 @@ Tuy nhiên, GraphRAG gốc chưa được thiết kế cho domain luật lao đ�
     \item Prompt extraction mặc định bằng tiếng Anh, chưa tối ưu cho thuật ngữ pháp luật tiếng Việt.
 \end{itemize}
 
-Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \textbf{xây dựng trợ lý hỏi đáp pháp luật lao động Việt Nam trên nền GraphRAG, kết hợp cấu trúc pháp lý deterministic, suy luận đa bước và kiểm tra tuân thủ HĐLĐ}.
+Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \textbf{xây dựng trợ lý hỏi đáp pháp luật lao động Việt Nam trên nền GraphRAG, kết hợp cấu trúc pháp lý deterministic, suy luận đa bước và kiểm tra tuân thủ HĐLĐ}. Hình~\ref{fig:so-sanh-huong-tiep-can} tóm tắt sự khác biệt giữa ba hướng tiếp cận chính.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img11.drawio.png}
+  \caption{So sánh ba hướng tiếp cận tra cứu pháp luật: từ khóa (BM25), Naive RAG và GraphRAG hai lớp}
+  \label{fig:so-sanh-huong-tiep-can}
+\end{figure}
 
 \section{Mục tiêu và định hướng giải pháp}
 \label{section:1.3}

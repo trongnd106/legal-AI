@@ -25,7 +25,7 @@
         <mxCell id="m3" value="Community N&#xa;→ partial answer" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="480" y="260" width="160" height="55" as="geometry"/>
         </mxCell>
-        <mxCell id="reduce" value="REDUCE PHASE&#xa;LLM tổng hợp partial answers → câu trả lời thống nhất" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="1">
+        <mxCell id="reducePhase" value="REDUCE PHASE&#xa;LLM tổng hợp partial answers → câu trả lời thống nhất" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="200" y="360" width="500" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="cite" value="Citation Resolver + Temporal Filter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
@@ -38,10 +38,10 @@
         <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="comm" target="m1"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e3" style="endArrow=block;html=1;" edge="1" parent="1" source="comm" target="m2"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e4" style="endArrow=block;html=1;" edge="1" parent="1" source="comm" target="m3"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e5" style="endArrow=block;html=1;" edge="1" parent="1" source="m1" target="reduce"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="m2" target="reduce"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="m3" target="reduce"><mxGeometry relative="1" as="geometry"/></mxCell>
-        <mxCell id="e8" style="endArrow=block;html=1;" edge="1" parent="1" source="reduce" target="cite"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;" edge="1" parent="1" source="m1" target="reducePhase"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="m2" target="reducePhase"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="m3" target="reducePhase"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;" edge="1" parent="1" source="reducePhase" target="cite"><mxGeometry relative="1" as="geometry"/></mxCell>
         <mxCell id="e9" style="endArrow=block;html=1;" edge="1" parent="1" source="cite" target="out"><mxGeometry relative="1" as="geometry"/></mxCell>
       </root>
     </mxGraphModel>

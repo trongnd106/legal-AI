@@ -4,7 +4,7 @@
 \section{Ngữ cảnh bài toán hỏi đáp pháp luật lao động}
 \label{section:2.1}
 
-Chương này trình bày nền tảng lý thuyết phục vụ thiết kế Trợ lý Ảo Luật Lao Động Việt Nam. Nội dung gồm: (1)~đặc thù bài toán tra cứu pháp luật lao động, (2)~các nghiên cứu liên quan, (3)~kiến thức nền về \gls{RAG}, đồ thị tri thức và \gls{GraphRAG}, (4)~vai trò \gls{LLM} và \gls{Embedding} trong hệ thống triển khai.
+Chương này trình bày nền tảng lý thuyết phục vụ cho thiết kế. Nội dung gồm: (1)~đặc thù bài toán tra cứu pháp luật lao động, (2)~các nghiên cứu liên quan, (3)~kiến thức nền về \gls{RAG}, đồ thị tri thức và \gls{GraphRAG}, (4)~vai trò \gls{LLM} và \gls{Embedding} trong hệ thống triển khai.
 
 \subsection{Đặc điểm văn bản pháp luật lao động Việt Nam}
 \label{subsection:2.1.1}
@@ -241,6 +241,15 @@ Ba chế độ truy vấn:
     \item \textbf{Local Search:} từ entity liên quan câu hỏi, lấy mô tả entity, quan hệ lân cận, text units phù hợp single-hop và câu hỏi cụ thể.
     \item \textbf{Global Search:} map-reduce -- chia câu hỏi, query từng community report, tổng hợp; phù hợp câu hỏi khám phá (chẳng hạn ``Các quyền NLĐ khi nghỉ việc?'').
 \end{itemize}
+
+Hình~\ref{fig:pipeline-indexing} minh họa trực quan toàn bộ pipeline indexing và điểm hợp nhất với đồ thị cấu trúc Lớp~1.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img21.drawio.png}
+  \caption{Pipeline GraphRAG indexing: từ tài liệu thô đến parquet artifacts}
+  \label{fig:pipeline-indexing}
+\end{figure}
 
 \subsection{Community detection và báo cáo cộng đồng}
 \label{subsection:2.3.4}

@@ -4,7 +4,7 @@
 \section{Tổng quan giải pháp}
 \label{section:3.1}
 
-Chương này trình bày phương pháp đề xuất xây dựng Trợ lý Ảo Luật Lao Động Việt Nam dưới góc độ khoa học: kiến trúc tổng thể, quy trình xây dựng đồ thị tri thức, chiến lược truy vấn, tích hợp \gls{LLM}, và ứng dụng phân tích tuân thủ \gls{HDLD}. Nội dung bám sát các nguyên tắc thiết kế cốt lõi nhằm đảm bảo tính chính xác, truy vết và khả năng mở rộng.
+Chương này trình bày phương pháp đề xuất xây dựng dưới góc độ khoa học: kiến trúc tổng thể, quy trình xây dựng đồ thị tri thức, chiến lược truy vấn, tích hợp \gls{LLM}, và ứng dụng phân tích tuân thủ \gls{HDLD}. Nội dung bám sát các nguyên tắc thiết kế cốt lõi nhằm đảm bảo tính chính xác, truy vết và khả năng mở rộng.
 
 \subsection{Định hướng tiếp cận tổng thể}
 \label{subsection:3.1.1}
@@ -30,6 +30,15 @@ Kiến trúc tổng thể gồm bốn tầng:
     
     \item \textbf{Tầng ứng dụng (Application Layer):} Giao diện chat hỏi đáp pháp luật có trích dẫn và module phân tích tuân thủ hợp đồng, cung cấp trải nghiệm người dùng tích hợp, dễ sử dụng và đáng tin cậy.
 \end{enumerate}
+
+Kiến trúc bốn tầng được minh họa ở Hình~\ref{fig:kien-truc-4-tang}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.92\textwidth]{img31.drawio.png}
+  \caption{Kiến trúc tổng thể bốn tầng của hệ thống hỏi đáp pháp luật lao động}
+  \label{fig:kien-truc-4-tang}
+\end{figure}
 
 Các phương pháp so sánh (baseline) được thiết kế để đo lường đóng góp từng thành phần: truy xuất vector thuần (Naive RAG), Local Search, Global Search, Local kết hợp Multi-hop. Điều này cho phép định lượng lợi ích của cấu trúc đồ thị so với truy xuất vector đơn thuần.
 
@@ -130,7 +139,14 @@ Pipeline chuẩn bị dữ liệu là bước quan trọng để tạo input ch�
     \end{itemize}
 \end{enumerate}
 
-Đầu ra: 581 Điều, 2069 Khoản, 1705 Điểm được cấu trúc hóa, siêu dữ liệu đầy đủ, sẵn sàng cho giai đoạn indexing. Dữ liệu được xác thực: kiểm tra không có Điều nào bị cắt, không có khoảng trống bất thường, tổng số Khoản khớp với dự kiến.
+Đầu ra: 581 Điều, 2069 Khoản, 1705 Điểm được cấu trúc hóa, siêu dữ liệu đầy đủ, sẵn sàng cho giai đoạn indexing. Dữ liệu được xác thực: kiểm tra không có Điều nào bị cắt, không có khoảng trống bất thường, tổng số Khoản khớp với dự kiến. Luồng xử lý tổng thể được tóm tắt ở Hình~\ref{fig:pipeline-chuan-bi}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img33.drawio.png}
+  \caption{Pipeline chuẩn bị dữ liệu và xây dựng đồ thị tri thức hợp nhất}
+  \label{fig:pipeline-chuan-bi}
+\end{figure}
 
 \subsection{Chiến lược chunking phục vụ tính nguyên vẹn đơn vị pháp lý}
 \label{subsection:3.2.4}
@@ -206,6 +222,27 @@ Lựa chọn mode theo loại câu hỏi:
     \item \textbf{Multi-hop:} Câu hỏi suy luận (``Không trả lương sẽ bị xử phạt thế nào?''), cần tìm chuỗi ``hành vi → quy định → chế tài''.
 \end{itemize}
 
+Hai chế độ truy vấn cốt lõi của GraphRAG được minh họa ở Hình~\ref{fig:local-search} và Hình~\ref{fig:global-search}.
+
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{img34.drawio.png}
+    \caption{Local Search}
+    \label{fig:local-search}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\textwidth}
+    \centering
+    \includegraphics[width=\textwidth]{img35.drawio.png}
+    \caption{Global Search (Map-Reduce)}
+    \label{fig:global-search}
+  \end{subfigure}
+  \caption{Luồng xử lý Local Search và Global Search trong tầng truy vấn}
+  \label{fig:search-strategies}
+\end{figure}
+
 \subsection{Suy luận đa bước (Multi-hop Reasoning)}
 \label{subsection:3.3.2}
 
@@ -219,7 +256,14 @@ Engine suy luận multi-hop thực hiện tìm kiếm trên đồ thị theo chu
     \item \textbf{Thủ tục (Procedure Chain):} Mục tiêu $\rightarrow$ quy trình $\rightarrow$ cơ quan phụ trách. Quan hệ: \texttt{requires\_procedure} → \texttt{enforced\_by}.
 \end{enumerate}
 
-Thuật toán: DFS hoặc BFS trên merged graph; với độ sâu giới hạn (2--3 hop) để tránh explosion. Output: \texttt{ReasoningChain} gồm \texttt{steps[]}, \texttt{cited\_articles[]}, \texttt{final\_answer}. Tích hợp hiện tại ở tầng script/benchmark; dự kiến mở rộng vào chat API.
+Thuật toán: DFS hoặc BFS trên merged graph; với độ sâu giới hạn (2--3 hop) để tránh explosion. Output: \texttt{ReasoningChain} gồm \texttt{steps[]}, \texttt{cited\_articles[]}, \texttt{final\_answer}. Tích hợp hiện tại ở tầng script/benchmark; dự kiến mở rộng vào chat API. Hình~\ref{fig:multihop} mô tả luồng suy luận của \texttt{VNLegalReasoningEngine}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{img36.drawio.png}
+  \caption{Luồng suy luận đa bước (Multi-hop) trên merged Knowledge Graph}
+  \label{fig:multihop}
+\end{figure}
 
 \subsection{Lọc hiệu lực văn bản (Temporal Filter)}
 \label{subsection:3.3.3}
@@ -338,6 +382,15 @@ Pipeline gồm 7 bước:
     
     \item \textbf{Sinh báo cáo:} Gộp issues; phân loại mức độ; mỗi cảnh báo kèm trích dẫn Điều/Khoản, khuyến nghị. Markdown report hoặc PDF.
 \end{enumerate}
+
+Pipeline phân tích HĐLĐ được tóm tắt ở Hình~\ref{fig:phan-tich-hdld}.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{img37.drawio.png}
+  \caption{Pipeline phân tích hợp đồng lao động: Rule Validator, LLM và GraphRAG}
+  \label{fig:phan-tich-hdld}
+\end{figure}
 
 Tuỳ chọn: lưu session vào Neo4j (label \texttt{ContractSession}, TTL 24h) --- tách biệt đồ thị HĐLĐ riêng.
 
