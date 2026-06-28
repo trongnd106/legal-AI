@@ -44,11 +44,11 @@ Với nhóm câu hỏi multi-hop, đánh giá thủ công theo chuỗi suy luậ
 Một hệ thống RAG cho sản xuất cần đạt không chỉ chất lượng mà còn tính khả thi về chi phí. Các chỉ số sau được theo dõi:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Thời gian indexing:} phân tách theo từng giai đoạn pipeline — trích xuất đồ thị (entity/relation extraction), tổng hợp community reports, và embedding — để xác định điểm nghẽn.
-    \item \textbf{Chi phí LLM:} số lần gọi API và tổng token input/output. Chỉ số này xác định chi phí một lần xây dựng chỉ mục và chi phí tái index khi corpus thay đổi.
-    \item \textbf{Quy mô đồ thị:} số lượng entity, relationship, và community sau khi hợp nhất hai lớp — chỉ số này phản ánh mức độ phong phú của biểu diễn tri thức.
-    \item \textbf{Latency truy vấn:} phân vị P50 và P95 cho từng chế độ truy vấn, đo trên nhiều lần chạy lặp lại để đảm bảo tính ổn định thống kê.
-    \item \textbf{Cache hit rate:} tỷ lệ tái sử dụng kết quả trung gian khi tái index, phản ánh hiệu quả thiết kế cache pipeline.
+    \item Thời gian indexing: phân tách theo từng giai đoạn pipeline — trích xuất đồ thị (entity/relation extraction), tổng hợp community reports, và embedding — để xác định điểm nghẽn.
+    \item Chi phí LLM: số lần gọi API và tổng token input/output. Chỉ số này xác định chi phí một lần xây dựng chỉ mục và chi phí tái index khi corpus thay đổi.
+    \item Quy mô đồ thị: số lượng entity, relationship, và community sau khi hợp nhất hai lớp — chỉ số này phản ánh mức độ phong phú của biểu diễn tri thức.
+    \item Latency truy vấn: phân vị P50 và P95 cho từng chế độ truy vấn, đo trên nhiều lần chạy lặp lại để đảm bảo tính ổn định thống kê.
+    \item Cache hit rate: tỷ lệ tái sử dụng kết quả trung gian khi tái index, phản ánh hiệu quả thiết kế cache pipeline.
 \end{itemize}
 
 \section{Phương pháp thí nghiệm}
@@ -57,16 +57,16 @@ Một hệ thống RAG cho sản xuất cần đạt không chỉ chất lượn
 \subsection{Dữ liệu thí nghiệm}
 \label{subsection:4.2.1}
 
-\textbf{Corpus indexing.} Tập dữ liệu gồm 7 văn bản pháp luật lao động Việt Nam, bao gồm Bộ luật Lao động 2019 (BLLĐ), Luật BHXH 2014, và 5 Nghị định hướng dẫn. Sau khi chunking theo cấu trúc pháp lý (mỗi Điều là một chunk độc lập), corpus có \textbf{581 Điều} (documents) và \textbf{2.069 Khoản}. Chiến lược chunking theo Điều — thay vì kích thước cố định như trong vanilla RAG — đảm bảo ranh giới ngữ nghĩa tự nhiên của luật được bảo toàn: mỗi chunk tương ứng chính xác với một đơn vị pháp lý có thể trích dẫn độc lập.
+Tập dữ liệu gồm 7 văn bản pháp luật lao động Việt Nam, bao gồm Bộ luật Lao động 2019 (BLLĐ), Luật BHXH 2014, và 5 Nghị định hướng dẫn. Sau khi chunking theo cấu trúc pháp lý (mỗi Điều là một chunk độc lập), corpus có 581 Điều (documents) và 2.069 Khoản. Chiến lược chunking theo Điều — thay vì kích thước cố định như trong vanilla RAG — đảm bảo ranh giới ngữ nghĩa tự nhiên của luật được bảo toàn: mỗi chunk tương ứng chính xác với một đơn vị pháp lý có thể trích dẫn độc lập.
 
-\textbf{Bộ câu hỏi đánh giá.} Bộ test cases được tổ chức thành hai phần với mục đích khác nhau: tập đánh giá chính (10 câu, domain \texttt{lao\_dong}) và tập kiểm tra robustness (12 câu, các domain chưa có corpus). Bảng~\ref{table:test_cases_main} trình bày chi tiết tập đánh giá chính.
+Bộ câu hỏi đánh giá: Bộ test cases được tổ chức thành hai phần với mục đích khác nhau: tập đánh giá chính (10 câu, domain \texttt{lao\_dong}) và tập kiểm tra robustness (12 câu, các domain chưa có corpus). Bảng~\ref{table:test_cases_main} trình bày chi tiết tập đánh giá chính.
 
 \begin{table}[H]
 \centering
 \caption{Tập đánh giá chính --- domain \texttt{lao\_dong} ($n = 10$)}
 \label{table:test_cases_main}
 \small
-\begin{tabular}{|c|l|c|c|p{3.8cm}|}
+\begin{tabular}{|c|p{5.2cm}|c|c|p{3.8cm}|}
 \hline
 \textbf{ID} & \textbf{Câu hỏi (rút gọn)} & \textbf{Loại} & \textbf{Độ khó} & \textbf{Điều khoản chính} \\
 \hline
@@ -88,45 +88,9 @@ TMP002 & NĐ 90/2019 còn hiệu lực không?   & temporal & medium  & NĐ 74/2
 
 Mỗi test case gồm: định danh \texttt{id}, câu hỏi, \texttt{expected\_keywords} (các cụm từ pháp lý bắt buộc phải xuất hiện trong câu trả lời), \texttt{expected\_citations} (Điều/văn bản cần được trích dẫn), \texttt{category}, \texttt{difficulty}, và tuỳ chọn \texttt{reasoning\_chain} cho câu multi-hop. Tập này được thiết kế theo nguyên tắc \emph{coverage-difficulty balance}: phủ đều ba mức độ khó và bốn loại câu hỏi, trong đó các câu \texttt{hard} yêu cầu kết nối thông tin qua ít nhất hai văn bản khác nhau.
 
-\textbf{Tập kiểm tra robustness (12 câu).} Ngoài tập chính, bộ test còn gồm 12 câu thuộc các domain \emph{chưa có corpus được index}: \texttt{dan\_su} (5 câu), \texttt{hinh\_su} (3 câu), \texttt{doanh\_nghiep} (3 câu), và \texttt{cross\_domain} (3 câu). Mục đích của các câu này không phải đo accuracy mà là kiểm tra \emph{khả năng từ chối trả lời (graceful degradation)} của hệ thống khi corpus không có thông tin liên quan --- hệ thống cần thừa nhận giới hạn thay vì hallucinate. Kết quả của nhóm này không được tính vào các chỉ số KwAcc/CiteAcc tổng hợp.
+Tập kiểm tra robustness (12 câu): Ngoài tập chính, bộ test còn gồm 12 câu thuộc các domain \emph{chưa có corpus được index}: \texttt{dan\_su} (5 câu), \texttt{hinh\_su} (3 câu), \texttt{doanh\_nghiep} (3 câu), và \texttt{cross\_domain} (3 câu). Mục đích của các câu này không phải đo accuracy mà là kiểm tra \emph{khả năng từ chối trả lời (graceful degradation)} của hệ thống khi corpus không có thông tin liên quan --- hệ thống cần thừa nhận giới hạn thay vì hallucinate. Kết quả của nhóm này không được tính vào các chỉ số KwAcc/CiteAcc tổng hợp.
 
 Ngoài ra, bộ mở rộng gồm 68 câu hỏi được sinh tự động phục vụ đánh giá quy mô lớn hơn, với sáu loại: tra cứu (TK), tổng quát (TQ), tổng hợp (TH), số liệu (SL), hiệu lực (HL), và nghĩa pháp (NP).
-
-\subsection{Thiết kế thực nghiệm}
-\label{subsection:4.2.2}
-
-Quy trình thực nghiệm end-to-end được tổ chức thành bốn giai đoạn có ranh giới rõ ràng, đảm bảo tính tái lặp (reproducibility) và tách biệt các biến số độc lập.
-
-\textbf{Giai đoạn 1 --- Chuẩn bị và kiểm định corpus.} Bảy văn bản pháp luật được chuẩn hóa thành cấu trúc phân cấp: VanBan $\to$ Chuong $\to$ Dieu $\to$ Khoan $\to$ Diem, cùng với tệp metadata ghi nhận số hiệu, ngày ban hành, ngày có hiệu lực, và tình trạng hiệu lực của từng văn bản. Bước kiểm định xác nhận tính toàn vẹn cấu trúc: mọi Điều đều có ID duy nhất theo định dạng chuẩn hoá, đảm bảo khả năng truy xuất và trích dẫn xác định.
-
-\textbf{Giai đoạn 2 --- Xây dựng Knowledge Graph hai lớp.} Pipeline indexing GraphRAG xử lý corpus để trích xuất các thực thể và quan hệ ngữ nghĩa (Lớp 2), sau đó được hợp nhất với đồ thị cấu trúc xác định (Lớp 1). Quá trình hợp nhất áp dụng chiến lược deduplication dựa trên chuẩn hóa tên thực thể nhằm giảm nhiễu từ các entity trùng lặp do LLM extraction. Thuật toán phát hiện cộng đồng Leiden được áp dụng trên đồ thị hợp nhất để tạo các nhóm chủ đề phục vụ Global Search.
-
-\textbf{Giai đoạn 3 --- Truy vấn và đánh giá.} Mỗi test case được truy vấn qua \textbf{năm phương pháp so sánh} (Zero-shot, Basic, Local, Global, Local+Multi-hop). Với mỗi cặp (test case, phương pháp), câu trả lời sinh ra được đánh giá tự động qua hàm \texttt{evaluate\_system()} tính KwAcc và CiteAcc, đồng thời ghi lại câu trả lời thô để phân tích định tính.
-
-\textbf{Giai đoạn 4 --- Phân tích và tổng hợp.} Kết quả được phân tích theo hai chiều: (i) so sánh định lượng giữa các phương pháp qua các chỉ số đã định nghĩa; (ii) phân tích định tính các failure case để xác định nguyên nhân gốc rễ và hướng cải tiến. Latency được đo bằng cách lặp lại mỗi câu hỏi đại diện 10 lần cho mỗi chế độ và tính phân vị P50/P95.
-
-\subsection{Môi trường và cấu hình hệ thống}
-\label{subsection:4.2.3}
-
-\begin{table}[H]
-\centering
-\caption{Cấu hình môi trường thực nghiệm}
-\label{table:env_config}
-\begin{tabular}{|l|p{8cm}|}
-\hline
-\textbf{Thành phần} & \textbf{Cấu hình} \\
-\hline
-Runtime & Python 3.11, GraphRAG CLI, Node.js 20 \\
-LLM (indexing + truy vấn) & OpenRouter: Qwen3-235B-A22B (MoE, 235B params) hoặc GPT-4o-mini; \texttt{temperature=0} \\
-Embedding & Qwen3-Embedding-4B, chiều 2560 \\
-Local Search & \texttt{max\_context\_tokens: 6000}, \texttt{top\_k\_entities: 10} \\
-Global Search & \texttt{map\_max\_length: 1000}, \texttt{reduce\_max\_length: 2000} \\
-API timeout & 90\,s (backend), 160\,s (frontend proxy) \\
-\hline
-\end{tabular}
-\end{table}
-
-Việc đặt \texttt{temperature=0} cho cả giai đoạn indexing và truy vấn đảm bảo tính tất định (determinism) của kết quả — một yếu tố quan trọng để kết quả thực nghiệm có thể tái lặp. Mô hình Qwen3-235B-A22B với kiến trúc Mixture-of-Experts (MoE) được lựa chọn nhằm cân bằng giữa chất lượng trích xuất ngữ nghĩa và chi phí token trong giai đoạn indexing quy mô lớn.
 
 \section{Các phương pháp so sánh}
 \label{section:4.3}
@@ -151,16 +115,15 @@ Năm phương pháp được so sánh, được chọn lọc để đại diện
 \subsection{Kịch bản thí nghiệm}
 \label{subsection:4.3.2}
 
-\begin{table}[H]
-\centering
-\caption{Sáu kịch bản thực nghiệm (E1--E6)}
+\begin{center}
+\captionof{table}{Sáu kịch bản thực nghiệm (E1--E6)}
 \label{table:experiments}
 \small
-\begin{tabular}{|c|p{3.5cm}|p{3.5cm}|c|}
+\begin{tabular}{|c|p{5.2cm}|p{6cm}|c|}
 \hline
 \textbf{Kịch bản} & \textbf{Mục tiêu} & \textbf{Phương pháp so sánh} & \textbf{$n$} \\
 \hline
-E1 & Tổng thể trên domain \texttt{lao\_dong} & BL0, BL1, Local, Global, Multihop & 10 \\
+E1 & Tổng thể trên domain lao động & BL0, BL1, Local, Global, Multihop & 10 \\
 E2 & Single-hop (tra cứu) & BL1 vs.\ Local & 5 \\
 E3 & Tổng hợp (toàn cục) & Local vs.\ Global & 2 \\
 E4 & Multi-hop (suy luận chéo) & Local vs.\ Local+Multihop & 3 \\
@@ -168,9 +131,9 @@ E5 & Câu hỏi hiệu lực pháp luật & Local vs.\ Local+Temporal filter & 2
 E6 & Phân tích hợp đồng lao động & Rule validator trên HĐLĐ mẫu & 1 \\
 \hline
 \end{tabular}
-\end{table}
+\end{center}
 
-E1 là kịch bản tổng quát trên tập đánh giá chính (\texttt{lao\_dong}). E2--E5 là các kịch bản được thiết kế để \emph{phân lập} tác động của từng thành phần trong kiến trúc, giúp trả lời các câu hỏi nghiên cứu cụ thể: graph có giúp gì cho single-hop? (E2); community reports có hiệu quả hơn local search cho câu hỏi tổng hợp? (E3); multi-hop reasoning có cần thiết? (E4); temporal filter có ảnh hưởng thực tế? (E5). E6 đánh giá module HĐLĐ như một ứng dụng độc lập.
+E1 là kịch bản tổng quát trên tập đánh giá chính (\texttt{lao\_dong}). E2--E5 là các kịch bản được thiết kế để \emph{phân lập} tác động của từng thành phần trong kiến trúc, giúp trả lời các câu hỏi nghiên cứu cụ thể như: "graph có giúp gì cho single-hop?" (E2); "community reports có hiệu quả hơn local search cho câu hỏi tổng hợp?" (E3); "multi-hop reasoning có cần thiết?" (E4); "temporal filter có ảnh hưởng thực tế?" (E5). E6 đánh giá module HĐLĐ như một ứng dụng độc lập.
 
 \section{Kết quả thực nghiệm và phân tích}
 \label{section:4.4}
@@ -178,7 +141,7 @@ E1 là kịch bản tổng quát trên tập đánh giá chính (\texttt{lao\_do
 \subsection{Kết quả xây dựng Knowledge Graph}
 \label{subsection:4.4.1}
 
-Bảng~\ref{table:indexing_stats} tổng hợp thống kê sau giai đoạn indexing và hợp nhất đồ thị.
+\textbf{Bảng~\ref{table:indexing_stats}:} Tổng hợp thống kê sau giai đoạn indexing và hợp nhất đồ thị.
 
 \begin{table}[H]
 \centering
@@ -217,14 +180,12 @@ Cache hit rate (tái index) & $>$ 85\% \\
 \end{tabular}
 \end{table}
 
-\textbf{Phân tích cấu trúc đồ thị.} Lớp~1 cung cấp 581 node \texttt{Dieu} có ID chuẩn --- nền tảng citation accuracy; Lớp~2 bổ sung entity/relationship ngữ nghĩa phục vụ multi-hop. Leiden tạo 15 community chủ đề (Nghỉ phép, Kỷ luật, BHXH\ldots). Trích xuất L2 chiếm $\approx$30\% thời gian indexing; cache giúp tái index giảm $\approx$85\% LLM calls.
+Phân tích cấu trúc đồ thị: Lớp~1 cung cấp 581 node \texttt{Dieu} có ID chuẩn --- nền tảng citation accuracy; Lớp~2 bổ sung entity/relationship ngữ nghĩa phục vụ multi-hop. Leiden tạo 15 community chủ đề (Nghỉ phép, Kỷ luật, BHXH\ldots). Trích xuất L2 chiếm khoảng 30\% thời gian indexing; cache giúp tái index giảm khoảng 85\% LLM calls.
 
 \subsection{So sánh hiệu quả tổng thể}
 \label{subsection:4.4.2}
 
-Bảng~\ref{table:overall_comparison} trình bày kết quả kịch bản E1 trên \textbf{10 test cases domain \texttt{lao\_dong}}.
-
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{So sánh hiệu quả các phương pháp trên domain \texttt{lao\_dong} ($n=10$)}
 \label{table:overall_comparison}
@@ -250,9 +211,9 @@ $^*$CiteAcc được tính trên tập con có \texttt{expected\_citations}: 8 t
 \subsection{Phân tích theo loại câu hỏi và độ khó}
 \label{subsection:4.4.3}
 
-Bảng~\ref{table:by_category} phân rã KwAcc theo loại câu hỏi, làm rõ đóng góp của từng thành phần kiến trúc.
+Bảng phân rã KwAcc theo loại câu hỏi, làm rõ đóng góp của từng thành phần kiến trúc.
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Keyword accuracy theo loại câu hỏi (domain \texttt{lao\_dong})}
 \label{table:by_category}
@@ -273,39 +234,10 @@ Bảng~\ref{table:by_category} phân rã KwAcc theo loại câu hỏi, làm rõ 
 
 Nhóm \texttt{hard} (LD011, LD012) là điểm chênh lệch lớn nhất: Local 0\% vs.\ Local+Multi-hop 100\%. Failure case điển hình: Local Search retrieve đúng Điều 90 BLLĐ nhưng không mở rộng sang NĐ~12/2022 (chế tài) --- cần graph traversal cross-document.
 
-\subsection{Case study}
+\subsection{Phân tích hiệu năng và chi phí}
 \label{subsection:4.4.4}
 
-\begin{example}[LD012 --- Multi-hop]
-\textbf{Câu hỏi:} Trả lương dưới mức tối thiểu vùng IV thì bị phạt bao nhiêu?
-
-\textbf{Local Search:} Nêu vi phạm Điều~90 BLLĐ nhưng không nêu mức phạt NĐ~12/2022 --- chain\_hit: \texttimes.
-
-\textbf{Local+Multi-hop:} Engine duyệt chuỗi \textit{violation} $\rightarrow$ trích mức phạt --- kw\_hit: \checkmark; chain\_hit: \checkmark.
-\end{example}
-
-Case study HĐLĐ (E6): VR008 phát hiện nghỉ phép 6 ngày $<$ 12 (Điều~113), điểm tuân thủ 74/100, xử lý $\approx$25--40\,s.
-
-\begin{table}[H]
-\centering
-\caption{Kết quả phân tích HĐLĐ mẫu (E6)}
-\label{table:contract_case}
-\small
-\begin{tabular}{|l|l|}
-\hline
-\textbf{Chỉ số} & \textbf{Giá trị} \\
-\hline
-Điểm tuân thủ & 74/100 \\
-Vi phạm (VR008) & Nghỉ phép 6 ngày $<$ 12 \\
-Thời gian xử lý & $\approx$25--40\,s \\
-\hline
-\end{tabular}
-\end{table}
-
-\subsection{Phân tích hiệu năng và chi phí}
-\label{subsection:4.4.5}
-
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Latency truy vấn theo phương pháp (P50 / P95, 10 lần lặp)}
 \label{table:latency}
@@ -325,16 +257,14 @@ Contract pipeline & 25\,000 & 45\,000 & 3--8  & N/A \\
 }
 \end{table}
 
-\textbf{Phân tích trade-off.} Local Search (P95 = 8\,s) cân bằng tốt nhất cho production (KwAcc 90\%). Global Search (P95 = 25\,s) chỉ dùng cho câu hỏi tổng hợp. Local+Multi-hop tăng KwAcc lên 100\% với latency chỉ cao hơn $\approx$50\%.
+Phân tích trade-off: Local Search (P95 = 8\,s) cân bằng tốt nhất cho production (KwAcc 90\%). Global Search (P95 = 25\,s) chỉ dùng cho câu hỏi tổng hợp. Local+Multi-hop tăng KwAcc lên 100\% với latency chỉ cao hơn khoảng 50\%.
 
 \section{Thảo luận}
 \label{section:4.5}
 
 Kết quả xác nhận năm luận điểm chính: (1)~ontology L1 + chunking theo Điều là then chốt cho citation; (2)~multi-hop giải quyết cross-document (33\% $\rightarrow$ 100\%); (3)~community reports hỗ trợ câu hỏi tổng hợp; (4)~temporal filter ngăn trích dẫn lỗi thời; (5)~rule hybrid phát hiện vi phạm HĐLĐ deterministic.
 
-\textbf{Hạn chế đánh giá:} Bộ test 10 câu nhỏ; ground truth chưa qua luật sư review; RAGAS chưa chạy đầy đủ; corpus chỉ domain \texttt{lao\_dong}.
-
-So với GraphRAG gốc~\cite{graphrag2024}, đồ án bổ sung L1 deterministic, temporal filter, multi-hop engine và rule validator (Bảng~\ref{table:vs_graphrag}). Lớp 1 là đóng góp then chốt: GraphRAG gốc hoàn toàn dựa LLM extraction nên citation không ổn định; ontology hai lớp đảm bảo mọi node \texttt{Dieu} có ID chuẩn hoá. Temporal filter trong pháp luật VN khác Temporal GraphRAG --- yếu tố quan trọng là văn bản \emph{còn hiệu lực}, không phải timestamp sự kiện.
+Hạn chế đánh giá: Bộ test nhỏ, ground truth chưa qua luật sư review, corpus chỉ xoay quanh domain \texttt{lao\_dong}.
 
 \begin{table}[H]
 \centering
@@ -351,7 +281,7 @@ Citation          & Không đảm bảo & Điều/Khoản (Lớp 1) & Trích d�
 Temporal          & Không          & Metadata hiệu lực pháp luật & Lọc văn bản hết hiệu lực \\
 Multi-hop         & Qua community  & Custom graph traversal & Chuỗi Điều--Nghị định \\
 Rule validator    & Không          & VR001--VR016               & Phân tích HĐLĐ xác định \\
-Benchmark         & Comprehensiveness/Diversity & Keyword + Citation & Phù hợp đặc thù pháp luật \\
+Benchmark         & Comprehensiveness / Diversity & Keyword + Citation & Phù hợp đặc thù pháp luật \\
 \hline
 \end{tabular}
 \end{table}

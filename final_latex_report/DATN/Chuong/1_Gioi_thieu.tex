@@ -14,7 +14,7 @@ Văn bản pháp luật lao động có cấu trúc phân cấp chặt chẽ (BL
 \subsection{Quy mô corpus và độ phức tạp bài toán}
 \label{subsection:1.1.2}
 
-Đồ án tập trung vào corpus gồm \textbf{7 văn bản pháp luật lao động}, tương ứng \textbf{581 Điều}, \textbf{2069 Khoản} và \textbf{1705 Điểm} sau khi chuẩn hóa. Quy mô này đủ lớn để phản ánh thách thức thực tế nhưng vẫn trong tầm triển khai và đánh giá có kiểm soát.
+Đồ án tập trung vào corpus gồm 7 văn bản pháp luật lao động, tương ứng 581 Điều, 2069 Khoản và 1705 Điểm sau khi chuẩn hóa. Quy mô này đủ lớn để phản ánh thách thức thực tế nhưng vẫn trong tầm triển khai và đánh giá có kiểm soát.
 
 Bài toán hỏi đáp pháp luật lao động có thể phân thành ba mức độ khó:
 
@@ -30,13 +30,13 @@ Bài toán hỏi đáp pháp luật lao động có thể phân thành ba mức 
 Các Chatbot với \gls{LLM} tổng quát (ChatGPT, Gemini, Claude\ldots) có khả năng diễn đạt tự nhiên nhưng gặp hạn chế nghiêm trọng khi tra cứu pháp luật:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Ảo giác:} sinh nội dung nghe có vẻ hợp lý nhưng không có trong văn bản gốc, hoặc trích sai số liệu.
-    \item \textbf{Trích dẫn không chính xác:} ghi ``Điều X'' mà không chỉ rõ Khoản, hoặc nhầm lẫn giữa các phiên bản văn bản.
-    \item \textbf{Không kiểm soát hiệu lực:} có thể trích điều luật đã bị sửa đổi, bãi bỏ hoặc thay thế bởi văn bản mới hơn.
-    \item \textbf{Thiếu kho dữ liệu (corpus) chuyên biệt:} không index sẵn bộ văn bản lao động Việt Nam, dẫn đến câu trả lời dựa trên tri thức huấn luyện chung, có thể lỗi thời.
+    \item Ảo giác: sinh nội dung nghe có vẻ hợp lý nhưng không có trong văn bản gốc, hoặc trích sai số liệu.
+    \item Trích dẫn không chính xác: ghi ``Điều X'' mà không chỉ rõ Khoản, hoặc nhầm lẫn giữa các phiên bản văn bản.
+    \item Không kiểm soát hiệu lực: có thể trích điều luật đã bị sửa đổi, bãi bỏ hoặc thay thế bởi văn bản mới hơn.
+    \item Thiếu kho dữ liệu (corpus) chuyên biệt: không index sẵn bộ văn bản lao động Việt Nam, dẫn đến câu trả lời dựa trên tri thức huấn luyện chung, có thể lỗi thời.
 \end{itemize}
 
-Trong lĩnh vực pháp luật, sai sót không chỉ là vấn đề kỹ thuật mà còn là rủi ro pháp lý thực tế. Do đó, hệ thống hỏi đáp pháp luật cần đảm bảo tính \textbf{grounding} -- mọi khẳng định phải có căn cứ trong văn bản đã index và có thể truy vết về Điều/Khoản cụ thể.
+Trong lĩnh vực pháp luật, sai sót không chỉ là vấn đề kỹ thuật mà còn là rủi ro pháp lý thực tế. Do đó, hệ thống hỏi đáp pháp luật cần đảm bảo tính rounding -- mọi khẳng định phải có căn cứ trong văn bản đã index và có thể truy vết về Điều/Khoản cụ thể.
 
 \section{Các giải pháp hiện tại và hạn chế}
 \label{section:1.2}
@@ -58,7 +58,7 @@ Tra cứu trên cổng thông tin điện tử hoặc thư viện pháp luật d
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.55\textwidth]{graph.png}
+  \includegraphics[width=0.55\textwidth]{img11ex.png}
   \caption{Minh họa đồ thị tri thức (Knowledge Graph)}
   \label{fig:kg-minh-hoa}
 \end{figure}
@@ -76,7 +76,7 @@ Tuy nhiên, GraphRAG gốc chưa được thiết kế cho domain luật lao đ�
     \item Prompt extraction mặc định bằng tiếng Anh, chưa tối ưu cho thuật ngữ pháp luật tiếng Việt.
 \end{itemize}
 
-Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \textbf{xây dựng trợ lý hỏi đáp pháp luật lao động Việt Nam trên nền GraphRAG, kết hợp cấu trúc pháp lý deterministic, suy luận đa bước và kiểm tra tuân thủ HĐLĐ}. Hình~\ref{fig:so-sanh-huong-tiep-can} tóm tắt sự khác biệt giữa ba hướng tiếp cận chính.
+Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \textbf{xây dựng trợ lý ảo pháp luật lao động Việt Nam trên nền GraphRAG, kết hợp cấu trúc pháp lý deterministic, suy luận đa bước và kiểm tra tuân thủ HĐLĐ}. Tóm tắt sự khác biệt giữa ba hướng tiếp cận chính:
 
 \begin{figure}[H]
   \centering
@@ -91,29 +91,29 @@ Từ phân tích trên, đồ án xác định khoảng trống nghiên cứu: \
 \subsection{Mục tiêu của đồ án}
 \label{subsection:1.3.1}
 
-\textbf{Mục tiêu tổng quát:} Xây dựng \textbf{Xây dựng tác tử tư vấn luật lao động và phân tích rủi ro hợp đồng lao động} dựa trên Microsoft GraphRAG, hỗ trợ (1)~hỏi đáp pháp luật có trích dẫn Điều/Khoản và (2)~phân tích tuân thủ HĐLĐ theo quy tắc domain.
+Mục tiêu tổng quát: Xây dựng tác tử tư vấn luật lao động và phân tích rủi ro hợp đồng lao động dựa trên Microsoft GraphRAG, hỗ trợ (1)~hỏi đáp pháp luật có trích dẫn Điều/Khoản và (2)~phân tích tuân thủ HĐLĐ theo quy tắc domain.
 
 Các mục tiêu cụ thể:
 
-\begin{enumerate}[nosep, leftmargin=*]
-    \item \textbf{Thiết kế ontology hai lớp} cho corpus luật lao động: Lớp 1 (deterministic) biểu diễn cấu trúc văn bản; Lớp 2 (LLM) biểu diễn ngữ nghĩa domain (chủ thể, hành vi, chế tài).
-    \item \textbf{Xây dựng pipeline chuẩn bị dữ liệu end-to-end:} parse văn bản $\rightarrow$ chunk theo Điều $\rightarrow$ index GraphRAG $\rightarrow$ merge đồ thị cấu trúc và semantic.
-    \item \textbf{Triển khai các lớp truy vấn nâng cao:} Local Search, Global Search, \gls{MultiHop}, temporal validity filter (lọc văn bản hết hiệu lực), rule validator (quy tắc đánh giá tính xác thực) cho HĐLĐ.
-    \item \textbf{Phát triển ứng dụng thực tế:} Backend API FastAPI, frontend Next.js.
-    \item \textbf{Đánh giá có hệ thống} trên bộ benchmark với tiêu chí keyword accuracy, citation accuracy và phân loại single-hop/multi-hop.
+\begin{itemize}[nosep, leftmargin=*]
+    \item Thiết kế ontology hai lớp cho corpus luật lao động: Lớp 1 (deterministic) biểu diễn cấu trúc văn bản; Lớp 2 (LLM) biểu diễn ngữ nghĩa domain (chủ thể, hành vi, chế tài).
+    \item Xây dựng pipeline chuẩn bị dữ liệu end-to-end: parse văn bản $\rightarrow$ chunk theo Điều $\rightarrow$ index GraphRAG $\rightarrow$ merge đồ thị cấu trúc và semantic.
+    \item Triển khai các lớp truy vấn nâng cao: Local Search, Global Search, \gls{MultiHop}, temporal validity filter (lọc văn bản hết hiệu lực), rule validator (quy tắc đánh giá tính xác thực) cho HĐLĐ.
+    \item Phát triển ứng dụng thực tế: Backend API FastAPI, frontend Next.js.
+    \item Đánh giá có hệ thống trên bộ benchmark với tiêu chí keyword accuracy, citation accuracy và phân loại single-hop/multi-hop.
 \end{enumerate}
 
 \subsection{Định hướng giải pháp}
 \label{subsection:1.3.2}
 
-Để đạt các mục tiêu trên, đồ án theo định hướng \textbf{hybrid retrieval} --- kết hợp truy xuất có cấu trúc (đồ thị pháp luật) và truy xuất ngữ nghĩa (embedding):
+Để đạt các mục tiêu trên, đồ án theo định hướng hybrid retrieval --- kết hợp truy xuất có cấu trúc (đồ thị pháp luật) và truy xuất ngữ nghĩa (embedding):
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Lớp build bằng rule (không call LLM):} các thuật toán tiền xử lý file dữ liệu đầu vào, phân tách chính xác theo các Phần/Chương/Mục/Điều/Khoản/Điểm, gán \texttt{norm\_type} và metadata hiệu lực văn bản, đảm bảo cấu trúc pháp lý không phụ thuộc vào độ chính xác của LLM.
-    \item \textbf{Lớp extract bằng LLM với prompt domain tiếng Việt:} trích xuất thực thế (entity) và quan hệ (relationship) từ nội dung từng Điều.
-    \item \textbf{Merge graph và community detection:} gộp 2 lớp trên, phát hiện cộng đồng chủ đề (Leiden) phục vụ cho Global Search.
-    \item \textbf{Multi-hop trên quan hệ:} từ entity/câu hỏi ban đầu, duyệt chuỗi quan hệ để tìm Điều/Khoản liên quan ở bước tiếp theo.
-    \item \textbf{Kiểm soát đầu ra:} mọi câu trả lời kèm trích dẫn Điều/Khoản; lọc văn bản hết hiệu lực trước khi đưa vào ngữ cảnh; rules cứng VR001--VR016 cho phân tích HĐLĐ.
+    \item Lớp build bằng rule (không call LLM): các thuật toán tiền xử lý file dữ liệu đầu vào, phân tách chính xác theo các Phần/Chương/Mục/Điều/Khoản/Điểm, gán \texttt{norm\_type} và metadata hiệu lực văn bản, đảm bảo cấu trúc pháp lý không phụ thuộc vào độ chính xác của LLM.
+    \item Lớp extract bằng LLM với prompt domain tiếng Việt: trích xuất thực thế (entity) và quan hệ (relationship) từ nội dung từng Điều.
+    \item Merge graph và community detection: gộp 2 lớp trên, phát hiện cộng đồng chủ đề (Leiden) phục vụ cho Global Search.
+    \item Multi-hop trên quan hệ: từ entity/câu hỏi ban đầu, duyệt chuỗi quan hệ để tìm Điều/Khoản liên quan ở bước tiếp theo.
+    \item Kiểm soát đầu ra: mọi câu trả lời kèm trích dẫn Điều/Khoản; lọc văn bản hết hiệu lực trước khi đưa vào ngữ cảnh; rules cứng VR001--VR016 cho phân tích HĐLĐ.
 \end{itemize}
 
 \section{Đóng góp chính}

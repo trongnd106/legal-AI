@@ -4,7 +4,7 @@
 \section{Tổng quan các đóng góp}
 \label{section:5.0}
 
-Chương này phân tích chi tiết sáu đóng góp kỹ thuật và khoa học của đồ án, cách chúng giải quyết các vấn đề cụ thể trong ứng dụng \gls{GraphRAG} cho miền pháp luật lao động Việt Nam, và giá trị tái sử dụng trong các ứng dụng pháp lý khác. Mỗi đóng góp được trình bày theo cấu trúc: \textbf{giá trị lõi} → \textbf{vấn đề được giải quyết} → \textbf{so sánh với công trình liên quan} → \textbf{minh chứng thực nghiệm} (tham chiếu Chương 4). Các đóng góp bổ sung lẫn nhau, từng phần giải quyết một khía cạnh khác của pipeline Legal GraphRAG.
+Chương này phân tích chi tiết sáu đóng góp kỹ thuật và khoa học của đồ án, cách chúng giải quyết các vấn đề cụ thể trong ứng dụng \gls{GraphRAG} cho miền pháp luật lao động Việt Nam, và giá trị tái sử dụng trong các ứng dụng pháp lý khác. Mỗi đóng góp được trình bày theo cấu trúc: giá trị lõi → vấn đề được giải quyết → so sánh với công trình liên quan → minh chứng thực nghiệm (tham chiếu Chương 4). Các đóng góp bổ sung lẫn nhau, từng phần giải quyết một khía cạnh khác của pipeline Legal GraphRAG.
 
 \section{Ontology hai lớp với canonicalization để bảo toàn cấu trúc pháp lý}
 \label{section:5.1}
@@ -12,28 +12,28 @@ Chương này phân tích chi tiết sáu đóng góp kỹ thuật và khoa họ
 \subsection{Giá trị lõi và vấn đề đặt ra}
 \label{subsection:5.1.1}
 
-Vấn đề cốt lõi khi áp dụng \gls{RAG} cho pháp luật là \textbf{mất cấu trúc pháp lý} khi văn bản bị chunking tùy ý:
+Vấn đề cốt lõi khi áp dụng \gls{RAG} cho pháp luật là mất cấu trúc pháp lý khi văn bản bị chunking tùy ý:
 
 \begin{itemize}[nosep, leftmargin=*]
     \item \textbf{Naive RAG:} Chunk theo token cố định (512--1024 token, overlap 50\%) → cắt giữa Khoản, mất bối cảnh pháp lý. Trích dẫn không thể trace về đơn vị chuẩn (Điều/Khoản), gây mất tin cậy trong domain pháp luật.
     
     \item \textbf{GraphRAG gốc:} Trích entity/quan hệ bằng LLM nhưng schema mặc định (ORGANIZATION, PERSON, LOCATION) không phù hợp domain luật lao động Việt Nam. Thiếu lớp cấu trúc văn bản deterministic (Văn bản pháp lý $\rightarrow$ Phần $\rightarrow$ Chương $\rightarrow$ Điều $\rightarrow$ Khoản) → không đảm bảo nhất quán đồ thị.
     
-    \item \textbf{Hậu quả:} Không suy luận multi-hop giữa các quy phạm, không trích dẫn chính xác, khó giải thích nguồn.
+    \item Hậu quả: Không thể suy luận multi-hop giữa các quy phạm, không trích dẫn chính xác, khó giải thích nguồn.
 \end{itemize}
 
 \subsection{Giải pháp: Ontology hai lớp + canonicalization}
 \label{subsection:5.1.2}
 
-Đóng góp cốt lõi là thiết kế \textbf{ontology hai lớp với canonicalization} (chi tiết Mục~\ref{subsection:3.2.2}):
+Đóng góp cốt lõi là thiết kế ontology hai lớp với canonicalization (chi tiết tại Mục 3.2.2):
 
-\textbf{Lớp 1 --- Cấu trúc văn bản (100\% deterministic):} Biểu diễn phân cấp hình thức (Văn bản pháp lý, Phần, Chương, Mục, Điều, Khoản, Điểm) và các quan hệ phân cấp (\texttt{contains}, \texttt{nested\_in}), tham chiếu chéo (\texttt{cites}, \texttt{amends}, \texttt{repeals}, \texttt{guided\_by}). Mỗi thực thể gán định danh chuẩn cố định (ví dụ: \texttt{BLLĐ\_45\_2019\_Điều\_90\_Khoản\_1}), không dùng LLM, độ tin cậy 100\%, lặp lại được.
+Lớp Cấu trúc văn bản: Biểu diễn phân cấp hình thức (Văn bản pháp lý, Phần, Chương, Mục, Điều, Khoản, Điểm) và các quan hệ phân cấp (\texttt{contains}, \texttt{nested\_in}), tham chiếu chéo (\texttt{cites}, \texttt{amends}, \texttt{repeals}, \texttt{guided\_by}). Mỗi thực thể gán định danh chuẩn cố định (ví dụ: \texttt{BLLĐ\_45\_2019\_Điều\_90\_Khoản\_1}), không dùng LLM, độ tin cậy 100\%, lặp lại được.
 
-\textbf{Lớp 2 --- Ngữ nghĩa pháp luật (LLM extraction):} Trích xuất 14 loại thực thể domain (ChuThe, HanhVi, CoQuan, TienLuong, NghiPhep, CheTai, v.v.) và các quan hệ logic pháp lý (\texttt{entitles}, \texttt{obligates}, \texttt{prohibits}, \texttt{penalizes}). Schema entity types được khai báo tường minh, không sử dụng schema mặc định của GraphRAG gốc.
+Lớp Ngữ nghĩa pháp luật: Trích xuất 14 loại thực thể domain (ChuThe, HanhVi, CoQuan, TienLuong, NghiPhep, CheTai, v.v.) và các quan hệ logic pháp lý (\texttt{entitles}, \texttt{obligates}, \texttt{prohibits}, \texttt{penalizes}). Schema entity types được khai báo tường minh, không sử dụng schema mặc định của GraphRAG gốc.
 
-\textbf{Lớp 1.5 --- Canonicalization:} Ánh xạ các biểu diễn khác nhau (``Điều 35'', ``khoản 1 Điều 35 BLLĐ 2019'', ``mục 1 Điều 35'') về cùng một định danh chuẩn. Giải quyết xung đột giữa output LLM (chuỗi tự do) và ID cấu trúc (ID cố định) khi hợp nhất, tránh trùng lặp node (cùng Điều 35 nhưng hai ID khác nhau).
+Lớp Canonicalization: Ánh xạ các biểu diễn khác nhau (``Điều 35'', ``khoản 1 Điều 35 BLLĐ 2019'', ``mục 1 Điều 35'') về cùng một định danh chuẩn. Giải quyết xung đột giữa output LLM (chuỗi tự do) và ID cấu trúc (ID cố định) khi hợp nhất, tránh trùng lặp node (cùng Điều 35 nhưng hai ID khác nhau).
 
-Lựa chọn thiết kế: \textbf{không extract Lớp 1 bằng LLM} --- vì LLM không đảm bảo nhất quán giữa các lần chạy, dẫn tới duplicate node hay ngộ nhận giữa Điều khác nhau. Điều này là điểm khác biệt quan trọng so với GraphRAG gốc, nơi toàn bộ extraction dùng LLM. Hình~\ref{fig:so-sanh-ontology} so sánh ba hướng thiết kế ontology pháp luật.
+Lựa chọn thiết kế: không extract Lớp 1 bằng LLM vì LLM không đảm bảo nhất quán giữa các lần chạy, dẫn tới duplicate node hay ngộ nhận giữa Điều khác nhau. Điều này là điểm khác biệt quan trọng so với GraphRAG gốc, nơi toàn bộ extraction dùng LLM. 
 
 \begin{figure}[H]
   \centering
@@ -47,26 +47,11 @@ Lựa chọn thiết kế: \textbf{không extract Lớp 1 bằng LLM} --- vì LL
 
 Thiết kế ontology pháp luật có thể so sánh theo trục \emph{độ chính xác - chi phí xây dựng - khả năng scale}:
 
-\textbf{Legal KG thủ công (LKIF~\cite{hoekstra2007lkif}, Akoma Ntoso~\cite{palmirani2018akomantoso}):} Độ chính xác cao nhất vì được chuyên gia pháp lý thiết kế từng quan hệ. Tuy nhiên, chi phí xây dựng cực kỳ cao và khả năng scale thấp: khi \gls{BLLD} được sửa đổi hay Nghị định mới ban hành, toàn bộ phần liên quan phải được chuyên gia review và cập nhật thủ công. Đây là rào cản thực tế khiến các hệ thống này khó duy trì trong môi trường pháp luật thay đổi liên tục.
+Legal KG thủ công (LKIF~\cite{hoekstra2007lkif}, Akoma Ntoso~\cite{palmirani2018akomantoso}): Độ chính xác cao nhất vì được chuyên gia pháp lý thiết kế từng quan hệ. Tuy nhiên, chi phí xây dựng cực kỳ cao và khả năng scale thấp: khi \gls{BLLD} được sửa đổi hay Nghị định mới ban hành, toàn bộ phần liên quan phải được chuyên gia review và cập nhật thủ công. Đây là rào cản thực tế khiến các hệ thống này khó duy trì trong môi trường pháp luật thay đổi liên tục.
 
-\textbf{GraphRAG gốc (toàn bộ LLM extraction):} Chi phí xây dựng thấp hơn và linh hoạt, nhưng không đảm bảo nhất quán: cùng một Điều 90 \gls{BLLD} có thể được trích xuất thành các entity khác nhau qua các lần indexing khác nhau, tùy vào ngữ cảnh xuất hiện và nhiễu trong output LLM. Vấn đề này đặc biệt nghiêm trọng cho citation accuracy --- một yêu cầu cốt lõi trong domain pháp luật.
+GraphRAG gốc: Chi phí xây dựng thấp hơn và linh hoạt, nhưng không đảm bảo nhất quán: cùng một Điều 90 \gls{BLLD} có thể được trích xuất thành các entity khác nhau qua các lần indexing khác nhau, tùy vào ngữ cảnh xuất hiện và nhiễu trong output LLM. Vấn đề này đặc biệt nghiêm trọng cho citation accuracy --- một yêu cầu cốt lõi trong domain pháp luật.
 
-\textbf{Giải pháp của đồ án --- Ontology hai lớp:} Đạt cân bằng giữa ba trục trên bằng cách phân công trách nhiệm rõ ràng: L1 (parser xác định) chịu trách nhiệm cấu trúc pháp lý với độ tin cậy 100\%, L2 (LLM extraction) chịu trách nhiệm ngữ nghĩa domain với độ linh hoạt cao. Canonicalization đảm bảo hai lớp được hợp nhất nhất quán. Kết quả: khi thêm văn bản mới, chỉ cần chạy lại parser cho L1 và LLM extraction cho L2 của văn bản đó --- không cần review thủ công toàn bộ ontology. Đây là sự cải tiến thực chất về khả năng bảo trì so với cả hai hướng trên.
-
-\subsection{Minh chứng thực nghiệm}
-\label{subsection:5.1.4}
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item Parse thành công 581 Điều, 2069 Khoản từ 7 văn bản (độ chính xác 100\% trên cấu trúc hình thức).
-    
-    \item Đồ thị merged: $\approx$ 5120 entity (L1 $\approx$ 2800 + L2 $\approx$ 2320), $\approx$ 7890 quan hệ, 15 community.
-    
-    \item Chunking theo Điều (overlap=0) → Local Search đạt \textbf{100\%} keyword accuracy trên nhóm \texttt{single\_hop} (Bảng~\ref{table:by_category}, Chương~\ref{chapter:Experiment}).
-    
-    \item Citation accuracy (trích dẫn đúng Điều/Khoản): \textbf{88\%} trên Local Search --- cao hơn Naive RAG ($\approx$ 60--70\% vì cắt ngang Khoản).
-    
-    \item \textbf{Reusable framework:} Pattern L1 (parser) + L2 (LLM extraction) có thể mở rộng sang luật dân sự, hình sự bằng cách thay parser regex và khai báo entity types riêng --- không cần thiết kế lại toàn bộ ontology.
-\end{itemize}
+Giải pháp Ontology hai lớp: Đạt cân bằng giữa ba trục trên bằng cách phân công trách nhiệm rõ ràng: L1 (parser xác định) chịu trách nhiệm cấu trúc pháp lý với độ tin cậy 100\%, L2 (LLM extraction) chịu trách nhiệm ngữ nghĩa domain với độ linh hoạt cao. Canonicalization đảm bảo hai lớp được hợp nhất nhất quán. Kết quả: khi thêm văn bản mới, chỉ cần chạy lại parser cho L1 và LLM extraction cho L2 của văn bản đó --- không cần review thủ công toàn bộ ontology. Đây là sự cải tiến thực chất về khả năng bảo trì so với cả hai hướng trên.
 
 \section{Multi-hop Reasoning Engine để suy luận chéo quy phạm}
 \label{section:5.2}
@@ -81,193 +66,132 @@ Nhiều câu hỏi pháp lý không thể trả lời bằng một Điều duy n
 Trace: Điều 46 BLLĐ (nghĩa vụ trả trợ cấp) $\rightarrow$ NĐ 12/2022 Điều 3 (chế tài vi phạm) $\rightarrow$ Mức phạt tiền.
 \end{example}
 
-Vấn đề: \textbf{Local Search} retrieve text units ngữ nghĩa gần nhau nhưng không đảm bảo retrieve \emph{cả hai} văn bản (BLLĐ \textbf{và} Nghị định) trong chuỗi. Thí nghiệm: Local đạt 33\% trên nhóm \texttt{multi\_hop} (LD010--LD012), chứng minh vector similarity đơn thuần không đủ.
+Vấn đề: Local Search retrieve text units ngữ nghĩa gần nhau nhưng không đảm bảo retrieve \emph{cả hai} văn bản (BLLĐ \textbf{và} Nghị định) trong chuỗi. Thí nghiệm: Local đạt 33\% trên nhóm \texttt{multi\_hop} (LD010--LD012), chứng minh vector similarity đơn thuần không đủ.
 
-Giá trị: \textbf{Động cơ suy luận logic pháp lý}, không dựa trên ngữ nghĩa mà dựa trên \textbf{quan hệ pháp lý} (``hành vi A vi phạm → bị phạt theo Điều B → mức phạt là X'').
+Giá trị: Động cơ suy luận logic pháp lý, không dựa trên ngữ nghĩa mà dựa trên quan hệ pháp lý (``hành vi A vi phạm → bị phạt theo Điều B → mức phạt là X'').
 
-\subsection{Giải pháp: VNLegalReasoningEngine}
+\subsection{Giải pháp VNLegalReasoningEngine}
 \label{subsection:5.2.2}
 
 Triển khai engine trên merged graph với ba chain templates:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Violation chain:} Hành vi vi phạm $\rightarrow$ Chế tài. Quan hệ: \texttt{HanhVi} --\texttt{penalizes}$\rightarrow$ \texttt{CheTai} --\texttt{cites}$\rightarrow$ \texttt{Dieu}.
+    \item Violation chain: Hành vi vi phạm $\rightarrow$ Chế tài. Quan hệ: \texttt{HanhVi} --\texttt{penalizes}$\rightarrow$ \texttt{CheTai} --\texttt{cites}$\rightarrow$ \texttt{Dieu}.
     
-    \item \textbf{Entitlement chain:} Chủ thể $\rightarrow$ Quyền lợi $\rightarrow$ Điều kiện. Quan hệ: \texttt{ChuThe} --\texttt{entitles}$\rightarrow$ \texttt{QuyenLoi} --\texttt{applies\_to}$\rightarrow$ \texttt{DieuKien}.
+    \item Entitlement chain: Chủ thể $\rightarrow$ Quyền lợi $\rightarrow$ Điều kiện. Quan hệ: \texttt{ChuThe} --\texttt{entitles}$\rightarrow$ \texttt{QuyenLoi} --\texttt{applies\_to}$\rightarrow$ \texttt{DieuKien}.
     
-    \item \textbf{Procedure chain:} Hành động $\rightarrow$ Quy trình $\rightarrow$ Cơ quan. Quan hệ: --\texttt{applies\_to}$\rightarrow$ --\texttt{enforced\_by}$\rightarrow$.
+    \item Procedure chain: Hành động $\rightarrow$ Quy trình $\rightarrow$ Cơ quan. Quan hệ: --\texttt{applies\_to}$\rightarrow$ --\texttt{enforced\_by}$\rightarrow$.
 \end{itemize}
-
-Thuật toán: DFS trên graph; độ sâu tối đa 4 hop để tránh explosion. Output: \texttt{ReasoningChain} gồm chuỗi \texttt{steps[]}, danh sách \texttt{cited\_articles[]}, câu trả lời \texttt{final\_answer}.
 
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.2.3}
 
 Bài toán multi-hop reasoning trong QA đã được nghiên cứu theo nhiều hướng khác nhau, và mỗi hướng có đặc thù phù hợp với loại corpus và loại quan hệ cần suy luận.
 
-\textbf{Iterative retrieval (multi-step RAG):} Các phương pháp như IRCoT~\cite{trivedi2022ircot} hay ReAct xen kẽ retrieval và reasoning: sau mỗi bước retrieve, LLM quyết định bước tiếp theo cần tìm gì. Ưu điểm là linh hoạt; nhược điểm là latency cộng dồn và lỗi từ bước trước lan truyền sang bước sau. Trong domain pháp luật, nơi cấu trúc suy luận (violation → penalizes → mức phạt) có thể định nghĩa trước, phương pháp duyệt graph theo chain template tránh được vấn đề này.
+Iterative retrieval (multi-step RAG): Các phương pháp như IRCoT~\cite{trivedi2022ircot} hay ReAct xen kẽ retrieval và reasoning: sau mỗi bước retrieve, LLM quyết định bước tiếp theo cần tìm gì. Ưu điểm là linh hoạt; nhược điểm là latency cộng dồn và lỗi từ bước trước lan truyền sang bước sau. Trong domain pháp luật, nơi cấu trúc suy luận (violation → penalizes → mức phạt) có thể định nghĩa trước, phương pháp duyệt graph theo chain template tránh được vấn đề này.
 
-\textbf{Temporal GraphRAG:} Hướng nghiên cứu này xây dựng đồ thị sự kiện theo trục thời gian (``sự kiện A xảy ra trước B, gây ra C''), phù hợp với corpus tin tức hay lịch sử. Với pháp luật, quan hệ không phải là chuỗi sự kiện thời gian mà là chuỗi logic quy phạm (``hành vi A vi phạm quy định B, do đó chịu chế tài C'') --- một quan hệ có tính \emph{normatif}, không phải \emph{factual}. Đây là lý do Temporal GraphRAG không phù hợp trực tiếp cho đồ án.
+Temporal GraphRAG: Hướng nghiên cứu này xây dựng đồ thị sự kiện theo trục thời gian (``sự kiện A xảy ra trước B, gây ra C''), phù hợp với corpus tin tức hay lịch sử. Với pháp luật, quan hệ không phải là chuỗi sự kiện thời gian mà là chuỗi logic quy phạm (``hành vi A vi phạm quy định B, do đó chịu chế tài C'') --- một quan hệ có tính \emph{normatif}, không phải \emph{factual}. Đây là lý do Temporal GraphRAG không phù hợp trực tiếp cho đồ án.
 
-\textbf{Giải pháp của đồ án --- VNLegalReasoningEngine:} Duyệt trực tiếp trên merged graph theo chain templates được định nghĩa từ ontology pháp luật (violation, entitlement, procedure). Ưu điểm chính so với iterative retrieval: (a) latency ổn định ($\approx$200--500ms cho graph traversal, không phụ thuộc số hop); (b) path suy luận minh bạch, có thể trace toàn bộ chuỗi Điều--quan hệ--Điều; (c) lỗi LLM chỉ ảnh hưởng Lớp 2 (semantic entities) mà không làm sai cấu trúc pháp lý Lớp 1. Hạn chế: engine phụ thuộc vào chất lượng extraction entity L2 --- nếu một entity ``trả lương'' bị extract sai loại, chain violation có thể không kích hoạt.
+Giải pháp VNLegalReasoningEngine: Duyệt trực tiếp trên merged graph theo chain templates được định nghĩa từ ontology pháp luật (violation, entitlement, procedure). Ưu điểm chính so với iterative retrieval: (a) latency ổn định ($\approx$200--500ms cho graph traversal, không phụ thuộc số hop); (b) path suy luận minh bạch, có thể trace toàn bộ chuỗi Điều--quan hệ--Điều; (c) lỗi LLM chỉ ảnh hưởng Lớp 2 (semantic entities) mà không làm sai cấu trúc pháp lý Lớp 1. Hạn chế: engine phụ thuộc vào chất lượng extraction entity L2 --- nếu một entity ``trả lương'' bị extract sai loại, chain violation có thể không kích hoạt.
 
-\subsection{Minh chứng thực nghiệm}
-\label{subsection:5.2.4}
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item Local Search: 33\% keyword accuracy trên multi-hop. Local + Multi-hop: \textbf{100\%}.
-    
-    \item Case LD012: Trace violation từ ``lương dưới tối thiểu'' $\rightarrow$ NĐ 12/2022 --- chain\_hit đúng.
-    
-    \item Latency: $\approx$ 3.5s P50 tổng (Local ~3s + engine ~200--500ms). Chấp nhận được cho chat.
-    
-    \item Độ dài chain: 3--4 hop trung bình; thường kết thúc tại Điều cấu trúc (L1) hoặc chế tài (L2).
-\end{itemize}
-
-\section{Rule Validator VR001--VR016 cho phân tích HĐLĐ deterministic + hybrid}
+\section{Rule validator cho phân tích HĐLĐ}
 \label{section:5.3}
 
-\subsection{Vấn đề: Phân tích HĐLĐ LLM-only không tin cậy}
+\subsection{Vấn đề phân tích HĐLĐ với LLM-only không tin cậy}
 \label{subsection:5.3.1}
 
-Phân tích hợp đồng lao động yêu cầu: (1) \textbf{Nhanh} (50--150 khoản); (2) \textbf{Chính xác} (không miss vi phạm); (3) \textbf{Giải thích được} (trích dẫn căn cứ).
+Phân tích hợp đồng lao động yêu cầu: (1) Nhanh (50--150 khoản); (2) Chính xác (không miss vi phạm); (3) Giải thích được (trích dẫn căn cứ).
 
 LLM-only có hạn chế: chậm (1--2s/khoản), hallucination (trích sai Điều), chi phí token cao.
 
-Quan sát khóa: Domain luật lao động VN có \textbf{nhiều ngưỡng số học rõ ràng} --- 12 ngày phép/năm, 60 ngày thử việc, 48 giờ/tuần, lương tối thiểu vùng I--IV. Các ngưỡng này phù hợp kiểm tra bằng \textbf{rule deterministic}, không cần LLM.
+Quan sát khóa: Domain luật lao động VN có nhiều ngưỡng số học rõ ràng, chẳng hạn như 12 ngày phép/năm, 60 ngày thử việc, 48 giờ/tuần, lương tối thiểu vùng I--IV. Các ngưỡng này phù hợp kiểm tra bằng rule deterministic, không cần LLM.
 
-\subsection{Giải pháp: Kiến trúc hybrid ba lớp}
+\subsection{Giải pháp kiến trúc hybrid ba lớp}
 \label{subsection:5.3.2}
 
 Thiết kế layer stack:
 
-\textbf{Lớp 1 --- Rule-based} ($<$ 5ms/khoản): 16 quy tắc VR001--VR016 với ngưỡng cụ thể, regex pattern, kèm căn cứ pháp lý. Ví dụ:
+Lớp 1 --- Rule-based: 16 quy tắc VR001--VR016 với ngưỡng cụ thể, regex pattern, kèm căn cứ pháp lý. Ví dụ:
 \begin{itemize}[nosep, leftmargin=*]
     \item VR001: Lương monthly $<$ \texttt{REGIONAL\_MINIMUM\_WAGE[region]} → VIOLATION (Điều 90, NĐ 74/2024).
     \item VR008: Nghỉ phép năm $<$ 12 ngày → VIOLATION (Điều 113).
 \end{itemize}
 
-\textbf{Lớp 2 --- Graph grounding} (200--500ms/khoản phức tạp): Chỉ khoản category phức tạp hoặc UNKNOWN mới map qua \texttt{VNLegalReasoningEngine} → \texttt{MappedLawSnippet}. Cung cấp context pháp lý cho LLM mà không thay thế rule.
+Lớp 2 --- Graph grounding: Chỉ khoản category phức tạp hoặc UNKNOWN mới map qua \texttt{VNLegalReasoningEngine} → \texttt{MappedLawSnippet}. Cung cấp context pháp lý cho LLM mà không thay thế rule.
 
-\textbf{Lớp 3 --- LLM bổ sung} (batch processing): Phân tích rủi ro ngữ nghĩa (ví dụ: lương thêm, phụ cấp, điều kiện riêng) trên khoản chưa có VIOLATION rõ từ VR001--VR007. Skip LLM nếu rule đã báo rõ → tiết kiệm 80--90\% token.
+Lớp 3 --- LLM bổ sung: Phân tích rủi ro ngữ nghĩa (ví dụ: lương thêm, phụ cấp, điều kiện riêng) trên khoản chưa có VIOLATION rõ từ VR001--VR007. Skip LLM nếu rule đã báo rõ → tiết kiệm 80--90\% token.
 
 \subsection{So sánh với công trình liên quan}
 \label{subsection:5.3.3}
 
 Bài toán phân tích hợp đồng tự động đã được tiếp cận theo nhiều cách, mỗi cách có điểm mạnh và điểm yếu rõ ràng trong bối cảnh pháp luật lao động Việt Nam.
 
-\textbf{LLM-only:} Các nghiên cứu sử dụng GPT-4 hay Claude để phân tích toàn bộ hợp đồng~\cite{hendrycks2021cuad,manor2019clause} cho thấy khả năng phát hiện rủi ro ngữ nghĩa tốt (điều khoản mơ hồ, thiên vị một chiều), nhưng có hai vấn đề căn bản: (1) với hợp đồng dài, chi phí token cao và latency lớn; (2) với các vi phạm có ngưỡng số rõ ràng (lương $<$ tối thiểu, thử việc $>$ 60 ngày), LLM vẫn có xác suất sai do hallucination~\cite{ji2023hallucination}, trong khi rule xác định cho kết quả 100\% chính xác.
+LLM-only: Các nghiên cứu sử dụng GPT-4 hay Claude để phân tích toàn bộ hợp đồng~\cite{hendrycks2021cuad,manor2019clause} cho thấy khả năng phát hiện rủi ro ngữ nghĩa tốt (điều khoản mơ hồ, thiên vị một chiều), nhưng có hai vấn đề căn bản: (1) với hợp đồng dài, chi phí token cao và latency lớn; (2) với các vi phạm có ngưỡng số rõ ràng (lương $<$ tối thiểu, thử việc $>$ 60 ngày), LLM vẫn có xác suất sai do hallucination~\cite{ji2023hallucination}, trong khi rule xác định cho kết quả 100\% chính xác.
 
-\textbf{Rule-only:} Hệ thống kiểm tra hợp đồng dựa hoàn toàn trên rule là nhanh và deterministic, nhưng bị giới hạn bởi bộ rule đã định nghĩa trước. Các điều khoản diễn đạt không chuẩn, ngôn ngữ mơ hồ hay rủi ro tiềm ẩn (``lương tháng 13 theo quyết định của công ty'' --- điều khoản tùy tiện có thể bất lợi NLĐ) không thể phát hiện bằng regex hay ngưỡng số.
+Rule-only: Hệ thống kiểm tra hợp đồng dựa hoàn toàn trên rule là nhanh và deterministic, nhưng bị giới hạn bởi bộ rule đã định nghĩa trước. Các điều khoản diễn đạt không chuẩn, ngôn ngữ mơ hồ hay rủi ro tiềm ẩn (``lương tháng 13 theo quyết định của công ty'' --- điều khoản tùy tiện có thể bất lợi NLĐ) không thể phát hiện bằng regex hay ngưỡng số.
 
-\textbf{Giải pháp hybrid của đồ án:} Kiến trúc ba tầng (rule → graph grounding → LLM bổ sung) khai thác ưu điểm của cả hai hướng. Quan trọng hơn, \textbf{tầng graph grounding là yếu tố phân biệt} so với hybrid đơn giản: khi LLM được gọi để phân tích khoản phức tạp, nó nhận được context từ merged graph (các Điều liên quan, quan hệ logic) thay vì chỉ nội dung khoản hợp đồng thuần túy. Điều này giảm đáng kể khả năng LLM hallucinate về căn cứ pháp lý và tăng chất lượng giải thích trong báo cáo tuân thủ.
-
-\subsection{Minh chứng thực nghiệm}
-\label{subsection:5.3.4}
-
-Case study HĐLĐ mẫu (7 khoản):
-\begin{itemize}[nosep, leftmargin=*]
-    \item VR008: Phát hiện đúng --- nghỉ phép 6 ngày/năm $<$ 12 → VIOLATION (Điều 113).
-    \item VR015: Phát hiện --- thiếu địa điểm → MEDIUM\_RISK (Điều 21).
-    \item L001 (LLM): Làm rõ rủi ro lương/phụ cấp → HIGH\_RISK.
-    \item Điểm tuân thủ: 74/100; thời gian xử lý $\approx$ 25--40s (DOCX, 7 khoản) --- chấp nhận được.
-    \item Trace giải thích: Mỗi issue ghi \texttt{rule\_id} (VR008) + căn cứ (Điều 113) → tin cậy.
-\end{itemize}
-
-VR validator là đóng góp \textbf{domain-specific}, chưa có trong GraphRAG gốc, kết hợp hybrid mà không thay thế rule.
+Giải pháp hybrid: Kiến trúc ba tầng (rule → graph grounding → LLM bổ sung) khai thác ưu điểm của cả hai hướng. Quan trọng hơn, tầng graph grounding là yếu tố phân biệt so với hybrid đơn giản: khi LLM được gọi để phân tích khoản phức tạp, nó nhận được context từ merged graph (các Điều liên quan, quan hệ logic) thay vì chỉ nội dung khoản hợp đồng thuần túy. Điều này giảm đáng kể khả năng LLM hallucinate về căn cứ pháp lý và tăng chất lượng giải thích trong báo cáo tuân thủ.
 
 \section{Temporal Validity Filter lọc trích dẫn lỗi thời}
 \label{section:5.4}
 
-\subsection{Vấn đề: Luật thay đổi liên tục}
+\subsection{Vấn đề Luật thay đổi liên tục}
 \label{subsection:5.4.1}
 
-Pháp luật lao động VN thay đổi liên tục (lương vùng, chế tài, v.v.). Trích dẫn \textbf{văn bản hết hiệu lực} là sai pháp lý nghiêm trọng (ví dụ: NĐ 90/2019 → thay bằng NĐ 74/2024).
+Pháp luật lao động VN thay đổi liên tục (lương vùng, chế tài, v.v.). Trích dẫn văn bản hết hiệu lực là sai pháp lý nghiêm trọng (ví dụ: NĐ 90/2019 → thay bằng NĐ 74/2024). GraphRAG gốc và RAG truyền thống không có cơ chế lọc theo hiệu lực pháp lý tạm thời (temporal validity của văn bản, không phải timeline sự kiện).
 
-GraphRAG gốc và RAG truyền thống không có cơ chế lọc theo \textbf{hiệu lực pháp lý tạm thời} (temporal validity của văn bản, không phải timeline sự kiện).
-
-\subsection{Giải pháp: Temporal filter từ metadata}
+\subsection{Giải pháp Temporal filter từ metadata}
 \label{subsection:5.4.2}
 
-Module \texttt{query/temporal\_filter.py}:
+Module \texttt{query/temporal\_filter.py} xử lý các logic:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item Load \texttt{metadata.json}: mỗi văn bản có \texttt{tinh\_trang} (\texttt{con\_hieu\_luc}/\texttt{het\_hieu\_luc}), \texttt{ngay\_hieu\_luc}, \texttt{huong\_dan\_boi} (văn bản hướng dẫn).
+    \item Load \texttt{metadata.json}: mỗi văn bản có \texttt{tinh\_trang} (\texttt{con\_hieu\_luc} / \texttt{het\_hieu\_luc}), \texttt{ngay\_hieu\_luc}, \texttt{huong\_dan\_boi} (văn bản hướng dẫn).
     
     \item Sau retrieve, lọc \texttt{article\_citations} theo \texttt{is\_effective(van\_ban\_id, as\_of=today)}.
     
     \item Sinh \texttt{temporal\_warnings} nếu trích dẫn hết hiệu lực → thông báo người dùng.
 \end{itemize}
 
-Khác biệt vs. Temporal GraphRAG: Filter này xử lý \textbf{hiệu lực pháp lý văn bản} (metadata tĩnh), không phải timeline sự kiện bên ngoài.
+Khác biệt với Temporal GraphRAG: Filter này xử lý hiệu lực pháp lý văn bản (metadata tĩnh), không phải timeline sự kiện bên ngoài.
 
 \subsection{So sánh}
 \label{subsection:5.4.3}
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Temporal GraphRAG:} Suy luận theo thời gian sự kiện tin tức (``sự kiện X xảy ra trước Y'').
+    \item Temporal GraphRAG: Suy luận theo thời gian sự kiện tin tức (``sự kiện X xảy ra trước Y'').
     
-    \item \textbf{Giải pháp của đồ án:} Cảnh báo hiệu lực văn bản pháp lý --- tập trung vào bối cảnh pháp lý VN, nơi văn bản thường được thay thế (lương vùng hằng năm, chế tài cập nhật).
+    \item Giải pháp: Cảnh báo hiệu lực văn bản pháp lý, tập trung vào bối cảnh pháp lý VN, nơi văn bản thường được thay thế (lương vùng hằng năm, chế tài cập nhật).
 \end{itemize}
 
-\subsection{Minh chứng}
-\label{subsection:5.4.4}
 
-Thí nghiệm E5 (TMP001--TMP002):
-\begin{itemize}[nosep, leftmargin=*]
-    \item Với filter: Trả NĐ 74/2024 (hiện tại); cảnh báo NĐ 90/2019 hết hiệu lực.
-    
-    \item Không filter: Vẫn có thể nhắc NĐ 90/2019 nếu còn text units.
-    
-    \item Nhóm \texttt{temporal}: Local + filter → \textbf{100\%} keyword accuracy.
-\end{itemize}
-
-\section{Kiến trúc hybrid hỏi đáp pháp luật: tích hợp end-to-end}
+\section{Kiến trúc hybrid hỏi đáp pháp luật tích hợp end-to-end}
 \label{section:5.5}
 
-\subsection{Giá trị: Framework tái sử dụng cho Legal RAG}
+\subsection{Framework tái sử dụng cho Legal RAG}
 \label{subsection:5.5.1}
 
-Đóng góp thứ sáu là \textbf{kiến trúc end-to-end} tích hợp các thành phần trên thành hai luồng ứng dụng thực tiễn:
+Đóng góp thứ sáu là kiến trúc end-to-end tích hợp các thành phần trên thành hai luồng ứng dụng thực tiễn:
 
-\textbf{Luồng Chat hỏi đáp pháp luật:}
+Luồng Chat hỏi đáp pháp luật:
 \[
 \text{Query} \xrightarrow{\text{Mode}} \text{Retrieve} \xrightarrow{\text{[+Multi-hop]}} \text{[+Temporal filter]} \xrightarrow{\text{LLM}} \text{Response + Citations + Warnings}
 \]
 
-\textbf{Luồng Phân tích HĐLĐ:}
+Luồng Phân tích HĐLĐ:
 \[
 \text{Upload} \xrightarrow{\text{Segment}} \text{VR rules} \xrightarrow{\text{[+Graph]}} \text{[+LLM]} \xrightarrow{\text{Report}} \text{Tuân thủ \%}
 \]
 
-Nguyên tắc \textbf{triple-check}: (1) Retrieval grounding (corpus đã index); (2) Temporal check (hiệu lực); (3) Rule check (HĐLĐ, deterministic trước LLM).
-
-Mọi output có \textbf{trace giải thích}: \texttt{article\_citations}, \texttt{reasoning\_chain}, \texttt{rule\_id} → tin cậy.
+Mọi output đều có trace giải thích → đảm bảo độ tin cậy.
 
 \subsection{So sánh với GraphRAG gốc}
 \label{subsection:5.5.2}
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{GraphRAG gốc:} Local Search, Global Search (community map-reduce) --- tốt cho tin tức.
+    \item GraphRAG gốc: Local Search, Global Search (community map-reduce) --- tốt cho tin tức.
     
-    \item \textbf{Đồ án:} Local + Global + Multi-hop + Temporal filter + Rule validator + Contract analyzer --- tối ưu hóa cho pháp luật.
-    
-    \item \textbf{Routing logic:} Chọn mode theo loại câu hỏi (tra cứu → Local; tổng quan → Global; suy luận → Multi-hop; lỗi thời → Temporal).
-\end{itemize}
-
-\subsection{Minh chứng tổng hợp}
-\label{subsection:5.5.3}
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item Domain \texttt{lao\_dong} (n=10): Local 90\%, Local + Multi-hop 100\% keyword accuracy.
-    
-    \item Single-hop: 100\% với ontology L1 + chunking theo Điều.
-    
-    \item Multi-hop: 33% → 100% nhờ engine.
-    
-    \item HĐLĐ case: VR008 phát hiện, Điều 113 → tin cậy.
-    
-    \item Pipeline end-to-end: indexing → query → API → UI --- demo hoạt động.
+    \item Giải pháp đóng góp: Local + Global + Multi-hop + Temporal filter + Rule validator + Contract analyzer tối ưu hóa cho pháp luật.
 \end{itemize}
 
 \section{Tổng kết các đóng góp}
@@ -275,20 +199,20 @@ Mọi output có \textbf{trace giải thích}: \texttt{article\_citations}, \tex
 
 Chương này đã phân tích sáu đóng góp chính:
 
-\begin{enumerate}[nosep, leftmargin=*]
-    \item \textbf{Ontology hai lớp + canonicalization} --- giải quyết mất cấu trúc pháp lý, nền tảng citation accuracy cao, reusable.
+\begin{itemize}[nosep, leftmargin=*]
+    \item \textbf{Ontology hai lớp + canonicalization} giải quyết mất cấu trúc pháp lý, nền tảng citation accuracy cao, reusable.
     
-    \item \textbf{Multi-hop reasoning engine} --- suy luận chéo quy phạm, cải thiện 67 điểm phần trăm trên nhóm multi-hop.
+    \item \textbf{Multi-hop reasoning engine} suy luận chéo quy phạm, cải thiện multi-hop.
     
-    \item \textbf{Rule validator VR001--VR016} --- kiểm tra HĐLĐ nhanh, deterministic, hybrid (rule + graph + LLM).
+    \item \textbf{Rule validator VR001--VR016} kiểm tra HĐLĐ nhanh, deterministic, hybrid (rule + graph + LLM).
     
-    \item \textbf{Temporal validity filter} --- lọc văn bản hết hiệu lực, cảnh báo người dùng, phù hợp bối cảnh pháp lý VN.
+    \item \textbf{Temporal validity filter} lọc văn bản hết hiệu lực, phù hợp bối cảnh pháp lý Việt Nam.
     
-    \item \textbf{Kiến trúc hybrid tích hợp} --- end-to-end routing, triple-check tin cậy, FastAPI + Next.js.
+    \item \textbf{Kiến trúc hybrid tích hợp} end-to-end routing, triple-check tin cậy, FastAPI + Next.js.
     
-    \item \textbf{Framework tái sử dụng} --- pattern L1 + L2 + mở rộng sang luật dân sự, hình sự.
-\end{enumerate}
+    \item \textbf{Framework tái sử dụng} pattern L1 + L2, có khả năng mở rộng sang luật dân sự, hình sự.
+\end{itemize}
 
-Các đóng góp giải quyết các vấn đề cụ thể trong lĩnh vực pháp luật (trích dẫn chính xác, suy luận logic, hiệu lực tạm thời) mà GraphRAG gốc và RAG truyền thống không xử lý được. Framework được thiết kế để tái sử dụng trong các domain pháp lý khác bằng cách thay đổi parser, entity types, và rule validator mà không cần thiết kế lại toàn bộ kiến trúc. Chương~\ref{chapter:conclusion} tổng kết hạn chế và hướng phát triển.
+Các đóng góp giải quyết các vấn đề cụ thể trong lĩnh vực pháp luật (trích dẫn chính xác, suy luận logic, hiệu lực tạm thời) mà GraphRAG gốc và RAG truyền thống không xử lý được. Framework được thiết kế để tái sử dụng trong các domain pháp lý khác bằng cách thay đổi parser, entity types, và rule validator mà không cần thiết kế lại toàn bộ kiến trúc.
 
 \end{document}
