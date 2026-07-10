@@ -1,0 +1,12 @@
+% ── Số liệu thực nghiệm (200 câu hỏi) ──
+% Dán vào các ô số liệu trong bảng của 4_Ket_qua_thuc_nghiem.tex
+
+% Local+Multihop
+\newcommand{\kwaccLocalPlusMultihop}{90.0%\space (18/20)}
+\newcommand{\citeaccLocalPlusMultihop}{15.0%\space (3/20)}
+\newcommand{\latP50LocalPlusMultihop}{0}
+\newcommand{\latP95LocalPlusMultihop}{0}
+
+% ── Category breakdown ──
+
+\newcommand{\kwaccLocalPlusMultihopmulti_hop}{18/20=90%}

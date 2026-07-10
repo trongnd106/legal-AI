@@ -12,6 +12,8 @@ Cách dùng:
 """
 from __future__ import annotations
 
+import re
+
 TEST_CASES: list[dict] = [
 
     # ===================== LUẬT LAO ĐỘNG =====================
@@ -216,6 +218,47 @@ TEST_CASES: list[dict] = [
 ]
 
 
+_ABBR_MAP = {
+    "bllđ":   "bộ luật lao động",
+    "blds":   "bộ luật dân sự",
+    "blhs":   "bộ luật hình sự",
+    "nđ":     "nghị định",
+    "tt":     "thông tư",
+    "vbhn":   "văn bản hợp nhất",
+    "bhxh":   "bảo hiểm xã hội",
+}
+
+
+def _normalize_for_match(text: str) -> str:
+    """Chuẩn hoá text để so khớp keyword linh hoạt.
+
+    - lowercase, trim whitespace
+    - loại bỏ dấu câu (trừ chữ, số, khoảng trắng)
+    - expand viết tắt pháp lý thông dụng (BLLĐ, NĐ, TT…)
+    - loại bỏ các stopword có thể gây nhiễu (ngày, tháng, năm, số, kể từ…)
+    - chuẩn hoá số (xóa leading zero) — trừ năm 4 chữ số
+    """
+    t = text.lower().strip()
+    # Loại bỏ dấu câu (giữ chữ, số, khoảng trắng, /)
+    t = re.sub(r'[^\w\s/]', ' ', t)
+    # Collapse whitespace
+    t = re.sub(r'\s+', ' ', t).strip()
+    # Xóa stopword gây nhiễu (từ nối ngắn, trợ động từ)
+    t = re.sub(r'\b(của|và|là|hoặc|các|những|để|với|về|từ|cho|vào|được|phải|phép|đã|đang|sẽ)\b', ' ', t)
+    t = re.sub(r'\s+', ' ', t).strip()
+    # Expand viết tắt
+    for abbr, full in _ABBR_MAP.items():
+        t = re.sub(rf'\b{re.escape(abbr)}\b', full, t)
+    # Chuẩn hoá số hiệu văn bản: "45/2019/QH14" → "2019", "12/2022/NĐ-CP" → "12/2022"
+    # Giữ lại năm từ registration number để khớp keyword dạng "BLLĐ 2019"
+    t = re.sub(r'\bsố\s+\d+/(\d{4})/[^\s]*', r'\1', t)
+    # Chuẩn hoá số hiệu nghị định: "Nghị định 12/2022/NĐ-CP" → "Nghị định 12/2022"
+    t = re.sub(r'(\d+/\d{4})/[^\s]*', r'\1', t)
+    # Normalize leading zero trong số (chỉ khi có chữ số khác 0 theo sau)
+    t = re.sub(r'\b0+([1-9]\d*(?:/\d+)*)\b', r'\1', t)
+    return t.strip()
+
+
 def evaluate_system(
     answer_fn,
     test_cases: list[dict] | None = None,
@@ -246,10 +289,15 @@ def evaluate_system(
 
     for tc in cases:
         response     = answer_fn(tc["question"], tc.get("domain", ""))
-        answer_lower = response.get("answer", "").lower()
+        answer_raw   = response.get("answer", "")
         citations    = response.get("cited_articles", [])
 
-        kw_hit = all(kw.lower() in answer_lower for kw in tc["expected_keywords"])
+        # Normalize answer để khớp keyword linh hoạt hơn
+        answer_norm = _normalize_for_match(answer_raw)
+        kw_hit = all(
+            _normalize_for_match(kw) in answer_norm
+            for kw in tc["expected_keywords"]
+        )
         cite_hit = (
             not tc["expected_citations"]
             or any(

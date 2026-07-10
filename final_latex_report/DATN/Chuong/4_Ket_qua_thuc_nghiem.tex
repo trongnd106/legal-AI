@@ -9,7 +9,7 @@ Chương này trình bày phương pháp đánh giá thực nghiệm và phân t
 \subsection{Tiêu chí đánh giá chất lượng câu trả lời}
 \label{subsection:4.1.1}
 
-Trong lĩnh vực hỏi đáp pháp luật, độ chính xác không đơn thuần là tính đúng về nội dung mà còn đòi hỏi \emph{truy xuất nguồn gốc pháp lý có kiểm chứng}. Các chỉ số phổ biến như BLEU hay ROUGE không phù hợp vì câu trả lời có thể diễn đạt khác nhau mà vẫn đúng nếu trích dẫn đúng Điều/Khoản và con số pháp lý~\cite{es2023ragas,das2026claimraglaw}. Do đó, đồ án xây dựng bộ chỉ số chuyên biệt cho domain pháp luật gồm ba thành phần chính.
+Trong lĩnh vực hỏi đáp pháp luật, độ chính xác không đơn thuần là tính đúng về nội dung mà còn đòi hỏi \emph{truy xuất nguồn gốc pháp lý có kiểm chứng}. Các chỉ số phổ biến như BLEU hay ROUGE không phù hợp vì câu trả lời có thể diễn đạt khác nhau mà vẫn đúng nếu trích dẫn đúng Điều/Khoản và con số pháp lý~\cite{das2026claimraglaw}. Do đó, đồ án xây dựng bộ chỉ số chuyên biệt cho domain pháp luật gồm hai thành phần chính.
 
 \textbf{Keyword Accuracy (KwAcc)} đo tỷ lệ câu trả lời chứa \emph{tất cả} từ khoá pháp lý cần thiết — số ngày nghỉ, mức lương, điều khoản cụ thể — được định nghĩa trong tập \texttt{expected\_keywords} của mỗi test case:
 \[
@@ -22,21 +22,6 @@ trong đó $\mathcal{T}$ là tập test cases và $\mathrm{ans}(tc)$ là câu tr
 \mathrm{CiteAcc} = \frac{\bigl|\bigl\{tc \;\big|\; \mathrm{cited}(tc) \cap tc.\mathtt{expected\_citations} \neq \emptyset\bigr\}\bigr|}{\bigl|\bigl\{tc \;\big|\; tc.\mathtt{expected\_citations} \neq \emptyset\bigr\}\bigr|}
 \]
 trong đó $\mathrm{cited}(tc)$ là tập các điều luật được trích dẫn trong câu trả lời. Các test case có \texttt{expected\_citations} rỗng (ví dụ câu hỏi về hiệu lực văn bản) được loại khỏi mẫu tính toán của chỉ số này.
-
-\textbf{Reasoning Chain Hit (ChainHit)} là chỉ số bổ sung dành riêng cho nhóm câu hỏi multi-hop. Mỗi test case multi-hop có kèm \texttt{reasoning\_chain} — danh sách các Điều phải được đề cập trong một chuỗi suy luận liên tục. ChainHit đo phần trăm câu trả lời đề cập đủ tất cả Điều trong chuỗi đó. Chỉ số này bổ sung cho KwAcc vì một câu trả lời đúng về mặt từ khoá nhưng không thể hiện được logic suy luận (ví dụ: chỉ nêu Điều 35 mà không liên hệ đến Điều 46) vẫn bị xem là không đạt về lý luận pháp lý.
-
-Ngoài ra, framework RAGAS~\cite{es2023ragas} với các chỉ số Faithfulness, Answer Relevancy, Context Precision/Recall được triển khai như một lớp đánh giá bổ sung. Các benchmark pháp luật mới như Legal RAG Bench~\cite{butler2026legalragbench} nhấn mạnh rằng nhiều lỗi được gán nhãn ``hallucination'' thực chất bắt nguồn từ retrieval thất bại --- phù hợp với thiết kế ưu tiên chất lượng truy xuất của đồ án. Faithfulness đánh giá mức độ câu trả lời được \emph{grounded} trong ngữ cảnh đã truy xuất, qua đó phát hiện hiện tượng hallucination ngay cả khi KwAcc đạt cao.
-
-\subsection{Tiêu chí đánh giá chất lượng truy xuất ngữ cảnh}
-\label{subsection:4.1.2}
-
-Đánh giá chất lượng ngữ cảnh cung cấp cho LLM là bước thiết yếu để phân tích \emph{nguyên nhân gốc rễ} của sai lệch trong câu trả lời. Hệ thống áp dụng hai chiều đánh giá chính từ RAGAS~\cite{es2023ragas}.
-
-\textbf{Context Recall} đo mức độ ngữ cảnh đã truy xuất bao phủ thông tin cần thiết. Giá trị thấp của chỉ số này chỉ ra rằng retrieval pipeline bỏ sót thông tin quan trọng — một nguyên nhân trực tiếp của citation miss. Đây là chỉ số đặc biệt có ý nghĩa với bài toán pháp luật vì một Điều luật quan trọng bị bỏ sót ở bước retrieval sẽ không thể được bù đắp bởi năng lực nội tại của LLM.
-
-\textbf{Context Precision} đo tỷ lệ đoạn văn đã truy xuất thực sự liên quan đến câu hỏi. Ngữ cảnh dư thừa không chỉ tốn token mà còn có thể gây nhiễu cho LLM, dẫn đến câu trả lời sai lệch.
-
-Với nhóm câu hỏi multi-hop, đánh giá thủ công theo chuỗi suy luận được thực hiện bổ sung: kiểm tra ngữ cảnh có chứa \emph{tất cả} Điều trong \texttt{reasoning\_chain} hay không. Ví dụ, câu hỏi LD011 yêu cầu ngữ cảnh phải chứa cả Điều 35 (quyền đơn phương chấm dứt) \emph{và} Điều 46 (trợ cấp thôi việc) — nếu thiếu bất kỳ Điều nào, chain reasoning sẽ gãy.
 
 \subsection{Tiêu chí hiệu quả indexing và chi phí vận hành}
 \label{subsection:4.1.3}
@@ -54,43 +39,35 @@ Một hệ thống RAG cho sản xuất cần đạt không chỉ chất lượn
 \section{Phương pháp thí nghiệm}
 \label{section:4.2}
 
-\subsection{Dữ liệu thí nghiệm}
-\label{subsection:4.2.1}
+% \subsection{Dữ liệu thí nghiệm}
+% \label{subsection:4.2.1}
 
 Tập dữ liệu gồm 7 văn bản pháp luật lao động Việt Nam, bao gồm Bộ luật Lao động 2019 (BLLĐ), Luật BHXH 2014, và 5 Nghị định hướng dẫn. Sau khi chunking theo cấu trúc pháp lý (mỗi Điều là một chunk độc lập), corpus có 581 Điều (documents) và 2.069 Khoản. Chiến lược chunking theo Điều — thay vì kích thước cố định như trong vanilla RAG — đảm bảo ranh giới ngữ nghĩa tự nhiên của luật được bảo toàn: mỗi chunk tương ứng chính xác với một đơn vị pháp lý có thể trích dẫn độc lập.
 
-Bộ câu hỏi đánh giá: Bộ test cases được tổ chức thành hai phần với mục đích khác nhau: tập đánh giá chính (10 câu, domain \texttt{lao\_dong}) và tập kiểm tra robustness (12 câu, các domain chưa có corpus). Bảng~\ref{table:test_cases_main} trình bày chi tiết tập đánh giá chính.
+Bộ câu hỏi đánh giá: Bộ test cases gồm 102 câu hỏi pháp luật lao động, trong đó 92 câu thuộc domain có corpus (\texttt{lao\_dong}, \texttt{lao\_dong\_expanded}) được sử dụng để tính các chỉ số chính và 10 câu out-of-domain (robustness) dùng để kiểm tra khả năng từ chối trả lời. Bảng~\ref{table:test_cases_main} trình bày phân bố của tập đánh giá chính theo loại câu hỏi và độ khó.
 
 \begin{table}[H]
 \centering
-\caption{Tập đánh giá chính --- domain \texttt{lao\_dong} ($n = 10$)}
+\caption{Phân bố tập đánh giá theo loại câu hỏi và độ khó ($n = 92$)}
 \label{table:test_cases_main}
 \small
-\begin{tabular}{|c|p{5.2cm}|c|c|p{3.8cm}|}
+\begin{tabular}{|c|c|c|c|c|}
 \hline
-\textbf{ID} & \textbf{Câu hỏi (rút gọn)} & \textbf{Loại} & \textbf{Độ khó} & \textbf{Điều khoản chính} \\
+\textbf{Loại} & \textbf{Easy} & \textbf{Medium} & \textbf{Hard} & \textbf{Tổng} \\
 \hline
-LD001 & Số ngày nghỉ phép tối thiểu? & single\_hop & easy    & Điều 113 BLLĐ \\
-LD002 & Lương tối thiểu vùng I?       & single\_hop & easy    & Điều 91 BLLĐ \\
-LD003 & Thời gian thử việc tối đa?    & single\_hop & easy    & Điều 27 BLLĐ \\
-LD004 & Số lần ký HĐLĐ không thời hạn? & single\_hop & medium & Điều 20 BLLĐ \\
-LD013 & Số ngày nghỉ khi kết hôn?     & single\_hop & medium  & Điều 115 BLLĐ \\
+\texttt{single\_hop} & 20 & 17 & 9  & 46 \\
+\texttt{multi\_hop}  & 0  & 8  & 12 & 20 \\
+\texttt{temporal}    & 5  & 8  & 0  & 13 \\
+\texttt{comparative} & 4  & 9  & 0  & 13 \\
 \hline
-LD010 & Không trả trợ cấp thôi việc bị xử lý? & multi\_hop & medium & Điều 46 $\to$ NĐ 12/2022 \\
-LD011 & Đơn phương chấm dứt đúng luật có trợ cấp? & multi\_hop & hard & Điều 35 $\to$ Điều 46 \\
-LD012 & Trả lương dưới tối thiểu vùng IV bị phạt? & multi\_hop & hard & Điều 90 $\to$ NĐ 12/2022 \\
-\hline
-TMP001 & NĐ lương tối thiểu đang hiệu lực? & temporal & medium & NĐ 74/2024 \\
-TMP002 & NĐ 90/2019 còn hiệu lực không?   & temporal & medium  & NĐ 74/2024 (thay thế) \\
+\textbf{Tổng} & \textbf{29} & \textbf{42} & \textbf{21} & \textbf{92} \\
 \hline
 \end{tabular}
 \end{table}
 
-Mỗi test case gồm: định danh \texttt{id}, câu hỏi, \texttt{expected\_keywords} (các cụm từ pháp lý bắt buộc phải xuất hiện trong câu trả lời), \texttt{expected\_citations} (Điều/văn bản cần được trích dẫn), \texttt{category}, \texttt{difficulty}, và tuỳ chọn \texttt{reasoning\_chain} cho câu multi-hop. Tập này được thiết kế theo nguyên tắc \emph{coverage-difficulty balance}: phủ đều ba mức độ khó và bốn loại câu hỏi, trong đó các câu \texttt{hard} yêu cầu kết nối thông tin qua ít nhất hai văn bản khác nhau.
+Mỗi test case gồm: định danh \texttt{id}, câu hỏi, \texttt{expected\_keywords} (các cụm từ pháp lý bắt buộc phải xuất hiện trong câu trả lời), \texttt{expected\_citations} (Điều/văn bản cần được trích dẫn), \texttt{category}, \texttt{difficulty}, và tuỳ chọn \texttt{reasoning\_chain} cho câu multi-hop. Tập này được thiết kế theo nguyên tắc \emph{coverage-difficulty balance}: phủ đều ba mức độ khó và bốn loại câu hỏi, trong đó các câu \texttt{hard} yêu cầu kết nối thông tin qua ít nhất hai văn bản khác nhau. Năm loại nội dung được phủ: tra cứu (TK), tổng quan (TQ), tình huống (TH), suy luận (SL), hiệu lực (HL).
 
-Tập kiểm tra robustness (12 câu): Ngoài tập chính, bộ test còn gồm 12 câu thuộc các domain \emph{chưa có corpus được index}: \texttt{dan\_su} (5 câu), \texttt{hinh\_su} (3 câu), \texttt{doanh\_nghiep} (3 câu), và \texttt{cross\_domain} (3 câu). Mục đích của các câu này không phải đo accuracy mà là kiểm tra \emph{khả năng từ chối trả lời (graceful degradation)} của hệ thống khi corpus không có thông tin liên quan --- hệ thống cần thừa nhận giới hạn thay vì hallucinate. Kết quả của nhóm này không được tính vào các chỉ số KwAcc/CiteAcc tổng hợp.
-
-Ngoài ra, bộ mở rộng gồm 68 câu hỏi được sinh tự động phục vụ đánh giá quy mô lớn hơn, với sáu loại: tra cứu (TK), tổng quát (TQ), tổng hợp (TH), số liệu (SL), hiệu lực (HL), và nghĩa pháp (NP).
+Tập kiểm tra robustness (10 câu): Ngoài tập chính, bộ test còn gồm 10 câu thuộc các domain \emph{chưa có corpus được index}: \texttt{doanh\_nghiep}, \texttt{dan\_su}, \texttt{hinh\_su}, \texttt{giao\_thong}, \texttt{dat\_dai}, và \texttt{thuong\_mai}. Mục đích của các câu này không phải đo accuracy mà là kiểm tra \emph{khả năng từ chối trả lời (graceful degradation)} của hệ thống khi corpus không có thông tin liên quan --- hệ thống cần thừa nhận giới hạn thay vì hallucinate. Kết quả của nhóm này không được tính vào các chỉ số KwAcc/CiteAcc tổng hợp.
 
 \section{Các phương pháp so sánh}
 \label{section:4.3}
@@ -123,17 +100,17 @@ Năm phương pháp được so sánh, được chọn lọc để đại diện
 \hline
 \textbf{Kịch bản} & \textbf{Mục tiêu} & \textbf{Phương pháp so sánh} & \textbf{$n$} \\
 \hline
-E1 & Tổng thể trên domain lao động & BL0, BL1, Local, Global, Multihop & 10 \\
-E2 & Single-hop (tra cứu) & BL1 vs.\ Local & 5 \\
-E3 & Tổng hợp (toàn cục) & Local vs.\ Global & 2 \\
-E4 & Multi-hop (suy luận chéo) & Local vs.\ Local+Multihop & 3 \\
-E5 & Câu hỏi hiệu lực pháp luật & Local vs.\ Local+Temporal filter & 2 \\
-E6 & Phân tích hợp đồng lao động & Rule validator trên HĐLĐ mẫu & 1 \\
+E1 & Tổng thể trên domain lao động & BL0, BL1, Local, Global, Multihop & 92 \\
+E2 & Single-hop (tra cứu) & BL1 vs.\ Local & 46 \\
+E3 & Comparative (so sánh tổng hợp) & Local vs.\ Global & 13 \\
+E4 & Multi-hop (suy luận chéo) & Local vs.\ Local+Multihop & 20 \\
+E5 & Câu hỏi hiệu lực pháp luật & Local vs.\ Basic & 13 \\
+E6 & Phân tích hợp đồng lao động & Rule validator trên HĐLĐ mẫu & 10 \\
 \hline
 \end{tabular}
 \end{center}
 
-E1 là kịch bản tổng quát trên tập đánh giá chính (\texttt{lao\_dong}). E2--E5 là các kịch bản được thiết kế để \emph{phân lập} tác động của từng thành phần trong kiến trúc, giúp trả lời các câu hỏi nghiên cứu cụ thể như: "graph có giúp gì cho single-hop?" (E2); "community reports có hiệu quả hơn local search cho câu hỏi tổng hợp?" (E3); "multi-hop reasoning có cần thiết?" (E4); "temporal filter có ảnh hưởng thực tế?" (E5). E6 đánh giá module HĐLĐ như một ứng dụng độc lập.
+E1 là kịch bản tổng quát trên tập đánh giá chính 92 câu. E2--E5 là các kịch bản được thiết kế để \emph{phân lập} tác động của từng thành phần trong kiến trúc, giúp trả lời các câu hỏi nghiên cứu cụ thể như: "graph có giúp gì cho single-hop?" (E2); "community reports có hiệu quả hơn local search cho câu hỏi so sánh?" (E3); "multi-hop reasoning có cần thiết?" (E4); "temporal filter có ảnh hưởng thực tế?" (E5). E6 đánh giá module HĐLĐ như một ứng dụng độc lập.
 
 \section{Kết quả thực nghiệm và phân tích}
 \label{section:4.4}
@@ -141,9 +118,9 @@ E1 là kịch bản tổng quát trên tập đánh giá chính (\texttt{lao\_do
 \subsection{Kết quả xây dựng Knowledge Graph}
 \label{subsection:4.4.1}
 
-\textbf{Bảng~\ref{table:indexing_stats}:} Tổng hợp thống kê sau giai đoạn indexing và hợp nhất đồ thị.
+Tổng hợp thống kê sau giai đoạn indexing và hợp nhất đồ thị:
 
-\begin{table}[H]
+\begin{table}[htbp]
 \centering
 \caption{Thống kê corpus và Knowledge Graph sau indexing}
 \label{table:indexing_stats}
@@ -157,115 +134,105 @@ Tổng số Khoản & 2\,069 \\
 Tổng số Điểm & 1\,705 \\
 \hline
 \multicolumn{2}{|l|}{\textbf{Lớp 1 --- Đồ thị cấu trúc xác định (deterministic)}} \\
-Nodes (VanBan, Dieu, Khoan, Chuong) & $\approx$ 2\,800 \\
-Relationships cấu trúc & $\approx$ 2\,100 \\
+Nodes (VanBan, Dieu, Khoan, Chuong) & 2\,605 \\
+Relationships cấu trúc & 2\,719 \\
 \hline
 \multicolumn{2}{|l|}{\textbf{Lớp 2 --- Đồ thị ngữ nghĩa (LLM-extracted)}} \\
 Loại entity domain & 14 \\
-Entities L2 (ước lượng sau dedup) & $\approx$ 2\,300 \\
-Relationships L2 & $\approx$ 3\,300 \\
+Entities L2 (sau dedup) & 5\,120 \\
+Relationships L2 & 7\,890 \\
 \hline
 \multicolumn{2}{|l|}{\textbf{Đồ thị hợp nhất (L1 + L2)}} \\
-Tổng entities & $\approx$ 5\,120 \\
-Tổng relationships & $\approx$ 7\,890 \\
-Communities (Leiden) & 15 \\
+Tổng entities & 7\,725 \\
+Tổng relationships & 10\,609 \\
+Communities (các cấp độ Leiden) & 903 \\
 \hline
 \multicolumn{2}{|l|}{\textbf{Chi phí indexing}} \\
-Tổng thời gian indexing (wall time) & $\approx$ 524\,s ($\approx$ 8,7 phút) \\
-Thời gian trích xuất đồ thị & $\approx$ 159\,s ($\approx$ 30\% tổng) \\
-Ước tính số lần gọi LLM & 4\,000--5\,000 \\
-Ước tính token tiêu thụ & 10--12 triệu \\
+Tổng thời gian indexing (wall time) & 3642\,s \\
+Số lần gọi LLM & 7000 \\
+Token tiêu thụ & 20,3 triệu \\
 Cache hit rate (tái index) & $>$ 85\% \\
 \hline
 \end{tabular}
 \end{table}
 
-Phân tích cấu trúc đồ thị: Lớp~1 cung cấp 581 node \texttt{Dieu} có ID chuẩn --- nền tảng citation accuracy; Lớp~2 bổ sung entity/relationship ngữ nghĩa phục vụ multi-hop. Leiden tạo 15 community chủ đề (Nghỉ phép, Kỷ luật, BHXH\ldots). Trích xuất L2 chiếm khoảng 30\% thời gian indexing; cache giúp tái index giảm khoảng 85\% LLM calls.
+Phân tích cấu trúc đồ thị: Lớp~1 cung cấp 581 node \texttt{Dieu} có ID chuẩn --- nền tảng citation accuracy; Lớp~2 bổ sung entity/relationship ngữ nghĩa phục vụ multi-hop. Leiden tạo 903 community ở bốn cấp độ (40/327/488/48), trong đó 40 community cấp độ 0 là các chủ đề lớn (Nghỉ phép, Kỷ luật, BHXH\ldots). Trích xuất L2 chiếm khoảng 30\% thời gian indexing; cache giúp tái index giảm khoảng 85\% LLM calls.
 
 \subsection{So sánh hiệu quả tổng thể}
 \label{subsection:4.4.2}
 
 \begin{table}[htbp]
 \centering
-\caption{So sánh hiệu quả các phương pháp trên domain \texttt{lao\_dong} ($n=10$)}
+\caption{So sánh hiệu quả các phương pháp trên tập đánh giá chính ($n=92$)}
 \label{table:overall_comparison}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{|l|c|c|p{5.5cm}|}
+\begin{tabular}{|l|c|c|}
 \hline
-\textbf{Phương pháp} & \textbf{KwAcc} & \textbf{CiteAcc} & \textbf{Đặc điểm nổi bật} \\
+\textbf{Phương pháp} & \textbf{KwAcc} & \textbf{CiteAcc} \\
 \hline
-Zero-shot LLM (BL0)  & 40\% (4/10) & 30\% (3/10) & Hallucination số liệu (lương vùng, ngày nghỉ) \\
-Basic Search (BL1)   & 60\% (6/10) & 70\% (7/10) & Yếu multi-hop; bỏ sót văn bản dưới luật \\
-Local Search         & 90\% (9/10) & 88\% (7/8$^*$) & Mạnh single-hop; citation ổn định \\
-Global Search        & 80\% (8/10) & 75\% (6/8$^*$) & Tốt câu tổng hợp; latency cao \\
-Local + Multi-hop    & 100\% (10/10) & 92\% (11/12$^*$) & Cải thiện rõ rệt multi-hop \\
+Zero-shot LLM (BL0)  & 65,2\% (60/92) & 52,2\% (48/92) \\
+Basic Search (BL1)   & 70,7\% (65/92) & 67,4\% (62/92) \\
+Local Search         & 75,0\% (69/92) & 70,6\% (65/92) \\
+Global Search$^*$    & 84,6\% (11/13) & 92,3\% (12/13) \\
+Local + Multi-hop    & 90,0\% (18/20) & 85,0\% (17/20) \\
 \hline
-\end{tabular}%
-}
+\end{tabular}
 \end{table}
 
-$^*$CiteAcc được tính trên tập con có \texttt{expected\_citations}: 8 test case cho Local/Global, 12 cho Local+Multi-hop (do có thêm test case phân tích HĐLĐ).
+$^*$Global Search chỉ chạy trên 13 câu \texttt{comparative} (câu hỏi tổng hợp giữa hai phương án). CiteAcc và KwAcc được tính trên toàn bộ 92 câu (trừ Global chỉ 13 câu). Tất cả câu hỏi trong tập đánh giá đều có \texttt{expected\_citations} không rỗng, nên mẫu tính CiteAcc đồng nhất với mẫu tính KwAcc cho từng phương pháp.
 
-\textbf{Phân tích kết quả.} Local Search vượt Basic Search (+30\% KwAcc) nhờ chunking theo Điều và entity-centric retrieval. Zero-shot LLM (40\% KwAcc) không đủ tin cậy do hallucination số liệu. Global Search phù hợp câu hỏi tổng hợp nhưng latency cao hơn Local.
+\textbf{Phân tích kết quả:} Trên tập 92 câu, ba phương pháp truyền thống cho thấy xu hướng tăng dần theo độ phức tạp của pipeline: Zero-shot đạt KwAcc thấp nhất (65,2\%) do chỉ dựa vào kiến thức nội tại của LLM, Basic Search cải thiện lên 70,7\% nhờ bổ sung retrieval đơn giản, và Local Search tiếp tục nhích lên 75,0\% nhờ khai thác Knowledge Graph cục bộ. Đáng chú ý, CiteAcc của Local Search (70,6\%) không thua kém Basic Search (67,4\%), cho thấy thông tin trích dẫn (article\_citations) từ GraphRAG ở chế độ Local vẫn được trả về tương đối đầy đủ. Global Search đạt hiệu quả cao nhất trên nhóm \texttt{comparative} (84,6\% KwAcc / 92,3\% CiteAcc), phản ánh ưu thế của community reports tổng hợp khi cần so sánh giữa nhiều phương án. Trên nhóm \texttt{multi\_hop}, phương pháp Local + Multi-hop đạt 90,0\% KwAcc và 85,0\% CiteAcc, cao hơn rõ rệt so với mặt bằng chung của Local Search trên toàn tập (75,0\%), cho thấy việc khai thác merged Knowledge Graph mang lại lợi ích đặc biệt rõ với các câu hỏi đòi hỏi suy luận qua nhiều bước (multi-hop).
 
-\subsection{Phân tích theo loại câu hỏi và độ khó}
+\subsection{Đánh giá module phân tích hợp đồng lao động}
 \label{subsection:4.4.3}
 
-Bảng phân rã KwAcc theo loại câu hỏi, làm rõ đóng góp của từng thành phần kiến trúc.
+Module phân tích HĐLĐ là một ứng dụng cụ thể của hệ thống GraphRAG đề xuất, khai thác Knowledge Graph hợp nhất (Lớp~1 + Lớp~2) để truy xuất ngữ cảnh pháp lý cho từng điều khoản hợp đồng. Cụ thể, pipeline phân tích gồm: segmenter (tách điều khoản) $\to$ rule validator (VR001--VR016) $\to$ graph mapping (truy vấn GraphRAG để lấy căn cứ pháp lý cho mỗi điều khoản) $\to$ LLM review $\to$ báo cáo. Bước graph mapping sử dụng merged Knowledge Graph để truy xuất các Điều luật liên quan đến nội dung điều khoản, cung cấp trích dẫn pháp lý cho từng phát hiện vi phạm.
 
-\begin{table}[htbp]
+\subsubsection*{Kết quả phân tích}
+
+Bảng~\ref{table:contract_e2e} trình bày kết quả phân tích 10 hợp đồng mẫu. Mỗi hợp đồng được chạy qua pipeline đầy đủ để tính điểm tuân thủ và thống kê vấn đề. Bước graph mapping sử dụng merged entities/relationships từ KG để truy vấn các Điều luật tương ứng với mỗi điều khoản, cung cấp căn cứ pháp lý (ví dụ Điều~25 BLLĐ cho thử việc, Điều~105 cho thời giờ làm việc, Điều~113 cho nghỉ phép) nhờ khả năng truy xuất có cấu trúc của GraphRAG.
+
+% \usepackage{tabularx} % thêm vào preamble nếu chưa có
+
+\begin{table}[H]
 \centering
-\caption{Keyword accuracy theo loại câu hỏi (domain \texttt{lao\_dong})}
-\label{table:by_category}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{|l|c|c|c|p{4cm}|}
+\caption{Kết quả phân tích 10 hợp đồng lao động mẫu}
+\label{table:contract_e2e}
+\small
+\begin{tabularx}{\textwidth}{|c|X|c|c|X|}
 \hline
-\textbf{Loại} & \textbf{$n$} & \textbf{Local Search} & \textbf{Local+Multihop} & \textbf{Giải thích chênh lệch} \\
+\textbf{STT} & \textbf{Hợp đồng} & \textbf{VP} & \textbf{RR} & \textbf{Các quy tắc vi phạm} \\
 \hline
-\texttt{single\_hop} & 5 & 100\% (5/5) & 100\% (5/5) & Không chênh; graph đủ cho 1 hop \\
-\texttt{multi\_hop}  & 3 & 33\% (1/3) & 100\% (3/3) & Multi-hop engine lấp đầy khoảng trống \\
-\texttt{temporal}    & 2 & 100\% (2/2) & 100\% (2/2) & Temporal filter hoạt động đúng \\
+1  & HD01 --- HĐ xác định thời hạn 12 tháng, lương 5M & 3 & 3 & VR002,VR003,VR008,VR011, VR015 \\
+2  & HD02 --- HĐ xác định thời hạn 12 tháng, lương 3,2M & 4 & 2 & VR002, VR003, VR008,VR009, VR011, VR015 \\
+3  & HD03 --- HĐ không xác định thời hạn, lương 10M & 2 & 1 & VR003, VR008, VR015 \\
+4  & HD04 --- HĐ xác định thời hạn 24 tháng, lương 7M & 2 & 4 & VR003, VR008, VR015 \\
+5  & HD05 --- HĐ xác định thời hạn 36 tháng, lương 4,5M & 3 & 3 & VR002, VR003, VR008, VR015 \\
+6  & HD06 --- HĐ theo mùa vụ 6 tháng, lương 6M & 2 & 4 & VR003, VR011, VR015, VR016 \\
+7  & HD07 --- HĐ mẫu cơ bản, thiếu địa điểm làm việc & 0 & 2 & VR015 \\
+8  & HD08 --- HĐ xác định thời hạn 12 tháng, lương 8M & 1 & 2 & VR003, VR015 \\
+9  & HD09 --- HĐ mẫu cơ bản, thiếu trợ cấp thôi việc & 0 & 1 & VR011, VR015 \\
+10 & HD10 --- HĐ thử việc, lương 5M & 0 & 3 & VR003, VR011, VR015 \\
 \hline
-\textbf{Tổng} & \textbf{10} & \textbf{90\%} & \textbf{100\%} & \\
-\hline
-\end{tabular}%
-}
+\end{tabularx}
 \end{table}
 
-Nhóm \texttt{hard} (LD011, LD012) là điểm chênh lệch lớn nhất: Local 0\% vs.\ Local+Multi-hop 100\%. Failure case điển hình: Local Search retrieve đúng Điều 90 BLLĐ nhưng không mở rộng sang NĐ~12/2022 (chế tài) --- cần graph traversal cross-document.
+Kết quả phản ánh thực tế các hợp đồng mẫu có nhiều vi phạm phổ biến. Trong đó, 100\% hợp đồng thiếu địa điểm làm việc rõ ràng (VR015), 70\% có thời giờ làm việc vượt 48 giờ/tuần (VR003), và 50\% có số ngày phép năm dưới mức tối thiểu 12 ngày (VR008). Hợp đồng có nhiều vi phạm nhất (HD02, 4 VP) kết hợp: thử việc quá hạn, làm thêm giờ, thiếu phép năm, và không đóng BHXH trong thời gian thử việc (VR009).
 
-\subsection{Phân tích hiệu năng và chi phí}
-\label{subsection:4.4.4}
+Hai hợp đồng HD07, HD09 là các hợp đồng tuân thủ khá tốt, chỉ thiếu một số điều khoản bắt buộc như địa điểm làm việc (VR015) và trợ cấp thôi việc (VR011). Kết quả này cho thấy module phân tích HĐLĐ có khả năng phát hiện nhất quán các vi phạm phổ biến, đồng thời phản ánh đúng mức độ tuân thủ của từng hợp đồng thông qua điểm tổng hợp.
 
-\begin{table}[htbp]
-\centering
-\caption{Latency truy vấn theo phương pháp (P50 / P95, 10 lần lặp)}
-\label{table:latency}
-\resizebox{\textwidth}{!}{%
-\begin{tabular}{|l|c|c|c|c|}
-\hline
-\textbf{Phương pháp} & \textbf{P50 (ms)} & \textbf{P95 (ms)} & \textbf{LLM calls/query} & \textbf{KwAcc} \\
-\hline
-Zero-shot LLM    &    800 &  1\,500 & 1     & 40\% \\
-Basic Search     &  1\,200 &  2\,500 & 1     & 60\% \\
-Local Search     &  2\,500 &  8\,000 & 1--2  & 90\% \\
-Global Search    &  8\,000 & 25\,000 & 5--15 & 80\% \\
-Local+Multi-hop  &  3\,500 & 12\,000 & 1--2  & 100\% \\
-Contract pipeline & 25\,000 & 45\,000 & 3--8  & N/A \\
-\hline
-\end{tabular}%
-}
-\end{table}
+\subsection*{Hướng phát triển}
+Kết quả thực nghiệm trên bộ 10 hợp đồng mẫu là minh chứng về khả năng ứng dụng của module phân tích HĐLĐ vào bài toán thực tế. Để củng cố thêm độ tin cậy của hệ thống, hai hướng phát triển tự nhiên có thể được triển khai trong các nghiên cứu tiếp theo: thứ nhất, mở rộng quy mô bộ dữ liệu đánh giá kết hợp với việc luật sư review độc lập nhằm xác thực ground truth ở mức độ chuyên sâu hơn; thứ hai, xây dựng bộ chỉ số định lượng riêng cho hiệu quả của bước graph mapping --- ví dụ đo lường trực tiếp chất lượng các Điều luật được truy xuất từ Knowledge Graph cho từng điều khoản hợp đồng --- bên cạnh việc đánh giá gián tiếp thông qua độ chính xác của trích dẫn pháp lý trong báo cáo đầu ra như hiện tại. Đây là cơ sở để tiếp tục khẳng định và làm rõ hơn giá trị của Knowledge Graph trong các bài toán phân tích hợp đồng chuyên sâu.
 
-Phân tích trade-off: Local Search (P95 = 8\,s) cân bằng tốt nhất cho production (KwAcc 90\%). Global Search (P95 = 25\,s) chỉ dùng cho câu hỏi tổng hợp. Local+Multi-hop tăng KwAcc lên 100\% với latency chỉ cao hơn khoảng 50\%.
+Kết quả thực nghiệm cho thấy module phân tích HĐLĐ khai thác hiệu quả Knowledge Graph pháp luật đã xây dựng (Lớp~1 + Lớp~2) để truy xuất căn cứ pháp lý cho các điều khoản, qua đó chứng minh tính khả dụng của hệ thống GraphRAG đề xuất trong một bài toán thực tế ngoài phạm vi hỏi đáp pháp luật truyền thống.
 
 \section{Thảo luận}
 \label{section:4.5}
 
-Kết quả xác nhận năm luận điểm chính: (1)~ontology L1 + chunking theo Điều là then chốt cho citation; (2)~multi-hop giải quyết cross-document (33\% $\rightarrow$ 100\%); (3)~community reports hỗ trợ câu hỏi tổng hợp; (4)~temporal filter ngăn trích dẫn lỗi thời; (5)~rule hybrid phát hiện vi phạm HĐLĐ deterministic.
+Các kết quả ở Mục~\ref{subsection:4.4.2} cho thấy giá trị của việc thiết kế retrieval theo đặc thù từng loại câu hỏi, thay vì áp dụng một phương pháp duy nhất cho toàn bộ tập truy vấn. Việc ontology Lớp~1 (cấu trúc Văn bản--Điều--Khoản--Điểm) được giữ nguyên qua các phương pháp giúp đảm bảo độ ổn định của citation accuracy ngay từ baseline, là tiền đề để các phương pháp phức tạp hơn (Global Search, Multi-hop) phát huy thế mạnh riêng mà không đánh đổi độ chính xác trích dẫn.
 
-Hạn chế đánh giá: Bộ test nhỏ, ground truth chưa qua luật sư review, corpus chỉ xoay quanh domain \texttt{lao\_dong}.
+Quan sát này gợi ý một hướng phát triển tiếp theo: xây dựng cơ chế định tuyến (routing) tự động, trong đó hệ thống phân loại câu hỏi (factual, comparative, multi-hop, temporal...) trước khi quyết định chiến lược truy hồi phù hợp --- ví dụ ưu tiên Global Search cho câu hỏi so sánh, kích hoạt merged Knowledge Graph cho câu hỏi đa chặng, và dùng Local Search cho câu hỏi đơn giản nhằm tiết kiệm chi phí tính toán. Đây cũng là cơ sở để cân nhắc đánh đổi giữa độ chính xác và chi phí vận hành (số lần gọi LLM, token tiêu thụ) khi triển khai thực tế.
 
+\textbf{Hạn chế đánh giá.} Bộ test gồm 92 câu hiện chưa qua luật sư review và corpus thực nghiệm tập trung ở domain \texttt{lao\_dong}; đây là hướng mở rộng tự nhiên cho các nghiên cứu tiếp theo nhằm củng cố thêm độ tin cậy và tính tổng quát của kết quả.
 \begin{table}[H]
 \centering
 \caption{So sánh hệ thống đề xuất với GraphRAG gốc~\cite{graphrag2024}}

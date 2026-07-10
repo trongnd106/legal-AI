@@ -29,6 +29,7 @@ import re
 import uuid
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -37,6 +38,7 @@ import pandas as pd
 DEFAULT_ROOT = Path("data/labor-law")
 
 # GraphRAG output dirs to search (newest run first)
+# Legacy: output/<run_id>/artifacts  |  Direct: output/
 GRAPHRAG_OUTPUT_GLOB = "output/*/artifacts"
 
 # Column schemas expected by GraphRAG downstream queries
@@ -317,14 +319,27 @@ def resolve_alias(
 # ─── Step 4+5 — Load GraphRAG output + resolve aliases ───────────────────────
 
 def load_graphrag_output(root: Path) -> tuple[pd.DataFrame | None, pd.DataFrame | None]:
-    """Tìm artifacts mới nhất trong output/*/artifacts/."""
-    artifacts_dirs = sorted(root.glob("output/*/artifacts"), reverse=True)
-    if not artifacts_dirs:
-        return None, None
+    """Tìm GraphRAG output parquet files.
 
-    art = artifacts_dirs[0]
-    ent_path = art / "create_final_entities.parquet"
-    rel_path = art / "create_final_relationships.parquet"
+    Thử theo thứ tự:
+      1. output/<run_id>/artifacts/create_final_entities.parquet (legacy)
+      2. output/entities.parquet (từ phiên bản GraphRAG cũ hơn hoặc index chạy trực tiếp)
+    """
+    # Legacy: output/*/artifacts/
+    artifacts_dirs = sorted(root.glob("output/*/artifacts"), reverse=True)
+    if artifacts_dirs:
+        art = artifacts_dirs[0]
+        ent_path = art / "create_final_entities.parquet"
+        rel_path = art / "create_final_relationships.parquet"
+        ent_df = pd.read_parquet(ent_path) if ent_path.exists() else None
+        rel_df = pd.read_parquet(rel_path) if rel_path.exists() else None
+        if ent_df is not None:
+            return ent_df, rel_df
+
+    # Fallback: output/*.parquet trực tiếp
+    output_dir = root / "output"
+    ent_path = output_dir / "entities.parquet"
+    rel_path = output_dir / "relationships.parquet"
 
     ent_df = pd.read_parquet(ent_path) if ent_path.exists() else None
     rel_df = pd.read_parquet(rel_path) if rel_path.exists() else None
@@ -343,8 +358,16 @@ def resolve_llm_relationships(
     df = rel_df.copy()
     # Lấy van_ban từ text_unit_ids nếu có (format: BLLĐ_2019_Điều_35)
     def _get_van_ban(row: pd.Series) -> str:
-        tids = row.get("text_unit_ids", []) or []
-        for tid in (tids if isinstance(tids, list) else []):
+        raw = row.get("text_unit_ids")
+        if isinstance(raw, np.ndarray):
+            tids = raw.tolist()
+        elif isinstance(raw, list):
+            tids = raw
+        elif pd.isna(raw):
+            tids = []
+        else:
+            tids = [raw]
+        for tid in tids:
             # Thử extract van_ban từ chunk text_unit_id
             for vb in van_ban_slug:
                 slug = van_ban_slug[vb]
@@ -410,6 +433,18 @@ def apply_remap(
 
 # ─── Step 7 — Merge + write parquets ─────────────────────────────────────────
 
+def _align_columns(
+    df: pd.DataFrame,
+    cols: list[str],
+    fill: object = None,
+) -> pd.DataFrame:
+    """Thêm cột thiếu vào DataFrame để align với schema kỳ vọng."""
+    missing = [c for c in cols if c not in df.columns]
+    for c in missing:
+        df[c] = fill
+    return df
+
+
 def merge_and_save(
     l1_entities: list[dict],
     l1_rels: list[dict],
@@ -421,10 +456,20 @@ def merge_and_save(
     l1_ent_df = pd.DataFrame(l1_entities)
     l1_rel_df = pd.DataFrame(l1_rels)
 
-    # Đảm bảo các cột domain extension tồn tại trong L2
-    for col in ["norm_type", "van_ban", "chuong_so"]:
-        if l2_ent_df is not None and col not in l2_ent_df.columns:
-            l2_ent_df[col] = None
+    # ── Ensure column compatibility ──────────────────────────────────────────
+    # L1 columns: id, title, type, description, human_readable_id,
+    #             graph_embedding, text_unit_ids, norm_type, van_ban, chuong_so
+    # L2 columns: id, human_readable_id, title, type, description,
+    #             text_unit_ids, frequency, degree
+    # → fill missing columns với None để concat an toàn
+
+    if l2_ent_df is not None:
+        l2_ent_df = _align_columns(l2_ent_df, list(l1_ent_df.columns))
+        l1_ent_df = _align_columns(l1_ent_df, list(l2_ent_df.columns))
+
+    if l2_rel_df is not None:
+        l2_rel_df = _align_columns(l2_rel_df, list(l1_rel_df.columns))
+        l1_rel_df = _align_columns(l1_rel_df, list(l2_rel_df.columns))
 
     # Ghép L1 + L2
     ent_frames = [l1_ent_df]

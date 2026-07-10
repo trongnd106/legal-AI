@@ -85,14 +85,51 @@ async def ask_global(
 
 
 def _extract_citations(text: str) -> list[str]:
-    """Trích xuất số Điều/Khoản được dùng trong câu trả lời."""
+    """Trích xuất số Điều/Khoản và các văn bản pháp lý được nhắc đến."""
     citations: set[str] = set()
+    # Điều, Khoản, Điểm
     for m in re.finditer(
         r"(?:Điều\s+\d+|Khoản\s+\d+\s+Điều\s+\d+|Điểm\s+[a-zđ]\s+Khoản\s+\d+\s+Điều\s+\d+)",
-        text,
-        re.IGNORECASE,
+        text, re.IGNORECASE,
     ):
         citations.add(m.group(0))
+    # Nghị định
+    for m in re.finditer(r"Nghị\s+định\s+(?:số\s+)?(\d+/\d+)", text, re.IGNORECASE):
+        citations.add(f"NĐ {m.group(1)}")
+    # Thông tư
+    for m in re.finditer(r"Thông\s+tư\s+(?:số\s+)?(\d+/\d+)", text, re.IGNORECASE):
+        citations.add(f"TT {m.group(1)}")
+    # Bộ luật Lao động
+    for m in re.finditer(r"Bộ\s+luật\s+Lao\s+động(?:\s+năm\s+(\d+))?", text, re.IGNORECASE):
+        citations.add("Bộ luật Lao động")
+        if m.group(1):
+            citations.add(f"BLLĐ {m.group(1)}")
+    if re.search(r"\bBLLĐ\s+\d{4}\b", text, re.IGNORECASE):
+        for m in re.finditer(r"\bBLLĐ\s+(\d{4})\b", text, re.IGNORECASE):
+            citations.add(f"BLLĐ {m.group(1)}")
+    # Bộ luật Dân sự, Hình sự
+    for name, short in [("Dân sự", "Bộ luật Dân sự"), ("Hình sự", "BLHS")]:
+        if re.search(rf"Bộ\s+luật\s+{re.escape(name)}", text, re.IGNORECASE):
+            citations.add(short)
+    # Luật
+    law_map = [
+        ("Bảo hiểm xã hội", "Luật BHXH"),
+        ("Doanh nghiệp", "Luật Doanh nghiệp"),
+        ("Đầu tư", "Luật Đầu tư"),
+        ("Giao thông", "Luật Giao thông"),
+        ("Đất đai", "Luật Đất đai"),
+        ("Thương mại", "Luật Thương mại"),
+        ("Phá sản", "Luật Phá sản"),
+        ("Việc làm", "Luật Việc làm"),
+    ]
+    for full_name, short in law_map:
+        if re.search(rf"Luật\s+{re.escape(full_name)}", text, re.IGNORECASE):
+            citations.add(short)
+    # Phụ lục, Ghi chú
+    if re.search(r"Phụ\s+lục", text, re.IGNORECASE):
+        citations.add("Phụ lục")
+    if re.search(r"Ghi\s+chú", text, re.IGNORECASE):
+        citations.add("Ghi chú")
     return sorted(citations)
 
 

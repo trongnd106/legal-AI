@@ -282,35 +282,37 @@ def run_ragas(
     embedding_model: str,
     max_workers: int,
 ) -> Any:
-    """Run Ragas Faithfulness and AnswerRelevancy using Gemini (google-genai SDK)."""
-    from google import genai as google_genai
+    """Run Ragas Faithfulness and AnswerRelevancy using OpenRouter (OpenAI-compatible)."""
+    from openai import OpenAI
 
     from ragas import EvaluationDataset, evaluate
-    from ragas.embeddings import GoogleEmbeddings
+    from ragas.embeddings import OpenAIEmbeddings
     from ragas.llms import llm_factory
     from ragas.metrics.collections import AnswerRelevancy, Faithfulness
     from ragas.run_config import RunConfig
 
-    api_key = os.environ.get("GOOGLE_API_KEY")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         msg = (
-            "GOOGLE_API_KEY is required for Ragas evaluation. "
+            "OPENROUTER_API_KEY is required. "
             "Set it in the environment or run with --skip-eval."
         )
         raise ValueError(msg)
 
-    gemini_client = google_genai.Client(api_key=api_key)
+    openai_client = OpenAI(
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
     evaluator_llm = llm_factory(
         eval_model,
-        provider="google",
-        client=gemini_client,
+        provider="openai",
+        client=openai_client,
         temperature=0.1,
         max_tokens=2048,
     )
-    embedding_id = embedding_model.removeprefix("models/")
-    evaluator_embeddings = GoogleEmbeddings(
-        client=gemini_client,
-        model=embedding_id,
+    evaluator_embeddings = OpenAIEmbeddings(
+        client=openai_client,
+        model=embedding_model,
     )
     dataset = EvaluationDataset.from_list(samples)
     rc = RunConfig(
@@ -338,7 +340,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     epilog = """Prerequisites:
   uv sync --all-packages --group dev --group benchmark
 
-Requires GOOGLE_API_KEY when running Ragas (--skip-eval omits judging).
+Requires OPENROUTER_API_KEY when running Ragas (--skip-eval omits judging).
 
 Example:
   uv run python scripts/ragas_graphrag_benchmark.py --root ./my_project \\
@@ -427,13 +429,13 @@ Example:
     )
     p.add_argument(
         "--eval-model",
-        default="gemini-2.0-flash",
-        help="Gemini model id for Ragas judge LLM.",
+        default="deepseek/deepseek-v4-flash",
+        help="OpenRouter model for Ragas judge LLM.",
     )
     p.add_argument(
         "--embedding-model",
-        default="models/gemini-embedding-001",
-        help="Gemini embedding model for AnswerRelevancy.",
+        default="openai/text-embedding-3-small",
+        help="OpenAI embedding model for AnswerRelevancy.",
     )
     p.add_argument(
         "--max-workers",

@@ -10,13 +10,13 @@
 
 \vspace{0.8cm}
 
-Đồ án xây dựng \textbf{Tác tử tư vấn luật lao động và phân tích rủi ro hợp đồng lao động có trích dẫn} dựa trên Microsoft \gls{GraphRAG}~\cite{graphrag2024}, nhằm khắc phục hạn chế của tra cứu từ khóa truyền thống~\cite{robertson1994bm25} (không suy luận chéo văn bản) và chatbot \gls{LLM} tổng quát (dễ hallucination~\cite{ji2023hallucination}, trích dẫn sai lỗi thời).
+Trong bối cảnh nhu cầu tra cứu, tư vấn pháp luật lao động ngày càng tăng trong khi các công cụ hỗ trợ hiện có, từ tra cứu từ khóa truyền thống đến chatbot LLM vẫn còn nhiều hạn chế về độ chính xác và độ tin cậy của trích dẫn, đồ án xây dựng \textbf{Tác tử tư vấn luật lao động và phân tích rủi ro hợp đồng lao động có trích dẫn} dựa trên Microsoft \gls{GraphRAG}~\cite{graphrag2024}, hướng đến khắc phục một số hạn chế khó suy luận chéo văn bản của tra cứu từ khóa truyền thống~\cite{robertson1994bm25} và hạn chế về sự ảo giác hay trích dẫn không chính xác của chatbot LLM.
 
-Đóng góp chính là thiết kế ontology hai lớp với canonicalization: Lớp 1 (deterministic) biểu diễn cấu trúc pháp lý xác định không dùng LLM, đảm bảo 100\% nhất quán cho trích dẫn Điều/Khoản; Lớp 2 (LLM extraction) biểu diễn ngữ nghĩa domain với linh hoạt. Từ thiết kế này, hệ thống mở rộng sang suy luận đa bước (duyệt quan hệ pháp lý thay vì vector similarity), lọc trích dẫn hết hiệu lực, và phân tích tuân thủ hợp đồng kết hợp rule xác định với graph grounding.
+Đóng góp chính là thiết kế ontology hai lớp kết hợp canonicalization: Lớp 1 (deterministic) biểu diễn cấu trúc pháp lý xác định không dùng LLM, nhằm tăng độ nhất quán cho trích dẫn Điều/Khoản; Lớp 2 (LLM extraction) biểu diễn ngữ nghĩa domain với độ linh hoạt cao hơn. Trên nền tảng đó, hệ thống được mở rộng để hỗ trợ truy vấn đa bước thông qua duyệt quan hệ trên đồ thị tri thức (thay vì chỉ dựa vào vector similarity), có cơ chế lọc bớt một phần trích dẫn đã hết hiệu lực, và bước đầu thử nghiệm phân tích tuân thủ hợp đồng bằng cách kết hợp rule xác định với grounding trên đồ thị.
 
-Kết quả cho thấy phương pháp đề xuất vượt trội LLM thuần và RAG vector truyền thống trên các câu hỏi yêu cầu trích dẫn chính xác và suy luận chéo quý phạm. Hệ thống minh chứng rằng cấu trúc pháp lý xác định + ontology hai lớp là nền tảng cần thiết cho hỏi đáp pháp lý đáng tin cậy.
+Trên tập dữ liệu đánh giá được xây dựng trong phạm vi đồ án, các phương pháp khai thác đồ thị tri thức cho kết quả khả quan hơn so với LLM thuần và tìm kiếm cơ bản, ở cả độ chính xác từ khóa lẫn độ chính xác trích dẫn. Kết quả này cho thấy việc kết hợp cấu trúc pháp lý xác định với ontology hai lớp là một hướng tiếp cận tiềm năng cho bài toán hỏi đáp pháp lý có trích dẫn.
 
-Hạn chế là corpus hẹp (lao động), bộ đánh giá nhỏ chưa qua chuyên gia. Tuy nhiên, pattern thiết kế có thể mở rộng sang các domain pháp lý khác và tái sử dụng trong các ứng dụng Legal AI tương tự. Hệ thống mang tính hỗ trợ, không thay thế tư vấn pháp lý chính thức.
+Hệ thống được xây dựng với mục đích hỗ trợ tra cứu, đồng hành cùng người dùng trong việc tiếp cận thông tin pháp luật, không thay thế tư vấn pháp lý chính thức từ luật sư hoặc cơ quan có thẩm quyền.
 
 \vspace{1.5cm}
 

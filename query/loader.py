@@ -113,7 +113,12 @@ class GraphLoader:
     # ------------------------------------------------------------------
     def load(self, prefer_merged: bool = True) -> "GraphLoader":
         """Load config + tất cả parquets. Nếu prefer_merged=True, dùng merged graph nếu có."""
-        self.config = load_config(self.root_dir)
+        orig_cwd = Path.cwd()
+        try:
+            self.config = load_config(self.root_dir)
+        finally:
+            import os
+            os.chdir(orig_cwd)
         if (self.root_dir / "output" / "entities.parquet").exists():
             self._load_via_table_provider()
         else:

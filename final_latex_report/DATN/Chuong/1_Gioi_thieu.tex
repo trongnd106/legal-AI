@@ -6,13 +6,10 @@
 
 Trong bối cảnh chuyển đổi số và sự phát triển nhanh của trí tuệ nhân tạo, nhu cầu tra cứu, hiểu và áp dụng pháp luật lao động Việt Nam ngày càng lớn. \gls{NLD} cần biết quyền lợi, khiếu nại và nghĩa vụ của bản thân khi tham gia vào quan hệ lao động; \gls{NSDLD} và bộ phận nhân sự phải soạn thảo, rà soát \gls{HDLD} cho đúng quy định; luật sư nội bộ và cán bộ pháp chế doanh nghiệp cần phản hồi nhanh các câu hỏi tuân thủ pháp luật. Các cổng thông tin điện tử và thư viện pháp luật truyền thống hỗ trợ tra cứu theo từ khóa, nhưng không đáp ứng được kỳ vọng về \emph{hỏi đáp tự nhiên}, \emph{tổng hợp nhiều điều luật} và \emph{trích dẫn có căn cứ} -- những yêu cầu then chốt trong bối cảnh ứng dụng trí tuệ nhân tạo vào lĩnh vực pháp luật~\cite{ji2023hallucination}.
 
-\subsection{Đặc thù văn bản pháp luật lao động Việt Nam}
-\label{subsection:1.1.1}
+\subsection{Đặc thù, quy mô corpus và độ phức tạp bài toán}
+\label{subsection:1.1.2}
 
 Văn bản pháp luật lao động có cấu trúc phân cấp chặt chẽ (BLLĐ 2019 $\rightarrow$ Nghị định/Thông tư hướng dẫn), với quan hệ dẫn chiếu, sửa đổi và bãi bỏ tạo thành mạng lưới mà tra cứu từ khóa khó nắm bắt. Chi tiết corpus được phân tích ở Mục~\ref{subsection:2.1.1}.
-
-\subsection{Quy mô corpus và độ phức tạp bài toán}
-\label{subsection:1.1.2}
 
 Đồ án tập trung vào corpus gồm 7 văn bản pháp luật lao động, tương ứng 581 Điều, 2069 Khoản và 1705 Điểm sau khi chuẩn hóa. Quy mô này đủ lớn để phản ánh thách thức thực tế nhưng vẫn trong tầm triển khai và đánh giá có kiểm soát.
 
@@ -41,18 +38,15 @@ Trong lĩnh vực pháp luật, sai sót không chỉ là vấn đề kỹ thu�
 \section{Các giải pháp hiện tại và hạn chế}
 \label{section:1.2}
 
-\subsection{Phương pháp tra cứu pháp luật truyền thống}
+\subsection{Phương pháp tra cứu pháp luật truyền thống và RAG}
 \label{subsection:1.2.1}
 
 Tra cứu trên cổng thông tin điện tử hoặc thư viện pháp luật dựa trên BM25/TF-IDF~\cite{robertson1994bm25}. Phương pháp này mạnh khi biết từ khóa chính xác, nhưng thiếu hiểu ngữ nghĩa, không nắm quan hệ chéo văn bản và không suy luận chuỗi quy phạm $\rightarrow$ chế tài.
 
-\subsection{Phương pháp dựa trên LLM và RAG truyền thống}
-\label{subsection:1.2.2}
-
 \gls{RAG}~\cite{lewis2020rag} giảm ảo giác so với LLM thuần~\cite{ji2023hallucination}, nhưng \gls{NaiveRAG} gặp hạn chế: chunking cắt giữa Khoản, vector search không nắm quan hệ pháp lý, khó trả lời câu tổng hợp đa Điều, rủi ro trích văn bản lỗi thời.
 
 \subsection{Phương pháp dựa trên đồ thị tri thức và GraphRAG}
-\label{subsection:1.2.3}
+\label{subsection:1.2.2}
 
 \gls{KG} biểu diễn tri thức dưới dạng thực thể (entity) và quan hệ (relationship), phù hợp với cấu trúc phân cấp và dẫn chiếu của văn bản pháp luật. Hình~\ref{fig:kg-minh-hoa} minh họa khái niệm: các đỉnh (node) biểu diễn thực thể, các cạnh (edge) biểu diễn quan hệ giữa chúng --- nền tảng để suy luận đa bước trên corpus pháp luật.
 

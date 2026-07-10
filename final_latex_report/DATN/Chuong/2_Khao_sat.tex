@@ -162,22 +162,45 @@ Nghiên cứu gần đây cho thấy kết hợp (hybrid) là hướng hiệu qu
 \subsection{Đồ thị tri thức}
 \label{subsection:knowledge_graph}
 
-Đồ thị tri thức $G = (V, E)$ gồm tập đỉnh $V$ (entities) và tập cạnh $E$ (relationships). Mỗi entity có \texttt{id}, \texttt{title}, \texttt{description}; mỗi relationship nối hai entity với \texttt{type} (ví dụ: \texttt{entitles}, \texttt{cites}).
+Đồ thị tri thức (Knowledge Graph --- KG) là một cấu trúc dữ liệu đồ thị biểu diễn tri thức thế giới thực dưới dạng các thực thể (entity) và quan hệ (relationship) giữa chúng~\cite{ji2022kgsurvey}. Về mặt hình thức, KG được định nghĩa như một đồ thị có nhãn:
 
-Trong domain pháp luật lao động, đồ thị có tính dị thể (heterogeneous): nhiều loại entity (Văn bản, Điều, Chủ thể, Hành vi, Chế tài) và nhiều loại quan hệ. Entity resolution và deduplication là thách thức: ``Điều 35'', ``Điều thứ 35 BLLĐ'' có thể chỉ cùng một node -- vấn đề này được giải quyết qua Lớp canonicalization.
+\[
+G = (V, E, \mathcal{L}_V, \mathcal{L}_E, \mathcal{T})
+\]
+
+trong đó $V$ là tập đỉnh (entities), $E$ là tập cạnh (relationships), $\mathcal{L}_V : V \to \mathcal{T}_V$ là hàm gán nhãn kiểu cho mỗi đỉnh, $\mathcal{L}_E : E \to \mathcal{T}_E$ là hàm gán nhãn kiểu cho mỗi cạnh, và $\mathcal{T} = (\mathcal{T}_V, \mathcal{T}_E)$ là tập các kiểu (type system). Cách biểu diễn phổ biến nhất là bộ ba RDF (Resource Description Framework) dạng $\langle chủ\_thể, vị\_ngữ, tân\_ngữ \rangle$, tương ứng $\langle head, relation, tail \rangle$ --- mỗi bộ ba tạo thành một cạnh có hướng $h \xrightarrow{r} t$.
+
+Việc biểu diễn tri thức dưới dạng đồ thị cho phép áp dụng các phép toán hình thức như hợp (union), giao (intersection), và truy vấn cấu trúc (graph pattern matching)~\cite{wang2017kgembedding}. Trong hệ thống pháp luật lao động, mỗi Điều luật được biểu diễn thành nhiều bộ ba. Ví dụ, quy định về nghỉ phép tại Điều 113 BLLĐ có thể được trích xuất thành các triple: $\langle NLĐ, entitles, Quyền\_nghỉ\_phép \rangle$, $\langle Quyền\_nghỉ\_phép, applies\_when, Điều\_kiện\_12\_tháng \rangle$.
+
+\subsubsection*{Học biểu diễn đồ thị tri thức (Knowledge Graph Embedding)}
+
+KG embedding là nhóm kỹ thuật ánh xạ mỗi entity và relationship vào một không gian vector liên tục $\mathbb{R}^d$ sao cho cấu trúc đồ thị được bảo toàn trong không gian đó. Mô hình tiêu biểu là TransE~\cite{bordes2013transe}, dựa trên nguyên lý dịch chuyển (translational distance): nếu triple $(h, r, t)$ tồn tại thì vector embedding thỏa mãn:
+
+\[
+\mathbf{h} + \mathbf{r} \approx \mathbf{t}
+\]
+
+với $\mathbf{h}, \mathbf{r}, \mathbf{t} \in \mathbb{R}^d$. Score function $f(h, r, t) = \|\mathbf{h} + \mathbf{r} - \mathbf{t}\|$ đo độ tin cậy của triple --- giá trị càng nhỏ càng tin tưởng triple đúng. Các mô hình phức tạp hơn như RotatE (biểu diễn quan hệ dưới dạng phép quay trong không gian phức) hay ComplEx (tích vô hướng trong không gian phức) có khả năng biểu diễn các kiểu quan hệ bất đối xứng và bắc cầu tốt hơn. Trong đồ án, KG embedding không được sử dụng trực tiếp (hệ thống dùng text embedding từ Qwen3); tuy nhiên, hiểu về nguyên lý này giúp giải thích tại sao việc kết hợp cấu trúc đồ thị (Lớp~1) và biểu diễn ngữ nghĩa (Lớp~2) mang lại hiệu quả cho truy xuất pháp luật.
+
+\subsubsection*{Đồ thị dị thể (Heterogeneous Graph)}
+
+KG pháp luật lao động là một đồ thị dị thể (heterogeneous graph): tồn tại nhiều loại đỉnh (Văn bản, Điều, Chủ thể, Hành vi, Chế tài) và nhiều loại cạnh (\texttt{cites}, \texttt{obligates}, \texttt{penalizes}, \texttt{entitles}). Xử lý đồ thị dị thể đòi hỏi các thuật toán chuyên biệt vì phép toán giữa hai loại đỉnh khác nhau mang ý nghĩa khác với phép toán giữa hai đỉnh cùng loại. Meta-path~\cite{sun2011metapath} là khái niệm quan trọng: một đường đi trên đồ thị dị thể theo một mẫu các quan hệ xác định, ví dụ meta-path ``Điều $\xrightarrow{cites}$ Văn\_bản $\xrightarrow{issued\_by}$ Cơ\_quan'' cho phép suy luận logic xuyên văn bản. Trong VNLegalReasoningEngine (Mục~\ref{subsection:3.3.2}), các chain template (violation, entitlement, procedure) chính là các meta-path được định nghĩa trước dựa trên ontology pháp luật.
+
+Vấn đề entity resolution trong KG dị thể là một thách thức lớn: cùng một thực thể có thể được biểu diễn bằng nhiều chuỗi khác nhau (``Điều 35'', ``khoản 1 Điều 35 BLLĐ 2019'', ``Điều thứ 35'')~\cite{ji2022kgsurvey}. Trong đồ án, vấn đề này được giải quyết qua Lớp canonicalization, sử dụng bảng ánh xạ (lookup table) chuẩn hóa mọi biểu diễn về định danh duy nhất (Mục~\ref{subsection:3.2.2}).
 
 \subsection{Truy xuất dựa trên đồ thị}
 \label{subsection:graph_retrieval}
 
-Truy xuất đồ thị khác vector retrieval ở khả năng khai thác cấu trúc quan hệ:
+Truy xuất đồ thị khác vector retrieval ở khả năng khai thác cấu trúc quan hệ thay vì chỉ dựa trên độ tương tự ngữ nghĩa. Các kỹ thuật truy xuất trên đồ thị được sử dụng trong đồ án gồm:
 
 \begin{itemize}[nosep, leftmargin=*]
-    \item \textbf{Graph traversal:} từ entity khởi đầu, duyệt theo cạnh (BFS/DFS) đến depth $h$ (hops).
-    \item \textbf{Subgraph extraction:} trích subgraph liên quan câu hỏi, đưa vào LLM làm context.
-    \item \textbf{Multi-hop:} câu hỏi ``A vi phạm B thì bị phạt C'' $\rightarrow$ duyệt $A \xrightarrow{obligates} B \xrightarrow{penalizes} C$.
+    \item \textbf{Graph traversal:} từ entity khởi đầu, duyệt theo cạnh bằng BFS (Breadth-First Search) hoặc DFS (Depth-First Search) đến độ sâu $h$ (hops). BFS phù hợp tìm quan hệ trong phạm vi hẹp (các Điều cùng Chương); DFS phù hợp truy vết chuỗi nhân quả (hành vi $\rightarrow$ nghĩa vụ $\rightarrow$ chế tài). Độ phức tạp thời gian của BFS/DFS trên đồ thị là $O(|V| + |E|)$.
+    \item \textbf{Subgraph extraction:} trích xuất một subgraph liên quan đến câu hỏi bằng cách lấy $k$-hop neighborhood của entity khởi tạo, sau đó đưa toàn bộ subgraph vào LLM làm context. Đây là kỹ thuật nền tảng của GraphRAG Local Search.
+    \item \textbf{Personalized PageRank (PPR):} đo mức độ quan trọng của mỗi node đối với một node gốc $u$ cụ thể, dựa trên random walk với xác suất quay lại $u$ là $\alpha$. PageRank truyền thống~\cite{brin1998pagerank} tính tầm quan trọng toàn cục: $PR(u) = \frac{1-d}{|V|} + d \sum_{v \in N_{in}(u)} \frac{PR(v)}{|N_{out}(v)|}$, với $d$ là damping factor. PPR thêm bias vector tập trung vào node xuất phát, phù hợp để xếp hạng entity liên quan đến một câu hỏi cụ thể trong đồ thị pháp luật.
+    \item \textbf{Multi-hop reasoning:} kết hợp graph traversal và pattern matching: từ entity câu hỏi, engine duyệt theo các chain template (ví dụ: $\xrightarrow{violates} \xrightarrow{penalizes}$) để truy vết chuỗi suy luận. Khác với iterative retrieval (IRCoT~\cite{trivedi2022ircot}) dùng LLM quyết định hướng duyệt, phương pháp này duyệt trên cấu trúc đồ thị cố định, đảm bảo tính tái lập và thời gian xử lý ổn định (chi tiết Mục~\ref{subsection:3.3.2}).
 \end{itemize}
 
-So sánh: vector retrieval mạnh về ngữ nghĩa mờ (synonym, paraphrase); graph retrieval mạnh về quan hệ logic và chuỗi suy luận. Đồ án kết hợp cả hai qua GraphRAG Local Search (entity + text units) và multi-hop engine.
+So sánh tổng quan: vector retrieval mạnh về ngữ nghĩa mờ (synonym, paraphrase) với độ phức tạp $O(d \cdot |V|)$ cho mỗi truy vấn ($d$ là số chiều embedding); graph retrieval mạnh về quan hệ logic và chuỗi suy luận với độ phức tạp $O(|V| + |E|)$ cho traversal. Đồ án kết hợp cả hai qua GraphRAG Local Search (entity + text units) và multi-hop engine, khai thác ưu điểm bổ sung cho nhau: embedding thu hẹp không gian tìm kiếm, graph traversal đảm bảo tính logic của chuỗi suy luận.
 
 \subsection{GraphRAG --- Retrieval-Augmented Generation trên đồ thị}
 \label{subsection:graphrag_pipeline}
@@ -212,10 +235,32 @@ Hình~\ref{fig:pipeline-indexing} minh họa trực quan toàn bộ pipeline ind
 \subsection{Community detection và báo cáo cộng đồng}
 \label{subsection:2.3.4}
 
-Thuật toán Leiden~\cite{traag2019leiden} phân cụm entity theo modularity; mỗi community được LLM tóm tắt thành báo cáo (community report) phục vụ Global Search. Đồ án tùy chỉnh prompt tiếng Việt, nhấn mạnh quyền/nghĩa vụ/chế tài (chi tiết Phụ lục~B).
+Phát hiện cộng đồng (community detection) là bài toán phân hoạch tập đỉnh $V$ của đồ thị thành các cụm (communities) sao cho mật độ cạnh nội cụm cao và liên cụm thấp. Trong GraphRAG, community detection đóng vai trò then chốt: nó nhóm các entity pháp luật có liên quan chặt chẽ (ví dụ: tất cả entity về ``nghỉ phép'' và ``thai sản'') thành cùng một cộng đồng, từ đó LLM có thể tổng hợp báo cáo chủ đề (community report) phục vụ Global Search.
 
-\section{Mô hình ngôn ngữ lớn và embedding}
-\label{section:2.4}
+Chất lượng phân cụm được đo bằng modularity~\cite{newman2006modularity}:
+
+\[
+Q = \frac{1}{2m} \sum_{ij} \left[ A_{ij} - \frac{k_i k_j}{2m} \right] \delta(c_i, c_j)
+\]
+
+trong đó $A_{ij}$ là ma trận kề (0/1 cho đồ thị vô hướng), $k_i = \sum_j A_{ij}$ là bậc (degree) của đỉnh $i$, $m = \frac{1}{2} \sum_{ij} A_{ij}$ là tổng số cạnh, và $\delta(c_i, c_j) = 1$ nếu $i$ và $j$ thuộc cùng một cộng đồng. Modularity $Q$ nằm trong khoảng $[-0.5, 1]$; giá trị càng cao phản ánh cấu trúc cộng đồng càng rõ nét. Số hạng $\frac{k_i k_j}{2m}$ là kỳ vọng xác suất có cạnh giữa $i$ và $j$ trong đồ thị ngẫu nhiên (null model configuration), do đó $Q$ đo mức độ dư thừa cạnh nội cụm so với ngẫu nhiên.
+
+\subsubsection*{Thuật toán Louvain}
+
+Louvain~\cite{blondel2008louvain} là thuật toán tối ưu modularity phổ biến nhất, gồm hai pha lặp:
+
+\begin{enumerate}[nosep, leftmargin=*]
+    \item \textbf{Local moving:} duyệt từng đỉnh, di chuyển nó sang cộng đồng lân cận làm tăng $\Delta Q$ nhiều nhất. Lặp đến khi hội tụ.
+    \item \textbf{Aggregation:} gộp mỗi cộng đồng thành một siêu đỉnh (super-node), trọng số cạnh giữa các siêu đỉnh là tổng trọng số cạnh liên cộng đồng tương ứng.
+\end{enumerate}
+
+Hai pha được lặp cho đến khi modularity không còn cải thiện. Độ phức tạp của Louvain là $O(L \log L)$ với $L$ là số cạnh.
+
+\subsubsection*{Thuật toán Leiden}
+
+Leiden~\cite{traag2019leiden} khắc phục nhược điểm của Louvain: Louvain có thể sinh ra các cộng đồng không liên thông (disconnected communities) --- các đỉnh trong cùng một cộng đồng nhưng không có đường đi nào nối giữa chúng. Leiden bổ sung pha thứ ba --- \textbf{refinement}: sau local moving, các cộng đồng được tinh chỉnh bằng cách chia nhỏ dựa trên mật độ nội cụm, đảm bảo mọi cộng đồng đầu ra đều liên thông. Kết quả Leiden cho chất lượng phân cụm cao hơn Louvain trên hầu hết các đồ thị chuẩn, đặc biệt là đồ thị thưa (sparse graph) như KG pháp luật.
+
+Trong đồ án, Leiden được áp dụng trên merged graph (7.725 entities, 10.609 relationships) và tạo ra 903 cộng đồng ở bốn cấp độ phân giải (40 / 327 / 488 / 48). Các cộng đồng cấp độ 0 (40 cộng đồng) tương ứng các chủ đề pháp lý lớn (BHXH, kỷ luật lao động, nghỉ phép, lương tối thiểu vùng...) và được LLM sinh community reports tiếng Việt để phục vụ Global Search. Đồ án tùy chỉnh prompt community report, nhấn mạnh quyền/nghĩa vụ/chế tài (chi tiết Phụ lục~B).
 
 Mô hình \gls{LLM} qua OpenRouter phục vụ indexing (extraction, community report), truy vấn và phân tích HĐLĐ. Mô hình embedding \texttt{qwen/qwen3-embedding-4b} (với số chiều là 2560) phục vụ Basic/Local Search.
 

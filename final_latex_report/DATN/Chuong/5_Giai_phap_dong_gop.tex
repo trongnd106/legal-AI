@@ -97,17 +97,14 @@ Giải pháp VNLegalReasoningEngine: Duyệt trực tiếp trên merged graph th
 \section{Rule validator cho phân tích HĐLĐ}
 \label{section:5.3}
 
-\subsection{Vấn đề phân tích HĐLĐ với LLM-only không tin cậy}
-\label{subsection:5.3.1}
+\subsection{Giải pháp kiến trúc hybrid ba lớp}
+\label{subsection:5.3.2}
 
 Phân tích hợp đồng lao động yêu cầu: (1) Nhanh (50--150 khoản); (2) Chính xác (không miss vi phạm); (3) Giải thích được (trích dẫn căn cứ).
 
 LLM-only có hạn chế: chậm (1--2s/khoản), hallucination (trích sai Điều), chi phí token cao.
 
 Quan sát khóa: Domain luật lao động VN có nhiều ngưỡng số học rõ ràng, chẳng hạn như 12 ngày phép/năm, 60 ngày thử việc, 48 giờ/tuần, lương tối thiểu vùng I--IV. Các ngưỡng này phù hợp kiểm tra bằng rule deterministic, không cần LLM.
-
-\subsection{Giải pháp kiến trúc hybrid ba lớp}
-\label{subsection:5.3.2}
 
 Thiết kế layer stack:
 
@@ -135,13 +132,10 @@ Giải pháp hybrid: Kiến trúc ba tầng (rule → graph grounding → LLM b�
 \section{Temporal Validity Filter lọc trích dẫn lỗi thời}
 \label{section:5.4}
 
-\subsection{Vấn đề Luật thay đổi liên tục}
-\label{subsection:5.4.1}
-
-Pháp luật lao động VN thay đổi liên tục (lương vùng, chế tài, v.v.). Trích dẫn văn bản hết hiệu lực là sai pháp lý nghiêm trọng (ví dụ: NĐ 90/2019 → thay bằng NĐ 74/2024). GraphRAG gốc và RAG truyền thống không có cơ chế lọc theo hiệu lực pháp lý tạm thời (temporal validity của văn bản, không phải timeline sự kiện).
-
 \subsection{Giải pháp Temporal filter từ metadata}
 \label{subsection:5.4.2}
+
+Pháp luật lao động VN thay đổi liên tục (lương vùng, chế tài, v.v.). Trích dẫn văn bản hết hiệu lực là sai pháp lý nghiêm trọng (ví dụ: NĐ 90/2019 → thay bằng NĐ 74/2024). GraphRAG gốc và RAG truyền thống không có cơ chế lọc theo hiệu lực pháp lý tạm thời (temporal validity của văn bản, không phải timeline sự kiện).
 
 Module \texttt{query/temporal\_filter.py} xử lý các logic:
 
@@ -185,14 +179,7 @@ Luồng Phân tích HĐLĐ:
 
 Mọi output đều có trace giải thích → đảm bảo độ tin cậy.
 
-\subsection{So sánh với GraphRAG gốc}
-\label{subsection:5.5.2}
-
-\begin{itemize}[nosep, leftmargin=*]
-    \item GraphRAG gốc: Local Search, Global Search (community map-reduce) --- tốt cho tin tức.
-    
-    \item Giải pháp đóng góp: Local + Global + Multi-hop + Temporal filter + Rule validator + Contract analyzer tối ưu hóa cho pháp luật.
-\end{itemize}
+Khác biệt so với GraphRAG gốc (Local Search, Global Search --- tốt cho tin tức), giải pháp đóng góp bổ sung Local + Global + Multi-hop + Temporal filter + Rule validator + Contract analyzer, tối ưu hóa cho pháp luật.
 
 \section{Tổng kết các đóng góp}
 \label{section:5.6}

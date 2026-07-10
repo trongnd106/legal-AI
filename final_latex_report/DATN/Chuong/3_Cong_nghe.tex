@@ -204,13 +204,7 @@ Module xác thực quy tắc kiểm tra hai loại điều kiện: (1)~\emph{pre
 \section{Tích hợp LLM và kiểm soát hallucination}
 \label{section:3.4}
 
-\subsection{Vai trò LLM}
-\label{subsection:3.4.1}
-
 LLM đóng ba vai trò: indexing (extraction, community report), querying (Local Search, Global Search map-reduce), contract analysis. Tri thức pháp luật nằm trong corpus và đồ thị --- LLM chỉ tổng hợp ngữ cảnh retrieved, không phải nguồn tri thức chính.
-
-\subsection{Kiểm soát hallucination}
-\label{subsection:3.4.2}
 
 Ngữ cảnh query gồm text units, mô tả entity, community reports và quan hệ. Ba lớp kiểm soát: (1)~grounding retrieval; (2)~prompt schema cố định, cấu hình tham số \texttt{temperature=0}; (3)~post-processing (\texttt{citation\_resolver}, temporal filter, rule validator).
 

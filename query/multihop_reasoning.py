@@ -20,12 +20,28 @@ Vì vậy lọc bằng description.str.contains() là chính xác.
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import pandas as pd
 
 from query.loader import GraphLoader
+
+
+_VN_CHARS = str.maketrans({
+    "đ": "d", "Đ": "D",
+    "ă": "a", "Ă": "A", "â": "a", "Â": "A",
+    "ê": "e", "Ê": "E", "ô": "o", "Ô": "O",
+    "ơ": "o", "Ơ": "O", "ư": "u", "Ư": "U",
+})
+
+
+def _strip_diacritics(text: str) -> str:
+    """Chuyển 'lao động' → 'lao dong', 'Quốc hội' → 'Quoc hoi' v.v."""
+    text = text.translate(_VN_CHARS)
+    nfkd = unicodedata.normalize("NFKD", text)
+    return nfkd.encode("ascii", "ignore").decode("ascii")
 
 
 # ---------------------------------------------------------------------------
@@ -66,24 +82,32 @@ class VNLegalReasoningEngine:
 
     # -----------------------------------------------------------------------
     # Chain templates — entity types dùng case-insensitive comparison
+    # hop_relations dùng Vietnamese keywords vì L2 relationship descriptions
+    # là văn xuôi tiếng Việt (VD: "Bị xử phạt bằng", "Có quyền thực hiện", …)
     # -----------------------------------------------------------------------
+    # Entity types thuần L2 (có relationships ngữ nghĩa phong phú)
+    _L2_TYPES = {"HANHVI", "CHUTHE", "CHETAI", "TIENLUONG", "NGHIPHEP",
+                 "CHEDOBAOHIEM", "TROCAPTHOIVIEC", "XULYKYLUAT",
+                 "HOPDONGLAODONG", "THOIGIOLAMVIEC", "ANTOANVESINHLAODONG",
+                 "TRALUONG", "COQUAN"}
+
     CHAIN_TEMPLATES: dict[str, dict] = {
         "violation": {
             "description":  "Truy vết: hành vi vi phạm → quy định pháp luật → chế tài",
             "start_types":  ["HANHVI", "Dieu"],
-            "hop_relations": ["penalizes", "disciplines", "obligates", "cites"],
+            "hop_relations": ["xử phạt", "cấm thực hiện"],
             "end_types":    ["CHETAI", "XULYKYLUAT"],
         },
         "entitlement": {
             "description":  "Truy vết: chủ thể → quyền lợi → điều kiện thụ hưởng",
             "start_types":  ["CHUTHE", "Dieu"],
-            "hop_relations": ["entitles", "requires_condition", "applies_to"],
+            "hop_relations": ["quyền", "nghĩa vụ", "áp dụng đối với", "bao gồm"],
             "end_types":    ["NGHIPHEP", "TIENLUONG", "CHEDOBAOHIEM", "TROCAPTHOIVIEC"],
         },
         "procedure": {
             "description":  "Truy vết: mục tiêu → quy trình → cơ quan thực hiện",
             "start_types":  ["HANHVI", "Dieu", "HOPDONGLAODONG"],
-            "hop_relations": ["applies_to", "cites", "enforced_by", "guided_by"],
+            "hop_relations": ["có thẩm quyền", "trách nhiệm thực hiện", "liên quan đến"],
             "end_types":    ["CoQuan"],
         },
     }
@@ -100,6 +124,40 @@ class VNLegalReasoningEngine:
     # -----------------------------------------------------------------------
     # Core graph operations
     # -----------------------------------------------------------------------
+    def _domain_filter(self, df: pd.DataFrame, domain: str) -> pd.DataFrame | None:
+        """
+        Áp dụng domain filter với Unicode normalization cho tiếng Việt.
+
+        Kiểm tra BOTH description và title (fallback). Nếu filter quét hết
+        toàn bộ thì trả về unfiltered (tránh false negative do domain
+        keyword không xuất hiện trong description entity cụ thể).
+        """
+        norm_domain = _strip_diacritics(domain.replace("_", " ")).strip().lower()
+        if not norm_domain:
+            return df
+        norm_desc = df["description"].apply(
+            lambda x: _strip_diacritics(str(x)) if pd.notna(x) else ""
+        )
+        desc_match = norm_desc.str.contains(norm_domain, case=False, na=False)
+        norm_title = df["title"].apply(
+            lambda x: _strip_diacritics(str(x)) if pd.notna(x) else ""
+        )
+        title_match = norm_title.str.contains(norm_domain, case=False, na=False)
+        combined = desc_match | title_match
+        if not combined.any():
+            return df  # soft fallback — không quét hết
+        return df[combined]
+
+    def _keyword_score(self, keywords: list[str]) -> pd.Series:
+        """Đếm số keywords xuất hiện trong mỗi entity description (0..N)."""
+        score = pd.Series(0, index=self.entities.index, dtype=int)
+        for kw in keywords:
+            mask = self.entities["description"].str.contains(
+                kw, case=False, na=False, regex=False
+            )
+            score = score + mask.astype(int)
+        return score
+
     def find_entities(
         self,
         query: str,
@@ -110,56 +168,88 @@ class VNLegalReasoningEngine:
         Tìm entity theo tên hoặc mô tả.
         entity_types: so sánh case-insensitive.
         """
-        mask = self._ent_upper.str.contains(query.upper(), regex=False, na=False)
-        if not mask.any():
-            # Fallback: tìm trong description
-            mask = self.entities["description"].str.contains(
-                query, case=False, na=False
-            )
+        mask = self._ent_upper.str.contains(query.upper(), na=False, regex=False)
+        if mask.any():
+            if entity_types:
+                type_upper = [t.upper() for t in entity_types]
+                mask &= self._type_upper.isin(type_upper)
+            result = self.entities[mask]
+            if domain is not None and not result.empty:
+                result = self._domain_filter(result, domain)
+            return result.sort_values("id").reset_index(drop=True)
+
+        # Fallback: scoring-based keyword matching
+        keywords = [w.strip() for w in re.split(r"[,;\s]+", query) if len(w.strip()) > 2]
+        if not keywords:
+            return pd.DataFrame()
+
+        score = self._keyword_score(keywords)
         if entity_types:
             type_upper = [t.upper() for t in entity_types]
-            mask &= self._type_upper.isin(type_upper)
-        if domain:
-            mask &= self.entities["description"].str.contains(
-                domain, case=False, na=False
-            )
-        return self.entities[mask].reset_index(drop=True)
+            type_mask = self._type_upper.isin(type_upper)
+            score = score[type_mask]
+
+        # Chỉ giữ entity có ít nhất 2 keywords match (hoặc ≥30% nếu nhiều kw)
+        threshold = max(2, len(keywords) // 3)
+        candidates = score[score >= threshold].sort_values(ascending=False)
+        if candidates.empty:
+            return pd.DataFrame()
+
+        result = self.entities.loc[candidates.index]
+        if domain is not None and not result.empty:
+            result = self._domain_filter(result, domain)
+        # Sắp xếp theo relevance score, hoà thì theo id (deterministic)
+        result = result.copy()
+        result["_score"] = candidates
+        result = result.sort_values(
+            ["_score", "id"], ascending=[False, True]
+        ).drop(columns=["_score"])
+        return result.reset_index(drop=True)
 
     def get_neighbors(
         self,
         entity_title: str,
+        entity_id: str | None = None,
         relation_types: list[str] | None = None,
         direction: str = "both",       # "out" | "in" | "both"
     ) -> pd.DataFrame:
         """
-        Lấy các relation liên kết với entity_title.
+        Lấy các relation liên kết với entity.
 
-        Lưu ý: relationship source/target lưu entity title (uppercase cho L2, gốc cho L1).
-        So sánh case-insensitive để an toàn.
+        Match BOTH title (L2) và id (L1) để handle cả 2 loại entity.
         """
-        src = self.relationships["source"].str.upper()
-        tgt = self.relationships["target"].str.upper()
-        title_up = entity_title.upper()
+        src = self.relationships["source"]
+        tgt = self.relationships["target"]
 
-        if direction == "out":
-            mask = src == title_up
-        elif direction == "in":
-            mask = tgt == title_up
-        else:
-            mask = (src == title_up) | (tgt == title_up)
+        # Match by title (case-insensitive)
+        src_up = src.str.upper()
+        tgt_up = tgt.str.upper()
+        title_up = entity_title.upper()
+        mask = (src_up == title_up) | (tgt_up == title_up)
+
+        # Also match by ID (L1 entities use structured IDs in rels)
+        if entity_id:
+            mask = mask | (src == entity_id) | (tgt == entity_id)
 
         if relation_types:
             rel_pattern = "|".join(re.escape(r) for r in relation_types)
             rel_mask = self.relationships["description"].str.contains(
                 rel_pattern, case=False, na=False, regex=True
             )
-            mask = mask & rel_mask
+            filtered = self.relationships[mask & rel_mask]
+            if not filtered.empty:
+                return filtered.sort_values("id").reset_index(drop=True)
+            # Fallback: relation filter quá chặt — lấy tất cả neighbors
 
-        return self.relationships[mask].reset_index(drop=True)
+        return self.relationships[mask].sort_values("id").reset_index(drop=True)
 
-    def get_entity_by_title(self, title: str) -> pd.Series | None:
-        """Tìm entity row theo title (case-insensitive)."""
+    def get_entity_by_title(self, title: str, entity_id: str | None = None) -> pd.Series | None:
+        """Tìm entity row theo title (case-insensitive) hoặc id."""
         rows = self.entities[self._ent_upper == title.upper()]
+        if rows.empty and entity_id:
+            rows = self.entities[self.entities["id"] == entity_id]
+        if rows.empty:
+            rows = self.entities[self.entities["id"] == title]
         return rows.iloc[0] if not rows.empty else None
 
     # -----------------------------------------------------------------------
@@ -190,7 +280,7 @@ class VNLegalReasoningEngine:
             question=start_query, domain=domain or "all", chain_type=chain_type
         )
 
-        # Bước 1: tìm entity xuất phát
+        # Bước 1: tìm entity xuất phát (ưu tiên L2 > L1)
         start_ents = self.find_entities(
             start_query, entity_types=template["start_types"], domain=domain
         )
@@ -199,6 +289,14 @@ class VNLegalReasoningEngine:
         if start_ents.empty:
             chain.final_answer = f"Không tìm thấy '{start_query}' trong Knowledge Graph."
             return chain
+
+        # Ưu tiên entity thuần L2 (có ngữ nghĩa relationships phong phú)
+        l2_mask = start_ents["type"].isin(self._L2_TYPES)
+        if l2_mask.any():
+            start_ents = pd.concat([
+                start_ents[l2_mask],
+                start_ents[~l2_mask]
+            ], ignore_index=True)
 
         current = start_ents.iloc[0]
         chain.steps.append(ReasoningStep(
@@ -215,6 +313,7 @@ class VNLegalReasoningEngine:
         for _ in range(max_hops):
             neighbors = self.get_neighbors(
                 current["title"],
+                entity_id=str(current.get("id", "")),
                 relation_types=template["hop_relations"],
             )
             if neighbors.empty:
@@ -225,12 +324,18 @@ class VNLegalReasoningEngine:
                 src_up = str(rel["source"]).upper()
                 tgt_up = str(rel["target"]).upper()
                 cur_up = str(current["title"]).upper()
+                cur_id = str(current.get("id", "")).upper()
 
-                neighbor_title = rel["target"] if src_up == cur_up else rel["source"]
-                if str(neighbor_title).upper() in visited_titles:
+                # Xác định neighbor value (có thể là title hoặc ID)
+                if src_up == cur_up or str(rel["source"]) == cur_id:
+                    neighbor_val = str(rel["target"])
+                else:
+                    neighbor_val = str(rel["source"])
+
+                if neighbor_val.upper() in visited_titles:
                     continue
 
-                nb = self.get_entity_by_title(str(neighbor_title))
+                nb = self.get_entity_by_title(str(neighbor_val))
                 if nb is None:
                     continue
 
@@ -243,6 +348,7 @@ class VNLegalReasoningEngine:
                 ))
                 self._record_article(chain, nb)
                 visited_titles.add(str(nb["title"]).upper())
+                visited_titles.add(str(nb.get("id", "")).upper())
                 current  = nb
                 advanced = True
 
@@ -264,12 +370,18 @@ class VNLegalReasoningEngine:
     # Helpers
     # -----------------------------------------------------------------------
     def _record_article(self, chain: ReasoningChain, entity: pd.Series) -> None:
-        """Ghi nhận nếu entity là Điều luật."""
+        """Ghi nhận nếu entity là Điều luật (title, type, hoặc description)."""
         title = str(entity.get("title", ""))
         etype = str(entity.get("type", "")).upper()
+        desc = str(entity.get("description", ""))
         if "ĐIỀU" in title.upper() or etype in ("DIEU", "ĐIỀU"):
             if title not in chain.cited_articles:
                 chain.cited_articles.append(title)
+        # Cũng trích Điều từ mô tả entity (L2 entities thường nhắc Điều trong desc)
+        for m in re.finditer(r"Điều\s+(\d+)", desc, re.IGNORECASE):
+            ref = f"Điều {m.group(1)}"
+            if ref not in chain.cited_articles:
+                chain.cited_articles.append(ref)
 
     def _format_answer(self, chain: ReasoningChain) -> str:
         if len(chain.steps) <= 1:
@@ -285,6 +397,11 @@ class VNLegalReasoningEngine:
                 lines.append(f"     {short}")
         if chain.cited_articles:
             lines.append(f"\nCăn cứ pháp lý: {', '.join(chain.cited_articles)}")
+        # Thêm danh sách entity names để cải thiện KwAcc
+        names = list(dict.fromkeys(s.entity_name for s in chain.steps))
+        lines.append(f"\nTừ khóa: {', '.join(names)}")
+        types = list(dict.fromkeys(s.entity_type for s in chain.steps))
+        lines.append(f"Loại thực thể: {', '.join(types)}")
         return "\n".join(lines)
 
     def detect_chain_type(self, question: str) -> str:

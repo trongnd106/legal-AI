@@ -7,7 +7,6 @@ completion_models:
   default_completion_model:
     type: litellm
     model_provider: openrouter
-    # model: qwen/qwen3-235b-a22b-2507
     model: openai/gpt-4o-mini
     auth_method: api_key
     api_key: ${OPENROUTER_API_KEY}
@@ -19,16 +18,6 @@ completion_models:
     retry:
       type: exponential_backoff
       max_retries: 2
-  # default_completion_model:
-  #   type: litellm
-  #   model_provider: openai
-  #   model: kilo-auto/free
-  #   auth_method: api_key
-  #   api_key: ${KILO_API_KEY}
-  #   api_base: https://api.kilo.ai/api/gateway
-  #   retry:
-  #     type: exponential_backoff
-
 # ─── Embedding — OpenRouter ──────────────────────────────────────────────────
 embedding_models:
   default_embedding_model:
