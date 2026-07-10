@@ -23,12 +23,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_NEW_CHAT_TITLE = "Cuộc trò chuyện mới"
 WELCOME_HTML = """
   <p>Xin chào! Tôi là trợ lý tư vấn <strong>Luật Lao động Việt Nam</strong>.</p>
-  <p>Tôi có thể hỗ trợ bạn tra cứu Bộ luật Lao động 2019 và các Nghị định hướng dẫn.</p>
-  <ul>
-    <li>Quyền và nghĩa vụ của người lao động</li>
-    <li>Hợp đồng lao động, thử việc, chấm dứt HĐLĐ</li>
-    <li>Lương, BHXH, thời giờ làm việc, nghỉ phép</li>
-  </ul>
+  <p>Tôi có thể hỗ trợ bạn tìm hiểu về luật lao động và các quy định liên quan.</p>
 """
 
 

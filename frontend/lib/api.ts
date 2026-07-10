@@ -276,8 +276,95 @@ export async function analyzeContract(
     "/api/contract/analyze",
     { method: "POST", body: form },
     300_000,
-    { maxAttempts: 2, baseDelayMs: 2_000, ...retryOpts }, // contract analysis nặng → chỉ retry 1 lần
+    { maxAttempts: 2, baseDelayMs: 2_000, ...retryOpts },
   );
+}
+
+export interface ContractProgressEvent {
+  type: "progress";
+  message: string;
+}
+
+export interface ContractDoneEvent extends ContractAnalysisResponse {
+  type: "done";
+}
+
+export type ContractStreamEvent = ContractProgressEvent | ContractDoneEvent | { type: "error"; message: string };
+
+export async function streamContractAnalysis(
+  file: File,
+  wageRegion: string = "IV",
+  skipLlmReview: boolean = false,
+  callbacks: {
+    onProgress: (message: string) => void;
+    onDone: (result: ContractAnalysisResponse) => void;
+    onError: (error: string) => void;
+  },
+): Promise<void> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("wage_region", wageRegion);
+  form.append("skip_llm_review", String(skipLlmReview));
+
+  try {
+    const res = await fetch("/api/contract/analyze/stream", {
+      method: "POST",
+      body: form,
+    });
+
+    if (!res.ok) {
+      let detail = res.statusText;
+      try {
+        const body = await res.json() as { detail?: unknown };
+        if (typeof body.detail === "string") detail = body.detail;
+      } catch { /* ignore */ }
+      callbacks.onError(detail);
+      return;
+    }
+
+    const reader = res.body?.getReader();
+    if (!reader) {
+      callbacks.onError("Response body is null");
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+
+        let data: Record<string, unknown>;
+        try {
+          data = JSON.parse(raw);
+        } catch { continue; }
+
+        switch (data.type) {
+          case "progress":
+            callbacks.onProgress(String(data.message ?? ""));
+            break;
+          case "done":
+            callbacks.onDone(data as unknown as ContractAnalysisResponse);
+            return;
+          case "error":
+            callbacks.onError(String(data.message ?? "Lỗi không xác định"));
+            return;
+        }
+      }
+    }
+  } catch (err) {
+    callbacks.onError(err instanceof Error ? err.message : "Lỗi không xác định");
+  }
 }
 
 export async function healthCheck(): Promise<HealthResponse> {

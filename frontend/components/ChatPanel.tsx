@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, Paperclip, Send, Sparkles } from "lucide-react";
-import { analyzeContract, escapeHtml, sendChatMessage, streamChatMessage } from "@/lib/api";
+import { escapeHtml, sendChatMessage, streamChatMessage, streamContractAnalysis } from "@/lib/api";
 import type { ChatMessage } from "@/types/api";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { useToast } from "./ToastProvider";
@@ -139,19 +139,113 @@ export function ChatPanel({
 
     try {
       if (fileToAnalyze) {
-        // Có file đính kèm → gọi contract analysis pipeline
-        const data = await analyzeContract(fileToAnalyze, "IV", false, { onRetry });
-        const report = data.markdown_report || "Không có kết quả phân tích.";
+        // Có file đính kèm → gọi contract analysis pipeline (streaming)
+        setTyping(false);
+
+        let streamedReport = "";
+        let botAdded = false;
+        let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const scheduleUpdate = (markdown: string) => {
+          if (flushTimer) clearTimeout(flushTimer);
+          flushTimer = setTimeout(() => {
+            flushTimer = null;
+            if (!botAdded) {
+              botAdded = true;
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "bot",
+                  markdown,
+                  plain: markdown,
+                  timestamp: Date.now(),
+                },
+              ]);
+            } else {
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = { ...next[next.length - 1] };
+                last.markdown = markdown;
+                last.plain = markdown;
+                next[next.length - 1] = last;
+                return next;
+              });
+            }
+          }, 16);
+        };
+
         setMessages((prev) => [
           ...prev,
           {
             role: "bot",
-            markdown: report,
-            plain: report,
-            citations: [],
+            markdown: "⏳ Đang phân tích hợp đồng...",
+            plain: "Đang phân tích hợp đồng...",
             timestamp: Date.now(),
           },
         ]);
+
+        await streamContractAnalysis(
+          fileToAnalyze,
+          "IV",
+          false,
+          {
+            onProgress: (message) => {
+              const display = `⏳ ${message}`;
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = { ...next[next.length - 1] };
+                last.markdown = display;
+                last.plain = message;
+                next[next.length - 1] = last;
+                return next;
+              });
+            },
+            onDone: (data) => {
+              if (flushTimer) clearTimeout(flushTimer);
+              const report = data.markdown_report || "Không có kết quả phân tích.";
+              setMessages((prev) => {
+                const next = [...prev];
+                const isBot = next.length > 0 && next[next.length - 1].role === "bot";
+                if (!isBot) {
+                  next.push({
+                    role: "bot",
+                    markdown: report,
+                    plain: report,
+                    timestamp: Date.now(),
+                  });
+                } else {
+                  const last = { ...next[next.length - 1] };
+                  last.markdown = report;
+                  last.plain = report;
+                  next[next.length - 1] = last;
+                }
+                return next;
+              });
+            },
+            onError: (message) => {
+              if (flushTimer) clearTimeout(flushTimer);
+              setMessages((prev) => {
+                const next = [...prev];
+                const isBot = next.length > 0 && next[next.length - 1].role === "bot";
+                const finalMsg = `⚠️ ${message}`;
+                if (!isBot) {
+                  next.push({
+                    role: "bot",
+                    markdown: finalMsg,
+                    plain: message,
+                    timestamp: Date.now(),
+                  });
+                } else {
+                  const last = { ...next[next.length - 1] };
+                  last.markdown = finalMsg;
+                  last.plain = message;
+                  next[next.length - 1] = last;
+                }
+                return next;
+              });
+            },
+          },
+        );
       } else {
         // Không có file → hỏi đáp luật lao động thông thường (streaming)
         const mode = question.length > 120 ? "global" : "local";

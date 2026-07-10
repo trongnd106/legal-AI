@@ -26,6 +26,7 @@ import asyncio
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
+from collections.abc import Awaitable, Callable
 
 import uuid
 
@@ -118,6 +119,7 @@ async def run_contract_analysis(
     neo4j_graph_hops: int = 2,
     map_concurrency: int = 4,
     root_dir: str = "data/labor-law",
+    progress_callback: collections.abc.Callable[[str], collections.abc.Awaitable[None]] | None = None,
 ) -> ContractAnalysisResult:
     """
     Chạy pipeline phân tích HĐLĐ — tối ưu tốc độ.
@@ -167,6 +169,8 @@ async def run_contract_analysis(
     llm = get_completion_for_contract_tasks(config)
 
     # ── Bước 2: Segment bằng LLM ─────────────────────────────────────────
+    if progress_callback:
+        await progress_callback("Đang tách điều khoản...")
     clauses = await segment_clauses(llm, doc)
     missing = compute_missing_mandatory(clauses, raw_text=doc.raw_text)
 
@@ -176,6 +180,8 @@ async def run_contract_analysis(
         ClauseAnalysis(clause=c, rule_issues=apply_rules(c, rule_ctx))
         for c in clauses
     ]
+    if progress_callback:
+        await progress_callback(f"Đã áp dụng luật cho {len(clauses)} điều khoản")
 
     # ── Bước 4: Phân loại: cần map? cần LLM? ─────────────────────────────
     clauses_need_map: list = []
@@ -213,7 +219,12 @@ async def run_contract_analysis(
                 loader.load(prefer_merged=True)
                 sem = asyncio.Semaphore(map_concurrency)
                 result = {}
-                for clause in clauses_need_map:
+                total_map = len(clauses_need_map)
+                for i, clause in enumerate(clauses_need_map, 1):
+                    if progress_callback:
+                        await progress_callback(
+                            f"Đang tra cứu điều {clause.title} ({i}/{total_map})"
+                        )
                     context = await fetch_legal_context_optimized(
                         loader,
                         clause,
@@ -268,6 +279,8 @@ async def run_contract_analysis(
         # Bước 5a: map (cần kết quả trước LLM review để cho context tốt hơn)
         mapped = await do_map()
         # Bước 5b: LLM review (dùng mapped làm context)
+        if progress_callback:
+            await progress_callback("Đang đánh giá bằng AI...")
         llm_by_id = await do_llm_review(mapped)
     finally:
         if neo_driver is not None:
@@ -284,6 +297,8 @@ async def run_contract_analysis(
         ))
 
     # ── Bước 7: Finalize + persist ────────────────────────────────────────
+    if progress_callback:
+        await progress_callback("Đang tổng hợp báo cáo...")
     result = ContractAnalysisResult(
         contract=doc,
         clauses=clauses,
