@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Any
 
-from graphrag.api.query import local_search
+from graphrag.api.query import local_search, local_search_streaming
+from graphrag.callbacks.noop_query_callbacks import NoopQueryCallbacks
 
 from query.loader import GraphLoader
 
@@ -133,6 +136,54 @@ def _collect_entity_titles(context_data: dict) -> list[str]:
             titles.extend(value["title"].dropna().tolist())
 
     return list(dict.fromkeys(titles))   # preserve order, deduplicate
+
+
+async def ask_local_streaming(
+    question: str,
+    loader: GraphLoader,
+    community_level: int = 2,
+    response_type: str = "single paragraph",
+) -> AsyncGenerator[str | dict[str, Any], None]:
+    """
+    Local search streaming — yield tokens khi LLM trả về từng chunk,
+    sau đó yield một dict chứa kết quả cuối cùng (citations, entities, ...).
+    """
+    context_data: dict[str, Any] = {}
+
+    def on_context(ctx: Any) -> None:
+        nonlocal context_data
+        context_data = ctx
+
+    callbacks = [NoopQueryCallbacks()]
+    callbacks[0].on_context = on_context
+
+    full_response = ""
+    async for chunk in local_search_streaming(
+        config=loader.config,
+        entities=loader.entities,
+        communities=loader.communities,
+        community_reports=loader.community_reports,
+        text_units=loader.text_units,
+        relationships=loader.relationships,
+        covariates=loader.covariates,
+        community_level=community_level,
+        response_type=response_type,
+        query=question,
+        callbacks=callbacks,
+    ):
+        full_response += chunk
+        yield chunk
+
+    article_citations = _extract_citations(full_response)
+    entities_used = _collect_entity_titles(context_data)
+
+    yield {
+        "type": "done",
+        "answer": full_response,
+        "article_citations": article_citations,
+        "entities_used": entities_used,
+        "context_data": context_data,
+    }
 
 
 # ---------------------------------------------------------------------------

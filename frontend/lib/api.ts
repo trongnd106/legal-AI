@@ -158,6 +158,85 @@ export async function sendChatMessage(
   );
 }
 
+export async function streamChatMessage(
+  payload: ChatRequest,
+  callbacks: {
+    onToken: (token: string) => void;
+    onDone: (result: ChatResponse) => void;
+    onError: (error: string) => void;
+  },
+  retryOpts?: RetryOptions,
+): Promise<void> {
+  const { maxAttempts = 3, baseDelayMs = 1_000 } = retryOpts ?? {};
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch("/api/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let detail = res.statusText;
+        try {
+          const body = await res.json() as { detail?: unknown };
+          if (typeof body.detail === "string") detail = body.detail;
+        } catch { /* ignore */ }
+        throw Object.assign(new Error(detail), { status: res.status });
+      }
+
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("Response body is null");
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (!raw) continue;
+
+          let data: Record<string, unknown>;
+          try {
+            data = JSON.parse(raw);
+          } catch { continue; }
+
+          switch (data.type) {
+            case "token":
+              callbacks.onToken(String(data.content ?? ""));
+              break;
+            case "done":
+              callbacks.onDone(data as unknown as ChatResponse);
+              return;
+            case "error":
+              callbacks.onError(String(data.message ?? "Lỗi không xác định"));
+              return;
+          }
+        }
+      }
+      return;
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      const retryable = isRetryableNetworkError(err) || (status !== undefined && isRetryableStatus(status));
+      if (!retryable || attempt === maxAttempts) {
+        callbacks.onError(err instanceof Error ? err.message : "Lỗi không xác định");
+        return;
+      }
+      const delayMs = baseDelayMs * 2 ** (attempt - 1);
+      await sleep(delayMs);
+    }
+  }
+}
+
 export async function listDocuments(): Promise<{ documents: DocumentItem[] }> {
   return request<{ documents: DocumentItem[] }>("/api/documents");
 }

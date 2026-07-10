@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mic, Paperclip, Send, Sparkles } from "lucide-react";
-import { analyzeContract, escapeHtml, sendChatMessage } from "@/lib/api";
+import { analyzeContract, escapeHtml, sendChatMessage, streamChatMessage } from "@/lib/api";
 import type { ChatMessage } from "@/types/api";
 import { MarkdownMessage } from "./MarkdownMessage";
 import { useToast } from "./ToastProvider";
@@ -153,24 +153,111 @@ export function ChatPanel({
           },
         ]);
       } else {
-        // Không có file → hỏi đáp luật lao động thông thường
+        // Không có file → hỏi đáp luật lao động thông thường (streaming)
         const mode = question.length > 120 ? "global" : "local";
-        const data = await sendChatMessage(
+
+        let streamedAnswer = "";
+        let botAdded = false;
+        let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+        const scheduleBotUpdate = (
+          markdown: string,
+          extra: Partial<ChatMessage> = {},
+        ) => {
+          if (flushTimer) clearTimeout(flushTimer);
+          flushTimer = setTimeout(() => {
+            flushTimer = null;
+            if (!botAdded) {
+              botAdded = true;
+              setTyping(false);
+              setMessages((prev) => [
+                ...prev,
+                {
+                  role: "bot",
+                  markdown,
+                  plain: markdown,
+                  timestamp: Date.now(),
+                  ...extra,
+                },
+              ]);
+            } else {
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = { ...next[next.length - 1] };
+                last.markdown = markdown;
+                last.plain = markdown;
+                Object.assign(last, extra);
+                next[next.length - 1] = last;
+                return next;
+              });
+            }
+          }, 16);
+        };
+
+        await streamChatMessage(
           { question, mode, domain: "lao_dong" },
+          {
+            onToken: (token) => {
+              streamedAnswer += token;
+              scheduleBotUpdate(streamedAnswer);
+            },
+            onDone: (data) => {
+              if (flushTimer) clearTimeout(flushTimer);
+              const answer = data.answer || streamedAnswer || "Không có câu trả lời.";
+              if (!botAdded) {
+                botAdded = true;
+                setTyping(false);
+              }
+              setMessages((prev) => {
+                const next = [...prev];
+                const isBot = next.length > 0 && next[next.length - 1].role === "bot";
+                if (!isBot) {
+                  next.push({
+                    role: "bot",
+                    markdown: answer,
+                    plain: answer,
+                    citations: data.article_citations || [],
+                    dataCitations: data.data_citations || [],
+                    timestamp: Date.now(),
+                  });
+                } else {
+                  const last = { ...next[next.length - 1] };
+                  last.markdown = answer;
+                  last.plain = answer;
+                  last.citations = data.article_citations || [];
+                  last.dataCitations = data.data_citations || [];
+                  next[next.length - 1] = last;
+                }
+                return next;
+              });
+            },
+            onError: (message) => {
+              if (flushTimer) clearTimeout(flushTimer);
+              const finalMsg = streamedAnswer || message || "Lỗi khi gửi câu hỏi.";
+              setMessages((prev) => {
+                const next = [...prev];
+                const isBot = next.length > 0 && next[next.length - 1].role === "bot";
+                if (!isBot) {
+                  botAdded = true;
+                  setTyping(false);
+                  next.push({
+                    role: "bot",
+                    markdown: finalMsg,
+                    plain: finalMsg,
+                    timestamp: Date.now(),
+                  });
+                } else {
+                  const last = { ...next[next.length - 1] };
+                  last.markdown = finalMsg;
+                  last.plain = finalMsg;
+                  next[next.length - 1] = last;
+                }
+                return next;
+              });
+            },
+          },
           { onRetry },
         );
-        const answer = data.answer || "Không có câu trả lời.";
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "bot",
-            markdown: answer,
-            plain: answer,
-            citations: data.article_citations || [],
-            dataCitations: data.data_citations || [],
-            timestamp: Date.now(),
-          },
-        ]);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Lỗi khi gửi câu hỏi.";

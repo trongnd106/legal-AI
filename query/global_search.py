@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import asyncio
 import re
+from collections.abc import AsyncGenerator
 from pathlib import Path
+from typing import Any
 
-from graphrag.api.query import global_search
+from graphrag.api.query import global_search, global_search_streaming
+from graphrag.callbacks.noop_query_callbacks import NoopQueryCallbacks
 
 from query.loader import GraphLoader
 
@@ -131,6 +134,58 @@ def _extract_citations(text: str) -> list[str]:
     if re.search(r"Ghi\s+chú", text, re.IGNORECASE):
         citations.add("Ghi chú")
     return sorted(citations)
+
+
+async def ask_global_streaming(
+    question: str,
+    loader: GraphLoader,
+    domain_filter: str | None = None,
+    community_level: int | None = 2,
+    dynamic_community_selection: bool = False,
+    response_type: str = "multiple paragraphs",
+) -> AsyncGenerator[str | dict[str, Any], None]:
+    """
+    Global search streaming — yield tokens khi LLM trả về từng chunk,
+    sau đó yield một dict chứa kết quả cuối cùng (citations, ...).
+    """
+    query = question
+    if domain_filter:
+        domain_ctx = DOMAIN_LABELS.get(domain_filter, "")
+        if domain_ctx:
+            query = f"[Lĩnh vực: {domain_ctx}] {question}"
+
+    context_data: dict[str, Any] = {}
+
+    def on_context(ctx: Any) -> None:
+        nonlocal context_data
+        context_data = ctx
+
+    callbacks = [NoopQueryCallbacks()]
+    callbacks[0].on_context = on_context
+
+    full_response = ""
+    async for chunk in global_search_streaming(
+        config=loader.config,
+        entities=loader.entities,
+        communities=loader.communities,
+        community_reports=loader.community_reports,
+        community_level=community_level,
+        dynamic_community_selection=dynamic_community_selection,
+        response_type=response_type,
+        query=query,
+        callbacks=callbacks,
+    ):
+        full_response += chunk
+        yield chunk
+
+    article_citations = _extract_citations(full_response)
+
+    yield {
+        "type": "done",
+        "answer": full_response,
+        "article_citations": article_citations,
+        "context_data": context_data,
+    }
 
 
 # ---------------------------------------------------------------------------
