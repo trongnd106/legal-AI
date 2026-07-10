@@ -28,6 +28,17 @@ export function MarkdownMessage({ content, dataCitations = [] }: MarkdownMessage
     );
   }
 
+  const numberMap = new Map<string, number>();
+  let nextNum = 1;
+  for (const part of parts) {
+    if (part.kind !== "citation") continue;
+    for (const ref of resolveCitationRefs(part.raw, citationMap)) {
+      if (!numberMap.has(ref.key)) {
+        numberMap.set(ref.key, nextNum++);
+      }
+    }
+  }
+
   return (
     <div className="markdown-body markdown-with-citations">
       {parts.map((part, idx) => {
@@ -41,7 +52,13 @@ export function MarkdownMessage({ content, dataCitations = [] }: MarkdownMessage
         }
 
         const refs = resolveCitationRefs(part.raw, citationMap);
-        return <DataCitationGroup key={`cite-${idx}`} items={refs} />;
+        return (
+          <DataCitationGroup
+            key={`cite-${idx}`}
+            items={refs}
+            numberMap={numberMap}
+          />
+        );
       })}
     </div>
   );

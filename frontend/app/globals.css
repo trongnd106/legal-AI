@@ -604,36 +604,29 @@ button {
 .citation-badge-pill {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  max-width: 200px;
-  padding: 2px 8px;
-  border-radius: 999px;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 3px;
   background: #eef4ff;
   border: 1px solid #c5d9f8;
   color: #1e4a8a;
   font-size: 11px;
-  font-weight: 600;
-  line-height: 1.4;
+  font-weight: 700;
+  line-height: 1;
   cursor: help;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .citation-badge:hover .citation-badge-pill,
 .citation-badge:focus-within .citation-badge-pill {
   background: #dbeafe;
   border-color: #93b8f0;
-  box-shadow: 0 2px 6px rgba(30, 74, 138, 0.12);
-}
-
-.citation-badge-icon {
-  flex-shrink: 0;
-  font-size: 12px;
 }
 
 .citation-badge-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1;
 }
 
 .citation-tooltip {
