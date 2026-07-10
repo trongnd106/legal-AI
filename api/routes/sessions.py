@@ -152,3 +152,9 @@ def set_active_chat_session(body: SetActiveSessionRequest) -> ChatSessionListRes
         activeSessionId=data["activeSessionId"],
         storagePath=data["storagePath"],
     )
+
+
+@router.delete("/chat-sessions/{session_id}", status_code=204)
+def delete_chat_session(session_id: str) -> None:
+    if not store.delete_session(session_id):
+        raise HTTPException(status_code=404, detail="Không tìm thấy cuộc trò chuyện")

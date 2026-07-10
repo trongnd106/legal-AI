@@ -304,3 +304,23 @@ def set_active_session(session_id: str) -> bool:
     index["activeSessionId"] = session_id
     _save_index(index)
     return True
+
+
+def delete_session(session_id: str) -> bool:
+    index = _ensure_initialized()
+    before = len(index["sessions"])
+    index["sessions"] = [s for s in index["sessions"] if s.get("id") != session_id]
+    if len(index["sessions"]) == before:
+        return False
+
+    path = _session_path(session_id)
+    if path.exists():
+        path.unlink()
+
+    if index["activeSessionId"] == session_id:
+        index["activeSessionId"] = (
+            index["sessions"][0]["id"] if index["sessions"] else ""
+        )
+
+    _save_index(index)
+    return True

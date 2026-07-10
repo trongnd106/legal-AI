@@ -21,6 +21,7 @@ function AppContent() {
     sessionLoading,
     loaded,
     createNewChat,
+    deleteChat,
     switchChat,
     updateSessionMessages,
     updateSessionTitle,
@@ -60,6 +61,7 @@ function AppContent() {
         activeSessionId={activeSessionId}
         onNewChat={handleNewChat}
         onSwitchChat={handleSwitchChat}
+        onDeleteChat={deleteChat}
       />
       <main className="main-content">
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />

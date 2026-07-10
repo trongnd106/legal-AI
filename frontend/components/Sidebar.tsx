@@ -1,4 +1,4 @@
-import { MessageSquare, Plus } from "lucide-react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 import type { ChatSessionSummary, TabId } from "@/types/api";
 
 interface SidebarProps {
@@ -8,6 +8,7 @@ interface SidebarProps {
   activeSessionId: string;
   onNewChat: () => void;
   onSwitchChat: (id: string) => void;
+  onDeleteChat: (id: string) => void;
 }
 
 export function Sidebar({
@@ -17,6 +18,7 @@ export function Sidebar({
   activeSessionId,
   onNewChat,
   onSwitchChat,
+  onDeleteChat,
 }: SidebarProps) {
   return (
     <aside className="sidebar">
@@ -53,7 +55,7 @@ export function Sidebar({
 
         <ul className="history-list">
           {chatSessions.map((chat) => (
-            <li key={chat.id}>
+            <li key={chat.id} className="history-list-item">
               <button
                 className={`history-item${chat.id === activeSessionId ? " active" : ""}`}
                 type="button"
@@ -61,6 +63,19 @@ export function Sidebar({
               >
                 <MessageSquare size={14} aria-hidden />
                 <span className="history-title">{chat.title}</span>
+              </button>
+              <button
+                className="btn-delete-chat"
+                type="button"
+                title="Xóa cuộc trò chuyện"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Bạn có chắc muốn xóa cuộc trò chuyện này?")) {
+                    onDeleteChat(chat.id);
+                  }
+                }}
+              >
+                <Trash2 size={14} />
               </button>
             </li>
           ))}

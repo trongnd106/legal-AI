@@ -239,6 +239,15 @@ export async function updateChatSession(
   );
 }
 
+export async function deleteChatSession(
+  sessionId: string,
+): Promise<void> {
+  return request<void>(
+    `/api/chat-sessions/${encodeURIComponent(sessionId)}`,
+    { method: "DELETE" },
+  );
+}
+
 export async function setActiveChatSession(
   activeSessionId: string,
 ): Promise<ChatSessionListResponse> {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createChatSession,
+  deleteChatSession,
   fetchChatSession,
   fetchChatSessionList,
   setActiveChatSession,
@@ -228,6 +229,38 @@ export function useChatSessions() {
     [activeSessionId, loadSessionContent, showToast],
   );
 
+  const deleteChat = useCallback(
+    async (id: string) => {
+      try {
+        await deleteChatSession(id);
+        messagesCacheRef.current.delete(id);
+
+        let nextActiveId: string | null = null;
+        setSessions((prev) => {
+          const filtered = prev.filter((s) => s.id !== id);
+          if (id === activeSessionId) {
+            nextActiveId = filtered.length > 0 ? filtered[0].id : null;
+          }
+          return filtered;
+        });
+
+        if (id === activeSessionId) {
+          if (nextActiveId) {
+            setActiveSessionId(nextActiveId);
+            void loadSessionContent(nextActiveId);
+          } else {
+            void createNewChat();
+          }
+        }
+
+        showToast("Đã xóa cuộc trò chuyện");
+      } catch {
+        showToast("Không xóa được cuộc trò chuyện", true);
+      }
+    },
+    [activeSessionId, loadSessionContent, createNewChat, showToast],
+  );
+
   const updateSessionMessages = useCallback(
     (
       id: string,
@@ -266,6 +299,7 @@ export function useChatSessions() {
     loaded,
     storagePath,
     createNewChat,
+    deleteChat,
     switchChat,
     updateSessionMessages,
     updateSessionTitle,
